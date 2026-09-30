@@ -14,9 +14,10 @@ export function OrgSettingsPage({ me }: { me: Me }) {
   const qc = useQueryClient();
   const [terms, setTerms] = useState(me.settings.terms);
   const [pillars, setPillars] = useState<Pillar[]>(me.settings.enabledPillars);
+  const [workWeek, setWorkWeek] = useState<number[]>(me.settings.workWeek);
 
   const save = useMutation({
-    mutationFn: () => api("settings", { method: "PATCH", body: JSON.stringify({ terms, enabledPillars: pillars }) }),
+    mutationFn: () => api("settings", { method: "PATCH", body: JSON.stringify({ terms, enabledPillars: pillars, workWeek }) }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["me"] });
       toast.success("Settings saved");
@@ -71,6 +72,32 @@ export function OrgSettingsPage({ me }: { me: Me }) {
                 <span className={cn("h-5 w-9 rounded-full p-0.5 transition-colors", on ? "bg-primary" : "bg-input")}>
                   <span className={cn("block size-4 rounded-full bg-white transition-transform", on && "translate-x-4")} />
                 </span>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-lg font-bold">Working days</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Leave only counts these days. Holidays are set in People → Leave.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label, i) => {
+            const day = i + 1;
+            const on = workWeek.includes(day);
+            return (
+              <button
+                key={label}
+                type="button"
+                disabled={!canManage}
+                aria-pressed={on}
+                onClick={() => setWorkWeek((w) => (on ? (w.length > 1 ? w.filter((d) => d !== day) : w) : [...w, day].sort()))}
+                className={cn(
+                  "h-10 w-14 rounded-lg border text-sm font-medium transition-colors",
+                  on ? "border-people bg-[color-mix(in_srgb,var(--people)_14%,transparent)] text-people" : "border-border text-muted-foreground",
+                )}
+              >
+                {label}
               </button>
             );
           })}

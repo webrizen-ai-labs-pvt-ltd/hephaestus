@@ -39,6 +39,7 @@ export interface Me {
     enabledPillars: Pillar[];
     timezone: string;
     currency: string;
+    workWeek: number[];
   };
 }
 

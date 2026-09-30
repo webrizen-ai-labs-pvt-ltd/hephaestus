@@ -151,10 +151,20 @@ export const employeeRoutes = new Hono<AppEnv>()
           gte(leaveRequests.endDate, today),
         ),
       );
+    // Pending requests this viewer can act on: everyone else's (approvers) or their reports' (managers).
+    const me = await viewerEmployee(c);
     const [pending] = await db
       .select({ n: count() })
       .from(leaveRequests)
-      .where(and(eq(leaveRequests.orgId, org.id), eq(leaveRequests.status, "pending")));
+      .innerJoin(employees, eq(employees.id, leaveRequests.employeeId))
+      .where(
+        and(
+          eq(leaveRequests.orgId, org.id),
+          eq(leaveRequests.status, "pending"),
+          me ? ne(leaveRequests.employeeId, me.id) : undefined,
+          hasPermission(c, "leave", "approve") ? undefined : me ? eq(employees.managerId, me.id) : sql`false`,
+        ),
+      );
     const [onboarding] = await db
       .select({ n: count() })
       .from(onboardingRuns)

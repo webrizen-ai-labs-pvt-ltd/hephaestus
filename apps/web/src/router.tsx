@@ -4,6 +4,14 @@ import { createContext, use } from "react";
 import { AppShell } from "./components/app-shell.tsx";
 import { ApiError, type Me, signIn, signOut, useMe } from "./lib/api.ts";
 import { HomePage } from "./pages/home.tsx";
+import { DirectoryPage } from "./pages/people/directory.tsx";
+import { PeopleLayout } from "./pages/people/layout.tsx";
+import { LeavePage } from "./pages/people/leave.tsx";
+import { OnboardingPage } from "./pages/people/onboarding.tsx";
+import { OrgChartPage } from "./pages/people/org-chart.tsx";
+import { PeopleOverviewPage } from "./pages/people/overview.tsx";
+import { ProfilePage } from "./pages/people/profile.tsx";
+import { StructurePage } from "./pages/people/structure.tsx";
 import { PillarPage } from "./pages/pillars.tsx";
 import { AuditPage, OrgSettingsPage, PreferencesPage } from "./pages/settings.tsx";
 import { SignInPage } from "./pages/sign-in.tsx";
@@ -86,9 +94,21 @@ const rootRoute = createRootRoute({
 const page = <P extends string>(path: P, Component: () => React.ReactNode) =>
   createRoute({ getParentRoute: () => rootRoute, path, component: Component });
 
+const peopleRoute = createRoute({ getParentRoute: () => rootRoute, path: "/people", component: PeopleLayout });
+const peoplePage = <P extends string>(path: P, Component: () => React.ReactNode, validateSearch?: (s: Record<string, unknown>) => object) =>
+  createRoute({ getParentRoute: () => peopleRoute, path, component: Component, ...(validateSearch ? { validateSearch } : {}) });
+
 const routeTree = rootRoute.addChildren([
   page("/", () => <HomePage me={useViewer()} />),
-  page("/people", () => <PillarPage me={useViewer()} path="/people" />),
+  peopleRoute.addChildren([
+    peoplePage("/", () => <PeopleOverviewPage />),
+    peoplePage("directory", () => <DirectoryPage me={useViewer()} />, (s) => ({ add: s.add === true || s.add === "true" ? true : undefined })),
+    peoplePage("org-chart", () => <OrgChartPage />),
+    peoplePage("structure", () => <StructurePage me={useViewer()} />),
+    peoplePage("leave", () => <LeavePage me={useViewer()} />, (s) => ({ tab: typeof s.tab === "string" ? s.tab : undefined })),
+    peoplePage("onboarding", () => <OnboardingPage me={useViewer()} />),
+    peoplePage("$id", () => <ProfilePage />),
+  ]),
   page("/work", () => <PillarPage me={useViewer()} path="/work" />),
   page("/collab", () => <PillarPage me={useViewer()} path="/collab" />),
   page("/finance", () => <PillarPage me={useViewer()} path="/finance" />),
