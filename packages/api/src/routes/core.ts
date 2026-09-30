@@ -31,6 +31,7 @@ export const coreRoutes = new Hono<AppEnv>()
         enabledPillars: settings?.enabledPillars ?? [...PILLARS],
         timezone: settings?.timezone ?? "Asia/Kolkata",
         currency: settings?.currency ?? "INR",
+        workWeek: settings?.workWeek ?? [1, 2, 3, 4, 5],
       },
     });
   })
@@ -83,6 +84,7 @@ export const coreRoutes = new Hono<AppEnv>()
         enabledPillars: z.array(z.enum(PILLARS)).optional(),
         timezone: z.string().max(64).optional(),
         currency: z.string().length(3).optional(),
+        workWeek: z.array(z.number().int().min(1).max(7)).min(1).max(7).optional(),
       }),
     ),
     async (c) => {

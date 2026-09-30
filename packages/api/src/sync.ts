@@ -2,6 +2,7 @@ import type { Viewer } from "@hephaestus/core";
 import { type Db, members, orgSettings, orgs } from "@hephaestus/db";
 import { and, eq, sql } from "drizzle-orm";
 import type { ActiveOrg } from "./context.ts";
+import { seedOrgDefaults } from "./defaults.ts";
 
 /**
  * Make sure the viewer's org and membership exist locally, and refresh their
@@ -22,7 +23,8 @@ export async function syncViewer(db: Db, viewer: Viewer): Promise<ActiveOrg | nu
     .returning({ id: orgs.id, name: orgs.name, slug: orgs.slug });
   if (!org) throw new Error("Failed to upsert org");
 
-  await db.insert(orgSettings).values({ orgId: org.id }).onConflictDoNothing();
+  const created = await db.insert(orgSettings).values({ orgId: org.id }).onConflictDoNothing().returning({ orgId: orgSettings.orgId });
+  if (created.length > 0) await seedOrgDefaults(db, org.id);
 
   await db
     .insert(members)

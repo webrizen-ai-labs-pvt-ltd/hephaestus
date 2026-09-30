@@ -54,6 +54,8 @@ export const orgSettings = pgTable("org_settings", {
     .default(sql`array['people','work','collab','finance']::text[]`),
   timezone: text("timezone").notNull().default("Asia/Kolkata"),
   currency: text("currency").notNull().default("INR"),
+  /** Working days, ISO numbering (1 = Monday … 7 = Sunday). */
+  workWeek: integer("work_week").array().notNull().default(sql`array[1,2,3,4,5]::int[]`),
   updatedAt: updatedAt(),
 }).enableRLS();
 

@@ -1,8 +1,21 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ApiDeps, AppEnv } from "./context.ts";
+import { requireOrg } from "./middleware.ts";
 import { coreRoutes } from "./routes/core.ts";
 import { fileRoutes } from "./routes/files.ts";
+import { employeeRoutes } from "./routes/people/employees.ts";
+import { leaveRoutes } from "./routes/people/leave.ts";
+import { onboardingRoutes } from "./routes/people/onboarding.ts";
+import { structureRoutes } from "./routes/people/structure.ts";
+
+/** People pillar: every route needs a signed-in member of an organization. */
+const people = new Hono<AppEnv>()
+  .use(requireOrg)
+  .route("/", employeeRoutes)
+  .route("/", structureRoutes)
+  .route("/", leaveRoutes)
+  .route("/", onboardingRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
 export { audit } from "./audit.ts";
@@ -25,7 +38,8 @@ export function createApi(deps: ApiDeps) {
     })
     .get("/health", (c) => c.json({ ok: true, edition: deps.edition }))
     .route("/", coreRoutes)
-    .route("/", fileRoutes);
+    .route("/", fileRoutes)
+    .route("/", people);
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) {
