@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@hephaestus/ui/forge.css";
+
+@source "../../../packages/ui/src";
+
+/* cmdk palette */
+[cmdk-item][data-selected="true"] {
+  background: var(--surface-2);
+}
+[cmdk-group-heading] {
+  padding: 8px 8px 4px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "hephaestus",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=@hephaestus/web --filter=@hephaestus/cloud",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @hephaestus/db generate",
+    "db:migrate": "pnpm --filter @hephaestus/db migrate",
+    "build:vercel": "node scripts/build-vercel.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.5",
+    "typescript": "^7.0.2",
+    "esbuild": "^0.28.2"
+  }
+}

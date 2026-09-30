@@ -1,0 +1,98 @@
+import type { ViewerOrg } from "@hephaestus/core";
+import * as client from "openid-client";
+import { z } from "zod";
+import type { Env } from "./env.ts";
+import type { SessionData } from "./session.ts";
+
+export const SCOPES = "openid profile email organization offline_access";
+
+let configPromise: Promise<client.Configuration> | null = null;
+
+/** Discovery is cached per process (serverless instances reuse it while warm). */
+export function getConfig(env: Env) {
+  if (!env.WEBRIZEN_SSO_CLIENT_ID || !env.WEBRIZEN_SSO_CLIENT_SECRET) {
+    throw new Error("Webrizen SSO is not configured");
+  }
+  configPromise ??= client
+    .discovery(new URL(env.WEBRIZEN_SSO_ISSUER), env.WEBRIZEN_SSO_CLIENT_ID, env.WEBRIZEN_SSO_CLIENT_SECRET)
+    .catch((err) => {
+      configPromise = null;
+      throw err;
+    });
+  return configPromise;
+}
+
+const orgClaim = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    slug: z.string(),
+    logo: z.string().nullable().optional(),
+    roles: z.array(z.string()).default([]),
+    permissions: z.record(z.string(), z.array(z.string())).default({}),
+  })
+  .nullable()
+  .optional();
+
+const identityClaims = z.object({
+  sub: z.string(),
+  email: z.string().default(""),
+  name: z.string().optional(),
+  picture: z.string().nullable().optional(),
+  org: orgClaim,
+});
+
+/** Map ID token / userinfo claims to our session shape. */
+export function claimsToIdentity(raw: unknown): Pick<SessionData, "user" | "org"> {
+  const c = identityClaims.parse(raw);
+  const org: ViewerOrg | null = c.org
+    ? {
+        id: c.org.id,
+        name: c.org.name,
+        slug: c.org.slug,
+        logo: c.org.logo ?? null,
+        roles: c.org.roles,
+        permissions: c.org.permissions,
+      }
+    : null;
+  return {
+    user: { id: c.sub, email: c.email, name: c.name ?? c.email, image: c.picture ?? null },
+    org,
+  };
+}
+
+export function tokensToSession(tokens: client.TokenEndpointResponse, identity: Pick<SessionData, "user" | "org">, previous?: SessionData): SessionData {
+  return {
+    ...identity,
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token ?? previous?.refreshToken,
+    idToken: tokens.id_token ?? previous?.idToken,
+    expiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in ?? 3600),
+  };
+}
+
+/**
+ * Renew an expiring session with the refresh token, re-reading the org claim so
+ * role and permission changes reach the app within the access-token lifetime.
+ */
+export async function refreshSession(env: Env, session: SessionData): Promise<SessionData | null> {
+  if (!session.refreshToken) return null;
+  try {
+    const config = await getConfig(env);
+    const tokens = await client.refreshTokenGrant(config, session.refreshToken);
+    const idClaims = tokens.claims();
+    const identity = idClaims
+      ? claimsToIdentity(idClaims)
+      : claimsToIdentity(await client.fetchUserInfo(config, tokens.access_token, session.user.id));
+    return tokensToSession(tokens, identity, session);
+  } catch (err) {
+    console.warn("Session refresh failed", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+/** Only same-origin relative paths are allowed as post-login destinations. */
+export function safeReturnTo(value: string | undefined | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return "/";
+  return value;
+}

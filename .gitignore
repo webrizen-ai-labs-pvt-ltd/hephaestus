@@ -1,0 +1,12 @@
+node_modules
+dist
+.turbo
+.env
+.env.local
+.env.*.local
+*.log
+.data
+coverage
+playwright-report
+test-results
+.vercel

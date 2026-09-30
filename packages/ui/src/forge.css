@@ -1,0 +1,140 @@
+/*
+ * Forge — the Hephaestus design system tokens.
+ * Import after `tailwindcss` in the app stylesheet.
+ *
+ * Palette: Obsidian, Forge, Ash (neutrals) · Ember (primary) · Molten (ember
+ * text on light) · Brass (finance) · Patina (people, success) · Steel (collab,
+ * info) · Slag (danger). Dark-first, with a full light theme.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --obsidian: #121110;
+  --forge: #1e1b18;
+  --ash: #f5f1ea;
+  --ember: #ff5a1f;
+  --molten: #c2410c;
+  --brass: #c8a24a;
+  --patina: #2e8b6e;
+  --steel: #4c6e9e;
+  --slag: #d7263d;
+
+  /* Light theme */
+  --background: #f5f1ea;
+  --surface: #fffdf9;
+  --surface-2: #efe9df;
+  --foreground: #1a1715;
+  --muted-foreground: #6b635a;
+  --border: #e2dace;
+  --input: #d8cfc2;
+  --ring: #ff5a1f;
+  --primary: #ff5a1f;
+  --primary-foreground: #121110;
+  --accent: #c2410c;
+  --success: #23705a;
+  --warning: #9a6a00;
+  --danger: #b81f33;
+  --info: #3d5f8f;
+  --people: #2e8b6e;
+  --work: #e14d15;
+  --finance: #a8842e;
+  --collab: #4c6e9e;
+  --sidebar: #ede6db;
+}
+
+.dark {
+  --background: #121110;
+  --surface: #1a1816;
+  --surface-2: #231f1c;
+  --foreground: #f5f1ea;
+  --muted-foreground: #a39a8e;
+  --border: #2e2a26;
+  --input: #3a3530;
+  --ring: #ff5a1f;
+  --primary: #ff5a1f;
+  --primary-foreground: #121110;
+  --accent: #ff7a45;
+  --success: #4fbf97;
+  --warning: #f2b705;
+  --danger: #f0576a;
+  --info: #7fa1d1;
+  --people: #4fbf97;
+  --work: #ff7a45;
+  --finance: #d9b865;
+  --collab: #7fa1d1;
+  --sidebar: #0d0c0b;
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Geist Variable", ui-sans-serif, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-people: var(--people);
+  --color-work: var(--work);
+  --color-finance: var(--finance);
+  --color-collab: var(--collab);
+  --color-sidebar: var(--sidebar);
+  --color-ember: var(--ember);
+  --color-brass: var(--brass);
+  --color-obsidian: var(--obsidian);
+  --color-ash: var(--ash);
+
+  --radius-card: 12px;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--ember) 35%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
