@@ -17,5 +17,11 @@
 | D13 | 2026-09-30 | Employees are separate from sign-in accounts (`members`) and linked by work email | HR can add people before they sign in; some staff never need an account |
 | D14 | 2026-09-30 | Leave is counted in working days on the server (org work week, non-optional holidays, half days) and checked against the yearly balance, pending included | One source of truth; no over-booking by submitting many requests |
 | D15 | 2026-09-30 | Managers approve their direct reports; `leave:approve` approves anyone; nobody approves their own leave | Matches how most Indian SMEs run leave |
-| D16 | 2026-09-30 | Onboarding steps live in their own table until Phase 2, then become tasks | Work (tasks) doesn't exist yet; the checklist UX doesn't change |
+| D16 | 2026-09-30 | Onboarding steps live in their own table and, since Phase 2, each also gets a task (`source = onboarding`); ticking either one updates both | Steps show up in My work without changing the checklist |
 | D17 | 2026-09-30 | Employee documents: HR (`employee:update`) and the employee only | Documents are usually ID proofs and contracts |
+| D18 | 2026-10-01 | Projects have custom stages, each mapped to one of four categories (to do, in progress, review, done); tasks copy the category into `status` | Free-form workflows while reports and My work stay consistent |
+| D19 | 2026-10-01 | Board order uses fractional positions | A drag rewrites one row, not the whole column |
+| D20 | 2026-10-01 | Assignees are employees (not sign-in accounts); assigning others needs `task:assign`, self-assign doesn't | Matches People; members can pick up work without admin rights |
+| D21 | 2026-10-01 | Recurring tasks roll forward on completion (no scheduler) | Works identically in the offline edition |
+| D22 | 2026-10-01 | A task can't be completed while its blockers are open | Dependencies are meaningful, not decorative |
+| D23 | 2026-10-01 | Projects are visible to everyone with `project:read`; private projects are deferred | Keeps every query simple until there's demand |

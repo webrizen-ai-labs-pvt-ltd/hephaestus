@@ -12,6 +12,12 @@ import { OrgChartPage } from "./pages/people/org-chart.tsx";
 import { PeopleOverviewPage } from "./pages/people/overview.tsx";
 import { ProfilePage } from "./pages/people/profile.tsx";
 import { StructurePage } from "./pages/people/structure.tsx";
+import { GoalsPage } from "./pages/work/goals.tsx";
+import { WorkLayout } from "./pages/work/layout.tsx";
+import { MyWorkPage } from "./pages/work/my-work.tsx";
+import { ProjectPage } from "./pages/work/project.tsx";
+import { ProjectsPage } from "./pages/work/projects.tsx";
+import { WorkloadPage } from "./pages/work/workload.tsx";
 import { PillarPage } from "./pages/pillars.tsx";
 import { AuditPage, OrgSettingsPage, PreferencesPage } from "./pages/settings.tsx";
 import { SignInPage } from "./pages/sign-in.tsx";
@@ -98,6 +104,17 @@ const peopleRoute = createRoute({ getParentRoute: () => rootRoute, path: "/peopl
 const peoplePage = <P extends string>(path: P, Component: () => React.ReactNode, validateSearch?: (s: Record<string, unknown>) => object) =>
   createRoute({ getParentRoute: () => peopleRoute, path, component: Component, ...(validateSearch ? { validateSearch } : {}) });
 
+/** Every Work page accepts ?task=<id> to open a task in the side panel. */
+const taskSearch = (s: Record<string, unknown>): { task?: string } => (typeof s.task === "string" ? { task: s.task } : {});
+const workRoute = createRoute({ getParentRoute: () => rootRoute, path: "/work", component: WorkLayout, validateSearch: taskSearch });
+const workPage = <P extends string>(path: P, Component: () => React.ReactNode, validateSearch?: (s: Record<string, unknown>) => { view?: string }) =>
+  createRoute({
+    getParentRoute: () => workRoute,
+    path,
+    component: Component,
+    validateSearch: (s: Record<string, unknown>): { task?: string; view?: string } => ({ ...taskSearch(s), ...(validateSearch ? validateSearch(s) : {}) }),
+  });
+
 const routeTree = rootRoute.addChildren([
   page("/", () => <HomePage me={useViewer()} />),
   peopleRoute.addChildren([
@@ -109,7 +126,13 @@ const routeTree = rootRoute.addChildren([
     peoplePage("onboarding", () => <OnboardingPage me={useViewer()} />),
     peoplePage("$id", () => <ProfilePage />),
   ]),
-  page("/work", () => <PillarPage me={useViewer()} path="/work" />),
+  workRoute.addChildren([
+    workPage("/", () => <MyWorkPage />),
+    workPage("projects", () => <ProjectsPage me={useViewer()} />),
+    workPage("projects/$id", () => <ProjectPage me={useViewer()} />, (s) => (typeof s.view === "string" ? { view: s.view } : {})),
+    workPage("goals", () => <GoalsPage me={useViewer()} />),
+    workPage("workload", () => <WorkloadPage />),
+  ]),
   page("/collab", () => <PillarPage me={useViewer()} path="/collab" />),
   page("/finance", () => <PillarPage me={useViewer()} path="/finance" />),
   page("/settings", () => <OrgSettingsPage me={useViewer()} />),

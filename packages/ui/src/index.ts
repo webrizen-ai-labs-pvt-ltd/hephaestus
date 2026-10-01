@@ -7,6 +7,9 @@ export {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "./components/menu.tsx";
 export {
   Dialog,
@@ -16,6 +19,7 @@ export {
   EmptyState,
   Field,
   Select,
+  SheetContent,
   Stat,
   Textarea,
 } from "./components/forms.tsx";

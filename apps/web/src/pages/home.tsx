@@ -28,7 +28,7 @@ function greeting() {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-const PHASE: Record<string, string> = { people: "Live", work: "Phase 2", collab: "Phase 3", finance: "Phase 4" };
+const PHASE: Record<string, string> = { people: "Live", work: "Live", collab: "Phase 3", finance: "Phase 4" };
 
 export function HomePage({ me }: { me: Me }) {
   const { data } = useMembers();
@@ -40,7 +40,7 @@ export function HomePage({ me }: { me: Me }) {
     { done: true, label: "Sign in with your Webrizen account" },
     { done: members.length > 1, label: "Invite your team from Webrizen SSO" },
     { done: false, label: "Set up departments and teams", to: "/people/structure" },
-    { done: false, label: "Create your first project", to: "/work" },
+    { done: false, label: "Create your first project", to: "/work/projects" },
   ];
 
   return (

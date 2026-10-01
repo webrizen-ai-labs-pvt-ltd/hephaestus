@@ -118,3 +118,22 @@ export function Stat({ label, value, hint, tone, icon }: { label: string; value:
     </div>
   );
 }
+
+/** A panel that slides in from the right (task details, filters). */
+export function SheetContent({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-obsidian/40" />
+      <DialogPrimitive.Content
+        aria-describedby={undefined}
+        className={cn(
+          "fixed inset-y-0 right-0 z-40 flex w-full max-w-2xl flex-col border-l border-border bg-surface shadow-[-24px_0_64px_-24px_rgb(0_0_0/0.5)] outline-none",
+          className,
+        )}
+      >
+        <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+        {children}
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  );
+}
