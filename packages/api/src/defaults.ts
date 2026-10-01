@@ -1,4 +1,4 @@
-import { type Db, holidays, leaveTypes, type OnboardingTemplateItem, onboardingTemplates } from "@hephaestus/db";
+import { type Db, holidays, labels, leaveTypes, type OnboardingTemplateItem, onboardingTemplates } from "@hephaestus/db";
 
 /** Starting data for a brand-new organization. Everything is editable afterwards. */
 export async function seedOrgDefaults(db: Db, orgId: string, now = new Date()) {
@@ -37,4 +37,11 @@ export async function seedOrgDefaults(db: Db, orgId: string, now = new Date()) {
     description: "A starting checklist for every new joiner.",
     items,
   });
+
+  await db.insert(labels).values([
+    { orgId, name: "Client request", color: "#c8a24a" },
+    { orgId, name: "Bug", color: "#d7263d" },
+    { orgId, name: "Improvement", color: "#4c6e9e" },
+    { orgId, name: "Internal", color: "#8a8178" },
+  ]);
 }

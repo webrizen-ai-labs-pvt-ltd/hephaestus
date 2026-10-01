@@ -1,5 +1,5 @@
 import { addDays, isIsoDate } from "@hephaestus/core";
-import { employees, onboardingItems, onboardingRuns, onboardingTemplates } from "@hephaestus/db";
+import { employees, onboardingItems, onboardingRuns, onboardingTemplates, taskAssignees, tasks } from "@hephaestus/db";
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Hono } from "hono";
@@ -9,6 +9,7 @@ import { audit } from "../../audit.ts";
 import type { AppEnv } from "../../context.ts";
 import { forbid, hasPermission, notFound, notify, userIdsForEmployees, viewerEmployee } from "../../helpers.ts";
 import { requirePermission } from "../../middleware.ts";
+import { setOnboardingItemDone } from "../../onboarding-sync.ts";
 import { validate } from "../../validate.ts";
 
 const templateItem = z.object({
@@ -200,14 +201,35 @@ export const onboardingRoutes = new Hono<AppEnv>()
           .insert(onboardingRuns)
           .values({ orgId: org.id, employeeId, templateId, name: tpl.name, startDate, createdBy: c.get("viewer")!.userId })
           .returning({ id: onboardingRuns.id });
-        await tx.insert(onboardingItems).values(
-          resolved.map((r) => ({
-            ...r,
-            orgId: org.id,
-            runId: run!.id,
-            assigneeEmployeeId: r.assigneeEmployeeId && valid.has(r.assigneeEmployeeId) ? r.assigneeEmployeeId : null,
-          })),
-        );
+        const items = await tx
+          .insert(onboardingItems)
+          .values(
+            resolved.map((r) => ({
+              ...r,
+              orgId: org.id,
+              runId: run!.id,
+              assigneeEmployeeId: r.assigneeEmployeeId && valid.has(r.assigneeEmployeeId) ? r.assigneeEmployeeId : null,
+            })),
+          )
+          .returning();
+        // Each step is also a task, so it shows up in the assignee's My work.
+        for (const item of items) {
+          const [task] = await tx
+            .insert(tasks)
+            .values({
+              orgId: org.id,
+              title: `${item.title} · ${emp.fullName}`,
+              description: item.description,
+              dueDate: item.dueDate,
+              source: "onboarding",
+              sourceId: item.id,
+              createdBy: c.get("viewer")!.userId,
+            })
+            .returning({ id: tasks.id });
+          if (item.assigneeEmployeeId) {
+            await tx.insert(taskAssignees).values({ taskId: task!.id, employeeId: item.assigneeEmployeeId, orgId: org.id });
+          }
+        }
         return run!.id;
       });
 
@@ -235,30 +257,6 @@ export const onboardingRoutes = new Hono<AppEnv>()
     const me = await viewerEmployee(c);
     if (item.assigneeEmployeeId !== me?.id && !hasPermission(c, "employee", "update")) forbid();
 
-    await db
-      .update(onboardingItems)
-      .set(done ? { doneAt: new Date(), doneBy: c.get("viewer")!.userId } : { doneAt: null, doneBy: null })
-      .where(eq(onboardingItems.id, item.id));
-
-    // The run (and the employee's onboarding status) completes with its last step.
-    const [left] = await db
-      .select({ n: count() })
-      .from(onboardingItems)
-      .where(and(eq(onboardingItems.runId, item.runId), isNull(onboardingItems.doneAt)));
-    const [run] = await db
-      .update(onboardingRuns)
-      .set({ completedAt: left?.n === 0 ? new Date() : null })
-      .where(eq(onboardingRuns.id, item.runId))
-      .returning({ employeeId: onboardingRuns.employeeId });
-    if (run) {
-      const [open] = await db
-        .select({ n: count() })
-        .from(onboardingRuns)
-        .where(and(eq(onboardingRuns.employeeId, run.employeeId), isNull(onboardingRuns.completedAt)));
-      await db
-        .update(employees)
-        .set({ status: open?.n === 0 ? "active" : "onboarding" })
-        .where(and(eq(employees.id, run.employeeId), sql`${employees.status} <> 'offboarded'`));
-    }
-    return c.json({ ok: true, runCompleted: left?.n === 0 });
+    const { runCompleted } = await setOnboardingItemDone(db, item.id, done, c.get("viewer")!.userId);
+    return c.json({ ok: true, runCompleted });
   });

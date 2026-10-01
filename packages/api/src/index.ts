@@ -8,14 +8,23 @@ import { employeeRoutes } from "./routes/people/employees.ts";
 import { leaveRoutes } from "./routes/people/leave.ts";
 import { onboardingRoutes } from "./routes/people/onboarding.ts";
 import { structureRoutes } from "./routes/people/structure.ts";
+import { projectRoutes } from "./routes/work/projects.ts";
+import { taskRoutes } from "./routes/work/tasks.ts";
 
-/** People pillar: every route needs a signed-in member of an organization. */
-const people = new Hono<AppEnv>()
+/**
+ * Pillar routes. One group so the organization check runs once per request
+ * (a group-level middleware applies to everything mounted after it).
+ */
+const pillars = new Hono<AppEnv>()
   .use(requireOrg)
+  // People
   .route("/", employeeRoutes)
   .route("/", structureRoutes)
   .route("/", leaveRoutes)
-  .route("/", onboardingRoutes);
+  .route("/", onboardingRoutes)
+  // Work
+  .route("/", projectRoutes)
+  .route("/", taskRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
 export { audit } from "./audit.ts";
@@ -39,7 +48,7 @@ export function createApi(deps: ApiDeps) {
     .get("/health", (c) => c.json({ ok: true, edition: deps.edition }))
     .route("/", coreRoutes)
     .route("/", fileRoutes)
-    .route("/", people);
+    .route("/", pillars);
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) {
