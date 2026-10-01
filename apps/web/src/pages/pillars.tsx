@@ -32,7 +32,7 @@ function Roadmap({ path, tone, icon: Icon }: { path: string; tone: string; icon:
       <div className={`absolute inset-x-0 top-0 h-[3px] bg-current ${tone}`} />
       <div className="flex items-center gap-3">
         <Icon className={`size-5 ${tone}`} />
-        <h2 className="text-lg font-bold">Being forged</h2>
+        <h2 className="text-lg font-bold">Coming next</h2>
         <Badge className="ml-auto">{r.phase}</Badge>
       </div>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">

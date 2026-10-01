@@ -21,12 +21,12 @@ export function SignInPage({ variant = "sign-in" }: { variant?: "sign-in" | "sig
         <div className="my-auto max-w-lg">
           <p className="font-mono text-xs uppercase tracking-[0.14em] text-ember">By Webrizen</p>
           <h1 className="mt-4 font-display text-6xl font-bold leading-[0.98] tracking-tight">
-            Forge the work.
+            Run the whole company.
             <br />
-            <span className="text-ember">Collect the value.</span>
+            <span className="text-ember">From one place.</span>
           </h1>
           <p className="mt-6 max-w-md text-base leading-relaxed text-[#bdb5a8]">
-            People, projects, payments and conversations, cast in one place.
+            People, projects, payments and conversations, all connected.
           </p>
           <div className="mt-10 grid max-w-md grid-cols-4 gap-2">
             {[
