@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
 import { Check, ClipboardList, GripVertical, Pencil, Plus, Rocket, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -166,24 +166,38 @@ function RunCard({ run, myEmployeeId, canManage }: { run: OnboardingRun; myEmplo
   );
   const today = new Date().toISOString().slice(0, 10);
   const pct = Math.round((run.done / Math.max(1, run.total)) * 100);
+  const overdueCount = run.items.filter((it) => !it.doneAt && it.dueDate && it.dueDate < today).length;
+  const day = Math.max(1, Math.round((Date.parse(today) - Date.parse(run.startDate)) / 86_400_000) + 1);
 
   return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-center gap-3">
+    <Card className="overflow-hidden">
+      <div className="flex flex-wrap items-center gap-4 border-b border-border bg-gradient-to-r from-people/10 to-transparent p-5">
+        <Avatar name={run.employeeName} className="size-12 text-sm" />
         <div className="min-w-0 flex-1">
           <Link to="/people/$id" params={{ id: run.employeeId }} className="font-display text-lg font-bold hover:underline">
             {run.employeeName}
           </Link>
           <div className="text-xs text-muted-foreground">
             {run.name} · started {formatDate(run.startDate, { day: "numeric", month: "short" })}
+            {!run.completedAt ? ` · day ${day}` : ""}
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-muted-foreground">
+              {run.done} of {run.total} steps
+            </span>
+            {overdueCount ? <span className="rounded-full bg-danger/12 px-2 py-0.5 text-danger">{overdueCount} overdue</span> : null}
           </div>
         </div>
-        {run.completedAt ? <Badge tone="people">Complete</Badge> : <span className="font-mono text-sm">{pct}%</span>}
+        {run.completedAt ? (
+          <Badge tone="people">Complete</Badge>
+        ) : (
+          <ProgressRing value={pct} size={52} stroke={5} color="var(--people)">
+            <span className="text-[11px]">{pct}%</span>
+          </ProgressRing>
+        )}
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
-        <div className="h-full rounded-full bg-people transition-[width]" style={{ width: `${pct}%` }} />
-      </div>
-      <ul className="mt-4 space-y-1">
+      <ul className="space-y-0.5 p-4">
+
         {run.items.map((it) => {
           const mine = it.assigneeEmployeeId === myEmployeeId;
           const allowed = mine || canManage;

@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Badge, Button, Card, cn, EmptyState, Input, Select, Skeleton } from "@hephaestus/ui";
+import { Badge, Button, Card, cn, EmptyState, Input, ProgressRing, Select, Skeleton } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Kanban, List, MessagesSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -523,14 +523,20 @@ export function ProjectPage({ me }: { me: Me }) {
           </div>
           {detail.project.status !== "active" ? <Badge className="capitalize">{detail.project.status}</Badge> : null}
         </div>
-        <div className="flex items-center gap-4 text-sm">
-          {overdue ? <span className="text-danger">{overdue} overdue</span> : null}
-          <span className="text-muted-foreground">
-            {done}/{all.length} done
-          </span>
-          <div className="h-2 w-28 overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: detail.project.color }} />
-          </div>
+        <div className="flex items-center gap-5 rounded-xl border border-border bg-surface px-4 py-2.5 shadow-card">
+          <ProgressRing value={pct} size={44} stroke={4} color={detail.project.color}>
+            <span className="text-[10px]">{pct}%</span>
+          </ProgressRing>
+          {[
+            ["Done", `${done}/${all.length}`, ""],
+            ["Overdue", String(overdue), overdue ? "text-danger" : "text-subtle-foreground"],
+            ["Open", String(all.length - done), ""],
+          ].map(([label, value, tone]) => (
+            <div key={label}>
+              <div className="text-[11px] text-muted-foreground">{label}</div>
+              <div className={cn("font-display text-lg font-bold leading-tight tabular", tone)}>{value}</div>
+            </div>
+          ))}
         </div>
       </div>
 

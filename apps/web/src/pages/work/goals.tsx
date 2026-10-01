@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Badge, Button, Card, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Badge, Button, Card, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
 import { Pencil, Plus, Target, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -75,6 +75,19 @@ function GoalDialog({ open, onOpenChange, goal }: { open: boolean; onOpenChange:
   );
 }
 
+const STATUS_COLOR: Record<Goal["status"], string> = {
+  on_track: "var(--success)",
+  at_risk: "var(--warning)",
+  off_track: "var(--danger)",
+  done: "var(--subtle-foreground)",
+};
+
+function daysLeft(date: string | null) {
+  if (!date) return null;
+  const d = Math.round((Date.parse(`${date}T00:00:00`) - Date.parse(new Date().toISOString().slice(0, 10))) / 86_400_000);
+  return d < 0 ? `${-d}d past target` : d === 0 ? "Due today" : `${d} days left`;
+}
+
 export function GoalsPage({ me }: { me: Me }) {
   const { data } = useGoals();
   const [dialog, setDialog] = useState<{ open: boolean; goal?: Goal }>({ open: false });
@@ -82,12 +95,30 @@ export function GoalsPage({ me }: { me: Me }) {
   const canEdit = can(me.org.permissions, "project", "update");
   const canDelete = can(me.org.permissions, "project", "archive");
   const remove = useApiMutation((id: string) => api(`goals/${id}`, { method: "DELETE" }), { invalidate: WORK_KEYS, success: "Goal deleted" });
+  const goals = data?.goals ?? [];
+  const count = (s: Goal["status"]) => goals.filter((g) => g.status === s).length;
+  const avg = goals.length ? Math.round(goals.reduce((a, g) => a + g.progress, 0) / goals.length) : 0;
 
   return (
-    <WorkBody className="max-w-5xl">
+    <WorkBody>
       <PageHeader
         title="Goals"
-        description="What the company is working towards, and how close you are."
+        description={
+          goals.length ? (
+            <>
+              <Em tone="var(--work)">{goals.length} goals</Em>, <Em>{avg}%</Em> done on average.{" "}
+              {count("at_risk") + count("off_track") ? (
+                <>
+                  <Em tone="var(--warning)">{count("at_risk") + count("off_track")}</Em> need attention.
+                </>
+              ) : (
+                "All on track."
+              )}
+            </>
+          ) : (
+            "What the company is working towards, and how close you are."
+          )
+        }
         actions={
           canCreate ? (
             <Button variant="primary" onClick={() => setDialog({ open: true })}>
@@ -96,60 +127,88 @@ export function GoalsPage({ me }: { me: Me }) {
           ) : null
         }
       />
-      {data?.goals.length === 0 ? (
+      {goals.length ? (
+        <div className="rise rise-1 flex flex-wrap gap-2">
+          {(Object.keys(GOAL_STATUS) as Goal["status"][]).map((s) => (
+            <span key={s} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] shadow-card">
+              <span className="size-2 rounded-full" style={{ background: STATUS_COLOR[s] }} />
+              {GOAL_STATUS[s].label}
+              <span className="font-mono text-xs text-muted-foreground">{count(s)}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {data && goals.length === 0 ? (
         <Card>
           <EmptyState icon={<Target />} title="No goals yet" description="Set a few company goals, then link projects to them. Progress rolls up from tasks." />
         </Card>
       ) : null}
-      <div className="space-y-3">
-        {data?.goals.map((g) => (
-          <Card key={g.id} className="p-5">
-            <div className="flex flex-wrap items-start gap-3">
-              <Target className="mt-1 size-5 text-work" />
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold">{g.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {[g.ownerName, g.targetDate && `by ${formatDate(g.targetDate)}`].filter(Boolean).join(" · ") || "No owner or date yet"}
-                </p>
-              </div>
-              <Badge tone={GOAL_STATUS[g.status].tone}>{GOAL_STATUS[g.status].label}</Badge>
-              {canEdit ? (
-                <button type="button" aria-label={`Edit ${g.title}`} onClick={() => setDialog({ open: true, goal: g })} className="rounded p-1 text-muted-foreground hover:text-foreground">
-                  <Pencil className="size-4" />
-                </button>
-              ) : null}
-              {canDelete ? (
-                <button type="button" aria-label={`Delete ${g.title}`} onClick={() => confirm(`Delete "${g.title}"? Linked projects are kept.`) && remove.mutate(g.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
-                  <Trash2 className="size-4" />
-                </button>
-              ) : null}
-            </div>
-            {g.description ? <p className="mt-3 text-sm">{g.description}</p> : null}
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
-                <div className="h-full rounded-full bg-work" style={{ width: `${g.progress}%` }} />
-              </div>
-              <span className="font-mono text-sm">{g.progress}%</span>
-            </div>
-            {g.projects.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {g.projects.map((p) => (
-                  <Link key={p.id} to="/work/projects/$id" params={{ id: p.id }} className="inline-flex items-center gap-2 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-input">
-                    <span className="size-2 rounded-full" style={{ background: p.color }} />
-                    {p.name}
-                    <span className="font-mono text-muted-foreground">
-                      {p.done}/{p.total}
+      <div className="rise rise-2 grid gap-4 lg:grid-cols-2">
+        {goals.map((g) => {
+          const color = STATUS_COLOR[g.status];
+          return (
+            <Card key={g.id} className="group relative flex flex-col overflow-hidden p-5">
+              <span className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
+              <div className="flex items-start gap-4">
+                <ProgressRing value={g.progress} size={68} stroke={6} color={color}>
+                  <span className="text-sm">{g.progress}%</span>
+                </ProgressRing>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-2">
+                    <h3 className="min-w-0 flex-1 font-display text-[17px] font-bold leading-snug">{g.title}</h3>
+                    <span className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                      {canEdit ? (
+                        <button type="button" aria-label={`Edit ${g.title}`} onClick={() => setDialog({ open: true, goal: g })} className="rounded p-1 text-muted-foreground hover:text-foreground">
+                          <Pencil className="size-4" />
+                        </button>
+                      ) : null}
+                      {canDelete ? (
+                        <button type="button" aria-label={`Delete ${g.title}`} onClick={() => confirm(`Delete "${g.title}"? Linked projects are kept.`) && remove.mutate(g.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                          <Trash2 className="size-4" />
+                        </button>
+                      ) : null}
                     </span>
-                  </Link>
-                ))}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <Badge tone={GOAL_STATUS[g.status].tone}>{GOAL_STATUS[g.status].label}</Badge>
+                    {g.ownerName ? <span>{g.ownerName}</span> : null}
+                    {g.targetDate ? (
+                      <span className="font-mono">
+                        {formatDate(g.targetDate, { day: "numeric", month: "short" })} · {daysLeft(g.targetDate)}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <p className="mt-3 text-xs text-muted-foreground">No projects linked yet. Pick this goal in a project's settings.</p>
-            )}
-          </Card>
-        ))}
+              {g.description ? <p className="mt-4 text-sm text-muted-foreground">{g.description}</p> : null}
+              <div className="mt-auto pt-4">
+                {g.projects.length ? (
+                  <ul className="space-y-2 border-t border-border pt-3">
+                    {g.projects.map((p) => (
+                      <li key={p.id}>
+                        <Link to="/work/projects/$id" params={{ id: p.id }} className="flex items-center gap-3 text-[13px] hover:underline">
+                          <span className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
+                          <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                          <span className="h-1 w-24 overflow-hidden rounded-full bg-surface-2">
+                            <span className="block h-full rounded-full" style={{ width: `${p.total ? (p.done / p.total) * 100 : 0}%`, background: p.color }} />
+                          </span>
+                          <span className="w-10 text-right font-mono text-[11px] text-muted-foreground">
+                            {p.done}/{p.total}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="border-t border-border pt-3 text-xs text-muted-foreground">No projects linked yet. Pick this goal in a project's settings.</p>
+                )}
+              </div>
+            </Card>
+          );
+        })}
       </div>
       {dialog.open ? <GoalDialog key={dialog.goal?.id ?? "new"} open onOpenChange={(o) => setDialog({ open: o })} goal={dialog.goal} /> : null}
     </WorkBody>
   );
 }
+

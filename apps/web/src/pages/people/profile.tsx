@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, Card, Dialog, DialogContent, Field, Input, Skeleton } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, Field, Input, Skeleton } from "@hephaestus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Briefcase, Cake, FileText, Mail, MapPin, Paperclip, Pencil, Phone, Trash2, UserMinus } from "lucide-react";
@@ -28,6 +28,20 @@ function Detail({ icon, label, children }: { icon: React.ReactNode; label: strin
       </div>
     </div>
   );
+}
+
+/** "2 yrs 3 mos", "4 months", "New" */
+function tenure(joinDate: string | null) {
+  if (!joinDate) return "—";
+  const start = new Date(`${joinDate}T00:00:00`);
+  const now = new Date();
+  const months = (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth() - (now.getDate() < start.getDate() ? 1 : 0);
+  if (months < 0) return "Joining soon";
+  if (months < 1) return "New";
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (!y) return `${m} ${m === 1 ? "month" : "months"}`;
+  return m ? `${y} yr${y === 1 ? "" : "s"} ${m} mo` : `${y} ${y === 1 ? "year" : "years"}`;
 }
 
 function formatBytes(n: number) {
@@ -176,7 +190,10 @@ export function ProfilePage() {
       </Link>
 
       <Card className="relative overflow-hidden">
-        <div className="h-20 bg-[linear-gradient(120deg,color-mix(in_srgb,var(--people)_35%,transparent),transparent_70%)]" />
+        <div
+          className="h-24"
+          style={{ background: `linear-gradient(120deg, color-mix(in srgb, ${e.departmentColor ?? "var(--people)"} 40%, transparent), transparent 70%)` }}
+        />
         <div className="flex flex-wrap items-end gap-4 px-6 pb-6">
           <Avatar name={e.fullName} src={e.image} className="-mt-10 size-20 border-4 border-surface text-lg" />
           <div className="min-w-0 flex-1">
@@ -202,6 +219,22 @@ export function ProfilePage() {
             ) : null}
           </div>
         </div>
+        <dl className="grid grid-cols-2 border-t border-border sm:grid-cols-4">
+          {[
+            { label: "With the company", value: tenure(e.joinDate) },
+            { label: "Direct reports", value: String(reports.length) },
+            { label: "Teams", value: String(teams.length) },
+            {
+              label: "Leave left",
+              value: balances?.balances.length ? `${balances.balances.reduce((a, b) => a + (b.remaining ?? 0), 0)} days` : "—",
+            },
+          ].map((s, i) => (
+            <div key={s.label} className={cn("px-6 py-3.5", i > 0 && "sm:border-l sm:border-border", i % 2 === 1 && "border-l border-border")}>
+              <dt className="text-[11.5px] text-muted-foreground">{s.label}</dt>
+              <dd className="mt-0.5 font-display text-lg font-bold">{s.value}</dd>
+            </div>
+          ))}
+        </dl>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
