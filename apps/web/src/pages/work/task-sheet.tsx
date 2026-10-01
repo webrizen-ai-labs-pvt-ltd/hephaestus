@@ -16,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, Copy, Link2, Plus, Repeat, Tag, Trash2, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Thread } from "../../components/collab/thread.tsx";
 import { api } from "../../lib/api.ts";
 import { formatDate, useApiMutation, useEmployees } from "../../lib/people.ts";
 import {
@@ -495,6 +496,11 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
         ) : null}
 
         <section className="mt-8">
+          <h3 className="mb-3 text-sm font-bold">Comments</h3>
+          <Thread type="task" id={t.id} placeholder="Comment, or @mention someone" />
+        </section>
+
+        <section className="mt-8">
           <h3 className="mb-3 text-sm font-bold">Activity</h3>
           <ol className="space-y-3 border-l border-border pl-4">
             {data.activity.map((a) => (
@@ -505,7 +511,6 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
               </li>
             ))}
           </ol>
-          <p className="mt-4 text-xs text-muted-foreground">Comments arrive with Collaboration.</p>
         </section>
       </div>
     </>

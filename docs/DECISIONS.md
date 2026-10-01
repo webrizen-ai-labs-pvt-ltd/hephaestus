@@ -25,3 +25,8 @@
 | D21 | 2026-10-01 | Recurring tasks roll forward on completion (no scheduler) | Works identically in the offline edition |
 | D22 | 2026-10-01 | A task can't be completed while its blockers are open | Dependencies are meaningful, not decorative |
 | D23 | 2026-10-01 | Projects are visible to everyone with `project:read`; private projects are deferred | Keeps every query simple until there's demand |
+| D24 | 2026-10-01 | Chat participants are sign-in accounts (`members`); employees without an account can't chat | Only people who can log in can read or write |
+| D25 | 2026-10-01 | Messages are plain text with `@[member:<id>]` mention tokens and a small safe formatting subset (bold, italic, code, links) | No HTML injection risk; same format works offline and in emails |
+| D26 | 2026-10-01 | Live updates send ids only; browsers refetch through the API. Cloud: one Supabase Realtime topic per org. Local/offline: in-process bus + Server-Sent Events filtered per connection | One access-control path (the API); private content never travels over the realtime layer |
+| D27 | 2026-10-01 | Comment threads attach to records by (type, id); tasks and projects for now, finance records later | Any pillar can add discussion without new tables |
+| D28 | 2026-10-01 | Emails only for mentions, DMs, task assignment and leave; everything else stays in-app | Avoids notification fatigue |

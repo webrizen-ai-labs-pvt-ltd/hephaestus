@@ -1,8 +1,10 @@
 import { Button, Logo } from "@hephaestus/ui";
 import { createRootRoute, createRoute, createRouter, Link } from "@tanstack/react-router";
-import { createContext, use } from "react";
+import { MeContext, useViewer } from "./lib/viewer.ts";
 import { AppShell } from "./components/app-shell.tsx";
-import { ApiError, type Me, signIn, signOut, useMe } from "./lib/api.ts";
+import { ApiError, signIn, signOut, useMe } from "./lib/api.ts";
+import { ChannelPage, CollabIndexPage, DecisionsPage, MentionsPage } from "./pages/collab/channel.tsx";
+import { CollabLayout } from "./pages/collab/layout.tsx";
 import { HomePage } from "./pages/home.tsx";
 import { DirectoryPage } from "./pages/people/directory.tsx";
 import { PeopleLayout } from "./pages/people/layout.tsx";
@@ -22,13 +24,7 @@ import { PillarPage } from "./pages/pillars.tsx";
 import { AuditPage, OrgSettingsPage, PreferencesPage } from "./pages/settings.tsx";
 import { SignInPage } from "./pages/sign-in.tsx";
 
-const MeContext = createContext<Me | null>(null);
-
-export function useViewer() {
-  const me = use(MeContext);
-  if (!me) throw new Error("useViewer outside the signed-in app");
-  return me;
-}
+export { useViewer };
 
 function Splash() {
   return (
@@ -115,6 +111,10 @@ const workPage = <P extends string>(path: P, Component: () => React.ReactNode, v
     validateSearch: (s: Record<string, unknown>): { task?: string; view?: string } => ({ ...taskSearch(s), ...(validateSearch ? validateSearch(s) : {}) }),
   });
 
+const collabRoute = createRoute({ getParentRoute: () => rootRoute, path: "/collab", component: () => <CollabLayout me={useViewer()} /> });
+const collabPage = <P extends string>(path: P, Component: () => React.ReactNode) =>
+  createRoute({ getParentRoute: () => collabRoute, path, component: Component });
+
 const routeTree = rootRoute.addChildren([
   page("/", () => <HomePage me={useViewer()} />),
   peopleRoute.addChildren([
@@ -133,7 +133,12 @@ const routeTree = rootRoute.addChildren([
     workPage("goals", () => <GoalsPage me={useViewer()} />),
     workPage("workload", () => <WorkloadPage />),
   ]),
-  page("/collab", () => <PillarPage me={useViewer()} path="/collab" />),
+  collabRoute.addChildren([
+    collabPage("/", () => <CollabIndexPage />),
+    collabPage("c/$id", () => <ChannelPage me={useViewer()} />),
+    collabPage("mentions", () => <MentionsPage />),
+    collabPage("decisions", () => <DecisionsPage />),
+  ]),
   page("/finance", () => <PillarPage me={useViewer()} path="/finance" />),
   page("/settings", () => <OrgSettingsPage me={useViewer()} />),
   page("/settings/audit", () => <AuditPage me={useViewer()} />),

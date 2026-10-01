@@ -42,7 +42,8 @@ Copy the client ID, client secret and webhook signing secret.
    | `WEBRIZEN_SSO_CLIENT_ID` / `WEBRIZEN_SSO_CLIENT_SECRET` | from SSO |
    | `WEBRIZEN_WEBHOOK_SECRET` | from SSO (`whsec_…`) |
    | `DATABASE_URL` | Supabase **transaction pooler** URL |
-   | `SUPABASE_URL` / `SUPABASE_SECRET_KEY` / `SUPABASE_JWT_SECRET` | from Supabase |
+   | `SUPABASE_URL` / `SUPABASE_SECRET_KEY` / `SUPABASE_JWT_SECRET` / `SUPABASE_PUBLISHABLE_KEY` | from Supabase (the publishable key lets browsers connect to Realtime) |
+   | `RESEND_API_KEY` / `EMAIL_FROM` | from Resend, for mention, message, assignment and leave emails (optional) |
    | `CRON_SECRET` | random string (also used in the pg_cron job) |
 
 4. Add the custom domain.

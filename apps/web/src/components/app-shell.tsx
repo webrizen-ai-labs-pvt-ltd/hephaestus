@@ -12,14 +12,17 @@ import {
   Logo,
 } from "@hephaestus/ui";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { ArrowLeftRight, Bell, LogOut, Menu, Moon, Search, Sun, SunMoon, X } from "lucide-react";
+import { ArrowLeftRight, LogOut, Menu, Moon, Search, Sun, SunMoon, X } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { type Me, signIn, signOut } from "../lib/api.ts";
 import { ADMIN_NAV, MAIN_NAV, type NavItem } from "../lib/nav.ts";
 import { useTheme } from "../lib/theme.ts";
+import { useChannels } from "../lib/collab.ts";
+import { useLiveEvents } from "../lib/realtime.ts";
 import { CommandPalette, useCommandPalette } from "./command-palette.tsx";
+import { NotificationBell } from "./notification-bell.tsx";
 
-function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+function NavLink({ item, onNavigate, badge }: { item: NavItem; onNavigate?: () => void; badge?: number }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const active = item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(`${item.to}/`);
   return (
@@ -34,12 +37,15 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void 
       {active ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary" /> : null}
       <item.icon className={cn("size-4 shrink-0", item.tone ?? (active ? "text-foreground" : ""))} />
       <span className="truncate">{item.label}</span>
+      {badge ? <span className="ml-auto rounded-full bg-collab/20 px-1.5 font-mono text-[10px] text-collab">{badge > 99 ? "99+" : badge}</span> : null}
     </Link>
   );
 }
 
 function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
   const enabled = new Set(me.settings.enabledPillars);
+  const { data: chats } = useChannels();
+  const unreadChats = (chats?.channels ?? []).reduce((n, c) => n + c.unread, 0);
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-14 items-center gap-2.5 px-4">
@@ -71,7 +77,7 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
         {MAIN_NAV.filter((n) => !n.pillar || enabled.has(n.pillar)).map((n) => (
-          <NavLink key={n.to} item={n} onNavigate={onNavigate} />
+          <NavLink key={n.to} item={n} onNavigate={onNavigate} badge={n.pillar === "collab" ? unreadChats : undefined} />
         ))}
         <div className="px-3 pb-1 pt-5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Admin</div>
         {ADMIN_NAV.map((n) => (
@@ -103,6 +109,7 @@ function ThemeMenuItems() {
 }
 
 export function AppShell({ me }: { me: Me }) {
+  useLiveEvents();
   const [paletteOpen, setPaletteOpen] = useCommandPalette();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -143,9 +150,7 @@ export function AppShell({ me }: { me: Me }) {
           </button>
 
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" aria-label="Notifications">
-              <Bell />
-            </Button>
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="rounded-full" aria-label="Account menu">
