@@ -394,7 +394,7 @@ export const leaveRoutes = new Hono<AppEnv>()
         title: `${emp.fullName} requested ${days} day${days === 1 ? "" : "s"} of ${type.name}`,
         body: `${input.startDate} to ${input.endDate}`,
         link: "/people/leave?tab=approvals",
-      });
+      }, { email: true });
       return c.json({ request: { id: row!.id, days } }, 201);
     },
   )
@@ -423,7 +423,7 @@ export const leaveRoutes = new Hono<AppEnv>()
         title: `Your ${req.leaveTypeName} request was ${decision}`,
         body: note ?? `${req.startDate} to ${req.endDate}`,
         link: "/people/leave",
-      });
+      }, { email: true });
       return c.json({ ok: true });
     },
   )

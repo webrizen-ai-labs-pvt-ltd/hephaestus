@@ -136,6 +136,21 @@ export const coreRoutes = new Hono<AppEnv>()
     return c.json({ notifications: rows });
   })
 
+  .post("/notifications/:id/read", requireOrg, async (c) => {
+    const { db } = c.get("deps");
+    await db
+      .update(notifications)
+      .set({ readAt: new Date() })
+      .where(
+        and(
+          eq(notifications.orgId, c.get("org").id),
+          eq(notifications.recipientId, c.get("viewer")!.userId),
+          eq(notifications.id, c.req.param("id")),
+        ),
+      );
+    return c.json({ ok: true });
+  })
+
   .post("/notifications/read-all", requireOrg, async (c) => {
     const { db } = c.get("deps");
     await db

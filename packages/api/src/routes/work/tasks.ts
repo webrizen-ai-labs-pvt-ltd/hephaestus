@@ -128,7 +128,7 @@ async function notifyAssigned(c: Ctx, taskId: string, title: string, employeeIds
     type: "task.assigned",
     title: `${c.get("viewer")?.name ?? "Someone"} assigned you "${title}"`,
     link: projectId ? `/work/projects/${projectId}?task=${taskId}` : `/work?task=${taskId}`,
-  });
+  }, { email: true });
 }
 
 async function publishChange(c: Ctx, projectId: string | null, taskId: string) {

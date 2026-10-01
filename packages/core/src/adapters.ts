@@ -22,8 +22,15 @@ export interface RealtimeEvent {
   payload: unknown;
 }
 
+/**
+ * Server → browser events. Channels are always org-scoped strings:
+ * `org:<orgId>:<scope>` (e.g. org:…:channel:…, org:…:user:…). Payloads are
+ * minimal (ids and types); browsers refetch through the authorized API.
+ */
 export interface Realtime {
   publish(event: RealtimeEvent): Promise<void>;
+  /** In-process subscription (local dev, offline edition). Absent when a hosted service delivers events. */
+  subscribe?(listener: (event: RealtimeEvent) => void): () => void;
 }
 
 export interface MailMessage {

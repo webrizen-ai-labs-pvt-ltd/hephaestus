@@ -38,11 +38,16 @@ export class SupabaseRealtime implements Realtime {
   constructor(private readonly url: string, private readonly secretKey: string) {}
 
   async publish(event: { channel: string; type: string; payload: unknown }) {
+    // One topic per org ("org:<id>"): browsers subscribe once and filter by scope.
+    // Payloads are ids only; anything sensitive is fetched through the API.
+    const [, orgId, ...rest] = event.channel.split(":");
     const res = await fetch(`${this.url}/realtime/v1/api/broadcast`, {
       method: "POST",
       headers: { "content-type": "application/json", apikey: this.secretKey, authorization: `Bearer ${this.secretKey}` },
       body: JSON.stringify({
-        messages: [{ topic: event.channel, event: event.type, payload: event.payload, private: true }],
+        messages: [
+          { topic: `org:${orgId}`, event: "event", payload: { scope: rest.join(":"), type: event.type, payload: event.payload }, private: true },
+        ],
       }),
     });
     if (!res.ok) console.warn(`Realtime broadcast failed: ${res.status}`);

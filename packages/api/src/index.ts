@@ -10,6 +10,8 @@ import { onboardingRoutes } from "./routes/people/onboarding.ts";
 import { structureRoutes } from "./routes/people/structure.ts";
 import { projectRoutes } from "./routes/work/projects.ts";
 import { taskRoutes } from "./routes/work/tasks.ts";
+import { collabRoutes } from "./routes/collab.ts";
+import { eventRoutes } from "./routes/events.ts";
 
 /**
  * Pillar routes. One group so the organization check runs once per request
@@ -24,7 +26,10 @@ const pillars = new Hono<AppEnv>()
   .route("/", onboardingRoutes)
   // Work
   .route("/", projectRoutes)
-  .route("/", taskRoutes);
+  .route("/", taskRoutes)
+  // Collaboration
+  .route("/", collabRoutes)
+  .route("/", eventRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
 export { audit } from "./audit.ts";
@@ -33,6 +38,7 @@ export { findOrg, type MemberSnapshot, reconcileMembers, syncViewer } from "./sy
 export { validate } from "./validate.ts";
 export { LocalFileStore, localFileRoutes } from "./adapters/local-files.ts";
 export { consoleMailer, noopRealtime } from "./adapters/noop.ts";
+export { MemoryRealtime } from "./adapters/memory-realtime.ts";
 
 /**
  * The edition-agnostic API, mounted at /api/v1. Each edition wraps it with its

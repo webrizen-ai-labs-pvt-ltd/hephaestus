@@ -5,7 +5,7 @@ import {
   findOrg,
   LocalFileStore,
   localFileRoutes,
-  noopRealtime,
+  MemoryRealtime,
   reconcileMembers,
   syncViewer,
 } from "@hephaestus/api";
@@ -30,6 +30,7 @@ import {
   writeSession,
   writeTx,
 } from "./session.ts";
+import { ResendMailer } from "./mail.ts";
 import { mintSupabaseToken, SupabaseFileStore, SupabaseRealtime } from "./supabase.ts";
 
 interface LoginTx {
@@ -65,7 +66,7 @@ export async function createCloudApp(env: Env) {
     files = localFiles;
   }
   const realtime: Realtime =
-    env.SUPABASE_URL && env.SUPABASE_SECRET_KEY ? new SupabaseRealtime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY) : noopRealtime;
+    env.SUPABASE_URL && env.SUPABASE_SECRET_KEY ? new SupabaseRealtime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY) : new MemoryRealtime();
 
   /*
    * Viewer resolution runs once per request in the middleware below (which may
@@ -78,7 +79,7 @@ export async function createCloudApp(env: Env) {
     db,
     files,
     realtime,
-    mailer: consoleMailer,
+    mailer: env.RESEND_API_KEY ? new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) : consoleMailer,
     resolveViewer: async (req) => viewers.get(req) ?? null,
   });
 
@@ -211,12 +212,12 @@ export async function createCloudApp(env: Env) {
   app.get("/api/supabase-token", async (c) => {
     const viewer = viewers.get(c.req.raw);
     if (!viewer?.org) return c.json({ error: "Sign in required" }, 401);
-    if (!env.SUPABASE_JWT_SECRET || !env.SUPABASE_URL) return c.json({ enabled: false });
+    if (!env.SUPABASE_JWT_SECRET || !env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) return c.json({ enabled: false });
     const org = await findOrg(db, viewer.org.id);
     if (!org) return c.json({ error: "Unknown organization" }, 403);
     const { token, expiresIn } = await mintSupabaseToken(env, viewer.userId, org.id);
     c.header("cache-control", "no-store");
-    return c.json({ enabled: true, url: env.SUPABASE_URL, token, expiresIn, orgId: org.id });
+    return c.json({ enabled: true, url: env.SUPABASE_URL, publishableKey: env.SUPABASE_PUBLISHABLE_KEY, token, expiresIn, orgId: org.id });
   });
 
   /* ---------------- Webrizen SSO webhooks ---------------- */

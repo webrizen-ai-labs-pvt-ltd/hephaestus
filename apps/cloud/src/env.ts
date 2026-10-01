@@ -20,6 +20,10 @@ const schema = z.object({
   SUPABASE_SECRET_KEY: optional,
   SUPABASE_STORAGE_BUCKET: z.string().default("hephaestus"),
   SUPABASE_JWT_SECRET: optional,
+  SUPABASE_PUBLISHABLE_KEY: optional,
+
+  RESEND_API_KEY: optional,
+  EMAIL_FROM: z.string().default("Hephaestus <no-reply@webrizen.com>"),
 
   CRON_SECRET: optional,
   DEV_AUTH: z

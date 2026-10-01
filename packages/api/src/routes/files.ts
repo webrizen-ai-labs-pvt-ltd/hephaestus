@@ -6,7 +6,8 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { audit } from "../audit.ts";
 import type { AppEnv } from "../context.ts";
-import { forbid, hasPermission, viewerEmployee } from "../helpers.ts";
+import { forbid, hasPermission, viewerEmployee, viewerMember } from "../helpers.ts";
+import { readableMessage } from "./collab.ts";
 import { requireOrg } from "../middleware.ts";
 import { validate } from "../validate.ts";
 
@@ -17,7 +18,14 @@ const BLOCKED_TYPES = new Set(["image/svg+xml", "text/html", "application/xhtml+
 const BLOCKED_EXT = /\.(svg|html?|xhtml|js|mjs)$/i;
 
 /** Owner types with restricted files. Employee documents: HR or the employee only. */
-async function assertOwnerAccess(c: Context<AppEnv>, ownerType: string, ownerId: string) {
+async function assertOwnerAccess(c: Context<AppEnv>, ownerType: string, ownerId: string, write = false) {
+  if (ownerType === "message") {
+    // Message files follow the message: readable where the message is; only its author adds files.
+    const me = await viewerMember(c);
+    const msg = await readableMessage(c, ownerId, me.id);
+    if (write && msg.authorId !== me.id) forbid("Only the author can attach files to a message");
+    return;
+  }
   if (ownerType !== "employee") return;
   if (hasPermission(c, "employee", "update")) return;
   const me = await viewerEmployee(c);
@@ -45,7 +53,7 @@ export const fileRoutes = new Hono<AppEnv>()
       if (file.size === 0 || file.size > MAX_UPLOAD_BYTES) {
         throw new HTTPException(413, { message: "Files must be between 1 byte and 25 MB" });
       }
-      await assertOwnerAccess(c, ownerType, ownerId);
+      await assertOwnerAccess(c, ownerType, ownerId, true);
       const contentType = file.type || "application/octet-stream";
       if (BLOCKED_TYPES.has(contentType) || BLOCKED_EXT.test(file.name)) {
         throw new HTTPException(415, { message: "This file type isn't allowed" });

@@ -1,6 +1,6 @@
 import { type Action, can, type Resource } from "@hephaestus/core";
 import { type Db, employees, members, notifications, orgSettings, sequences } from "@hephaestus/db";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AppEnv } from "./context.ts";
@@ -82,12 +82,28 @@ export async function userIdsForEmployees(db: Db, orgId: string, employeeIds: (s
   return rows.map((r) => r.userId);
 }
 
+/** The viewer's account row in the active org (their id as a chat participant). */
+export async function viewerMember(c: Context<AppEnv>) {
+  const { db } = c.get("deps");
+  const [m] = await db
+    .select({ id: members.id, name: members.name, image: members.image })
+    .from(members)
+    .where(and(eq(members.orgId, c.get("org").id), eq(members.userId, c.get("viewer")!.userId)));
+  if (!m) throw new HTTPException(403, { message: "You're not a member of this organization" });
+  return m;
+}
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!);
+}
+
 export async function notify(
   c: Context<AppEnv>,
   recipients: string[],
   n: { type: string; title: string; body?: string; link?: string },
+  opts: { email?: boolean } = {},
 ) {
-  const { db, realtime } = c.get("deps");
+  const { db, realtime, mailer } = c.get("deps");
   const org = c.get("org");
   const self = c.get("viewer")?.userId;
   const to = [...new Set(recipients)].filter((r) => r !== self);
@@ -98,4 +114,26 @@ export async function notify(
       realtime.publish({ channel: `org:${org.id}:user:${userId}`, type: "notification", payload: { type: n.type } }),
     ),
   );
+
+  // Important events also go by email, when the edition has a mailer configured.
+  if (opts.email && mailer.enabled) {
+    const rows = await db
+      .select({ email: members.email })
+      .from(members)
+      .where(and(eq(members.orgId, org.id), inArray(members.userId, to), eq(members.status, "active")));
+    const base = c.req.header("origin") ?? new URL(c.req.url).origin;
+    const href = n.link ? new URL(n.link, base).href : base;
+    const html = `<div style="font-family:system-ui,sans-serif;max-width:520px">
+<p style="font-size:16px;font-weight:600">${escapeHtml(n.title)}</p>
+${n.body ? `<p style="color:#555">${escapeHtml(n.body)}</p>` : ""}
+<p><a href="${escapeHtml(href)}" style="display:inline-block;background:#ff5a1f;color:#121110;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Open in Hephaestus</a></p>
+<p style="color:#999;font-size:12px">Webrizen AI Labs Pvt Ltd</p></div>`;
+    await Promise.all(
+      rows.map((r) =>
+        mailer
+          .send({ to: r.email, subject: n.title, text: `${n.title}\n\n${n.body ?? ""}\n\nOpen in Hephaestus: ${href}`, html })
+          .catch((err) => console.error("Email failed", err)),
+      ),
+    );
+  }
 }
