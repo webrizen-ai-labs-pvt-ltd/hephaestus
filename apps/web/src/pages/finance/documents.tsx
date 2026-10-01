@@ -1,5 +1,5 @@
 import { can, supplyTypeFor } from "@hephaestus/core";
-import { Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Ban, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Trash2 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import {
   type DocKind,
   displayStatus,
   FINANCE_KEYS,
+  compactMoney,
   KIND_LABEL,
   type Line,
   money,
@@ -57,6 +58,19 @@ const FILTERS = {
   credit_note: [["", "All"]],
 } as const;
 
+const INVOICE_BUCKETS = [
+  { key: "draft", label: "Drafts", color: "var(--subtle-foreground)", match: (s: string) => s === "draft" },
+  { key: "open", label: "Unpaid", color: "var(--collab)", match: (s: string) => s === "sent" || s === "partially_paid" || s === "overdue" },
+  { key: "overdue", label: "Overdue", color: "var(--danger)", match: (s: string) => s === "overdue" },
+  { key: "paid", label: "Paid", color: "var(--success)", match: (s: string) => s === "paid" },
+];
+const QUOTE_BUCKETS = [
+  { key: "draft", label: "Drafts", color: "var(--subtle-foreground)", match: (s: string) => s === "draft" },
+  { key: "sent", label: "Sent", color: "var(--collab)", match: (s: string) => s === "sent" },
+  { key: "accepted", label: "Accepted", color: "var(--success)", match: (s: string) => s === "accepted" },
+  { key: "declined", label: "Declined", color: "var(--danger)", match: (s: string) => s === "declined" },
+];
+
 export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" }) {
   const navigate = useNavigate();
   const [status, setStatus] = useState("");
@@ -70,11 +84,45 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
   const label = KIND_LABEL[effectiveKind];
   const canCreate = can(me.org.permissions, "invoice", "create");
 
+  // Totals per status, from the unfiltered list, for the summary strip.
+  const { data: everything } = useDocs({ kind });
+  const buckets = (kind === "invoice" ? INVOICE_BUCKETS : QUOTE_BUCKETS).map((b) => {
+    const list = (everything?.documents ?? []).filter((d) => b.match(displayStatus(d, everything?.today ?? today)));
+    const amount = list.filter((d) => d.currency === "INR").reduce((a, d) => a + (b.key === "open" || b.key === "overdue" ? d.total - d.amountPaid : d.total), 0);
+    return { ...b, count: list.length, amount };
+  });
+
   return (
     <FinanceBody>
       <PageHeader
         title={KIND_LABEL[kind].many}
         description={kind === "invoice" ? "GST invoices, payments and credit notes." : "Estimates you send before the work starts."}
+        children={
+          everything?.documents.length ? (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {buckets.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => (setShowCredit(false), setStatus(status === b.key ? "" : b.key))}
+                  className={cn(
+                    "relative overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-card transition-colors",
+                    status === b.key && !showCredit ? "border-border-strong" : "border-border hover:border-border-strong",
+                  )}
+                >
+                  <span className="absolute inset-x-0 top-0 h-0.5" style={{ background: b.color }} />
+                  <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+                    {b.label}
+                    <span className="rounded-full px-1.5 font-mono text-[10.5px]" style={{ color: b.color, background: `color-mix(in srgb, ${b.color} 14%, transparent)` }}>
+                      {b.count}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 font-display text-2xl font-bold tabular">{compactMoney(b.amount)}</div>
+                </button>
+              ))}
+            </div>
+          ) : null
+        }
         actions={
           canCreate ? (
             <Button variant="primary" asChild>
@@ -143,7 +191,12 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
                         {d.number ?? <span className="text-muted-foreground">Draft</span>}
                         {d.recurringId ? <span className="ml-2 font-sans text-[11px] text-finance">Retainer</span> : null}
                       </td>
-                      <td className="px-4 py-3">{d.clientName}</td>
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-2.5">
+                          <Avatar name={d.clientName} className="size-7 rounded-lg text-[10px]" />
+                          <span className="truncate">{d.clientName}</span>
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">{formatDate(d.issueDate, { day: "numeric", month: "short" })}</td>
                       <td className={cn("px-4 py-3", st === "overdue" ? "text-danger" : "text-muted-foreground")}>{formatDate(d.dueDate, { day: "numeric", month: "short" })}</td>
                       <td className="px-4 py-3">

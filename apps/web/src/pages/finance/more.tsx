@@ -1,5 +1,5 @@
 import { can, INDIAN_STATES, isValidGstin, stateOfGstin, supplyTypeFor } from "@hephaestus/core";
-import { Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, Em, EmptyState, Field, Input, KpiTile, Select, Textarea } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
 import { Check, Copy, CreditCard, Plus, Repeat, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "../../components/app-shell.tsx";
 import { api, type Me } from "../../lib/api.ts";
 import {
+  compactMoney,
   FINANCE_KEYS,
   type Line,
   money,
@@ -28,10 +29,43 @@ import { emptyLine, LineEditor } from "./line-editor.tsx";
 export function PaymentsPage() {
   const { data } = usePayments();
   const list = data?.payments ?? [];
-  const total = list.filter((p) => !p.voidedAt && p.method !== "credit_note").reduce((s, p) => s + p.amount, 0);
+  const real = list.filter((p) => !p.voidedAt && p.method !== "credit_note" && p.currency === "INR");
+  const total = real.reduce((s, p) => s + p.amount, 0);
+  const month = new Date().toISOString().slice(0, 7);
+  const thisMonth = real.filter((p) => p.paidOn.startsWith(month)).reduce((s, p) => s + p.amount, 0);
+  const byMethod = [...real.reduce((m, p) => m.set(p.method, (m.get(p.method) ?? 0) + p.amount), new Map<string, number>())].sort((a, b) => b[1] - a[1]);
+  const METHOD_COLORS = ["var(--chart-collected)", "var(--finance)", "var(--people)", "var(--collab)", "var(--work)"];
   return (
     <FinanceBody>
-      <PageHeader title="Payments" description={list.length ? `${money(total)} received across ${list.length} payments shown` : "Money received against invoices."} />
+      <PageHeader
+        title="Payments"
+        description={list.length ? <><Em tone="var(--chart-collected)">{money(total)}</Em> received across {list.length} payments shown.</> : "Money received against invoices."}
+        children={
+          real.length ? (
+            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_2fr]">
+              <KpiTile label="Received this month" icon={<CreditCard />} tone="var(--chart-collected)" value={compactMoney(thisMonth)} hint={new Date().toLocaleDateString("en-IN", { month: "long" })} />
+              <KpiTile label="Average payment" icon={<CreditCard />} tone="var(--finance)" value={compactMoney(Math.round(total / real.length))} hint={`Across ${real.length} payments`} />
+              <Card className="p-5">
+                <div className="text-[13px] text-muted-foreground">How clients pay</div>
+                <div className="mt-3 flex h-3 gap-[2px] overflow-hidden rounded-full">
+                  {byMethod.map(([m, v], i) => (
+                    <span key={m} style={{ flex: v, background: METHOD_COLORS[i % METHOD_COLORS.length] }} title={`${PAYMENT_METHOD_LABEL[m] ?? m}: ${money(v)}`} />
+                  ))}
+                </div>
+                <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+                  {byMethod.map(([m, v], i) => (
+                    <li key={m} className="flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-sm" style={{ background: METHOD_COLORS[i % METHOD_COLORS.length] }} />
+                      <span className="text-muted-foreground">{PAYMENT_METHOD_LABEL[m] ?? m}</span>
+                      <span className="font-mono">{Math.round((v / total) * 100)}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </div>
+          ) : null
+        }
+      />
       <Card>
         {data && list.length === 0 ? (
           <EmptyState icon={<CreditCard />} title="No payments yet" description="Record a payment from an invoice, or connect Razorpay so clients can pay online." />
@@ -51,7 +85,12 @@ export function PaymentsPage() {
                 {list.map((p) => (
                   <tr key={p.id} className={cn(p.voidedAt && "text-muted-foreground line-through")}>
                     <td className="px-4 py-3">{formatDate(p.paidOn)}</td>
-                    <td className="px-4 py-3">{p.clientName}</td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-2.5">
+                        <Avatar name={p.clientName} className="size-7 rounded-lg text-[10px]" />
+                        {p.clientName}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="font-mono text-xs text-accent hover:underline">
                         {p.invoiceNumber}
@@ -61,7 +100,7 @@ export function PaymentsPage() {
                       {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
                       {p.reference ? <span className="ml-1 font-mono text-xs">· {p.reference}</span> : null}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono">{money(p.amount, p.currency)}</td>
+                    <td className={cn("px-4 py-3 text-right font-mono", !p.voidedAt && "text-success")}>{p.voidedAt ? "" : "+"}{money(p.amount, p.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -174,11 +213,23 @@ export function RetainersPage({ me }: { me: Me }) {
     invalidate: FINANCE_KEYS,
   });
   const list = data?.recurring ?? [];
+  const amountOf = (r: (typeof list)[number]) => r.lines.reduce((s, l) => s + Math.round(l.quantity * l.unitPrice * (1 - (l.discountPct ?? 0) / 100)), 0);
+  const PER_MONTH: Record<string, number> = { monthly: 1, quarterly: 1 / 3, yearly: 1 / 12 };
+  const active = list.filter((r) => r.active);
+  const monthly = active.reduce((s, r) => s + amountOf(r) * (PER_MONTH[r.frequency] ?? 1), 0);
   return (
     <FinanceBody>
       <PageHeader
         title="Retainers"
-        description="Recurring invoices for ongoing work."
+        description={
+          active.length ? (
+            <>
+              <Em tone="var(--finance)">{active.length} active</Em>, worth about <Em tone="var(--chart-collected)">{money(Math.round(monthly))}</Em> a month before GST.
+            </>
+          ) : (
+            "Recurring invoices for ongoing work."
+          )
+        }
         actions={
           can(me.org.permissions, "invoice", "create") ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -192,29 +243,44 @@ export function RetainersPage({ me }: { me: Me }) {
           <EmptyState icon={<Repeat />} title="No retainers yet" description="Set one up for monthly support, maintenance or subscriptions, and the invoices make themselves." />
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="rise rise-1 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {list.map((r) => {
-            const amount = r.lines.reduce((s, l) => s + Math.round(l.quantity * l.unitPrice * (1 - (l.discountPct ?? 0) / 100)), 0);
+            const amount = amountOf(r);
+            const days = Math.round((Date.parse(`${r.nextIssueDate}T00:00:00`) - Date.parse(new Date().toISOString().slice(0, 10))) / 86_400_000);
             return (
-              <Card key={r.id} className={cn("p-5", !r.active && "opacity-60")}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-bold">{r.name}</h3>
-                    <p className="text-sm text-muted-foreground">{r.clientName}</p>
+              <Card key={r.id} className={cn("relative flex flex-col overflow-hidden p-5", !r.active && "opacity-60")}>
+                <div className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-finance/15 blur-2xl" />
+                <div className="relative flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-finance/15 text-finance [&_svg]:size-5">
+                    <Repeat />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-display text-[16px] font-bold">{r.name}</h3>
+                    <p className="truncate text-sm text-muted-foreground">{r.clientName}</p>
                   </div>
                   <Badge tone={r.active ? "finance" : "neutral"}>{r.active ? (r.autoSend ? "Auto-send" : "Drafts") : "Paused"}</Badge>
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="font-display text-2xl font-bold">{money(amount)}</span>
+                <div className="relative mt-4 flex items-baseline gap-2">
+                  <span className="font-display text-3xl font-bold tabular">{money(amount)}</span>
                   <span className="text-sm text-muted-foreground">+ GST, {r.frequency}</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {r.active ? `Next on ${formatDate(r.nextIssueDate)}` : "Paused"}
-                  {r.lastIssuedAt ? ` · last ${formatDate(r.lastIssuedAt.slice(0, 10), { day: "numeric", month: "short" })}` : ""}
-                </p>
-                <Button size="sm" variant="ghost" className="mt-2 -ml-2" onClick={() => toggle.mutate({ id: r.id, active: !r.active })}>
-                  {r.active ? "Pause" : "Resume"}
-                </Button>
+                <div className="relative mt-auto flex items-center justify-between gap-3 pt-4">
+                  <div className="text-xs text-muted-foreground">
+                    {r.active ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5">
+                        <span className="size-1.5 rounded-full bg-finance" />
+                        Next {formatDate(r.nextIssueDate, { day: "numeric", month: "short" })}
+                        {days >= 0 ? ` · in ${days} day${days === 1 ? "" : "s"}` : ""}
+                      </span>
+                    ) : (
+                      "Paused"
+                    )}
+                    {r.lastIssuedAt ? <div className="mt-1">Last issued {formatDate(r.lastIssuedAt.slice(0, 10), { day: "numeric", month: "short" })}</div> : null}
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => toggle.mutate({ id: r.id, active: !r.active })}>
+                    {r.active ? "Pause" : "Resume"}
+                  </Button>
+                </div>
               </Card>
             );
           })}

@@ -1,12 +1,12 @@
 import { can, INDIAN_STATES, isValidGstin, stateOfGstin } from "@hephaestus/core";
-import { Button, Card, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Building2, FilePlus2, Mail, Pencil, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { useDeferredValue, useState } from "react";
 import { PageHeader } from "../../components/app-shell.tsx";
 import { Thread } from "../../components/collab/thread.tsx";
 import { api, type Me } from "../../lib/api.ts";
-import { type ClientInfo, FINANCE_KEYS, money, useClient, useClients, useDocs } from "../../lib/finance.ts";
+import { type ClientInfo, compactMoney, FINANCE_KEYS, money, useClient, useClients, useDocs } from "../../lib/finance.ts";
 import { formatDate, useApiMutation } from "../../lib/people.ts";
 import { FinanceBody, StatusPill } from "./layout.tsx";
 import { displayStatus } from "../../lib/finance.ts";
@@ -208,53 +208,66 @@ export function ClientsPage({ me }: { me: Me }) {
           ) : null
         }
       />
-      <Card>
-        <div className="border-b border-border p-4">
-          <div className="relative sm:w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, GSTIN or email" className="pl-9" />
-          </div>
-        </div>
-        {isLoading ? <Skeleton className="m-4 h-24" /> : null}
-        {!isLoading && list.length === 0 ? (
+      <div className="relative sm:w-80">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, GSTIN or email" className="pl-9" />
+      </div>
+      {isLoading ? <Skeleton className="h-40" /> : null}
+      {!isLoading && list.length === 0 ? (
+        <Card>
           <EmptyState
             icon={<Building2 />}
             title={deferred ? "No one matches" : "Add your first client"}
             description="Clients hold billing details: GSTIN, place of supply and where invoices go."
             action={canCreate && !deferred ? <Button variant="primary" onClick={() => setAdding(true)}><Plus /> New client</Button> : null}
           />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                  <th className="px-4 py-2.5 font-medium">Client</th>
-                  <th className="px-4 py-2.5 font-medium">GSTIN / location</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Billed</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Outstanding</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {list.map((cl) => (
-                  <tr key={cl.id} className="cursor-pointer hover:bg-surface-2/60" onClick={() => navigate({ to: "/finance/clients/$id", params: { id: cl.id } })}>
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{cl.name}</div>
-                      <div className="text-xs text-muted-foreground">{cl.email ?? "No billing email"}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+        </Card>
+      ) : (
+        <ul className="rise rise-1 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {list.map((cl) => {
+            const collected = cl.billed ? Math.round(((cl.billed - cl.outstanding) / cl.billed) * 100) : 0;
+            return (
+              <li key={cl.id}>
+                <Link to="/finance/clients/$id" params={{ id: cl.id }} className="group block h-full">
+                  <Card className="flex h-full flex-col p-5 transition-all group-hover:-translate-y-0.5 group-hover:border-border-strong">
+                    <div className="flex items-start gap-3">
+                      <Avatar name={cl.name} className="size-11 rounded-xl text-sm" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-display text-[16px] font-bold">{cl.name}</div>
+                        <div className="truncate text-xs text-muted-foreground">{cl.email ?? "No billing email"}</div>
+                      </div>
+                      {cl.overdue ? <span className="rounded-full bg-danger/12 px-2 py-0.5 text-[11px] text-danger">Overdue</span> : null}
+                    </div>
+                    <div className="mt-3 truncate text-xs text-muted-foreground">
                       {cl.gstin ? <span className="font-mono text-foreground">{cl.gstin}</span> : cl.country !== "IN" ? `${cl.country} · ${cl.currency}` : cl.stateCode ? INDIAN_STATES[cl.stateCode] : "Unregistered"}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">{money(cl.billed, cl.currency)}</td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {cl.outstanding ? <span className={cl.overdue ? "text-danger" : ""}>{money(cl.outstanding, cl.currency)}</span> : <span className="text-muted-foreground">—</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                    </div>
+                    <dl className="mt-auto grid grid-cols-2 gap-3 pt-4">
+                      <div>
+                        <dt className="text-[11px] text-muted-foreground">Billed</dt>
+                        <dd className="font-mono text-sm">{compactMoney(cl.billed, cl.currency)}</dd>
+                      </div>
+                      <div className="text-right">
+                        <dt className="text-[11px] text-muted-foreground">Outstanding</dt>
+                        <dd className={cn("font-mono text-sm", cl.overdue ? "text-danger" : !cl.outstanding && "text-subtle-foreground")}>
+                          {cl.outstanding ? compactMoney(cl.outstanding, cl.currency) : "—"}
+                        </dd>
+                      </div>
+                    </dl>
+                    {cl.billed ? (
+                      <div className="mt-3">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                          <div className="h-full rounded-full bg-[var(--chart-collected)]" style={{ width: `${collected}%` }} />
+                        </div>
+                        <div className="mt-1 text-[11px] text-subtle-foreground">{collected}% collected</div>
+                      </div>
+                    ) : null}
+                  </Card>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {adding ? <ClientDialog open onOpenChange={setAdding} onSaved={(id) => navigate({ to: "/finance/clients/$id", params: { id } })} /> : null}
     </FinanceBody>
   );

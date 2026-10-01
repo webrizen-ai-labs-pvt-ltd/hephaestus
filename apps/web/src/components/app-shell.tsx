@@ -41,7 +41,8 @@ import { CommandPalette, useCommandPalette } from "./command-palette.tsx";
 import { NotificationBell } from "./notification-bell.tsx";
 
 function isActive(pathname: string, to: string) {
-  return to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
+  // "/settings" is its own page; its sub-pages have their own nav items.
+  return to === "/" || to === "/settings" ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
 }
 
 function NavLink({ item, onNavigate, badge, badgeTone }: { item: NavItem; onNavigate?: () => void; badge?: number; badgeTone?: string }) {

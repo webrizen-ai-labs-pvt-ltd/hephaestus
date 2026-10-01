@@ -116,8 +116,20 @@ export const coreRoutes = new Hono<AppEnv>()
       const { db } = c.get("deps");
       const org = c.get("org");
       const rows = await db
-        .select()
+        .select({
+          id: auditEvents.id,
+          actorId: auditEvents.actorId,
+          action: auditEvents.action,
+          targetType: auditEvents.targetType,
+          targetId: auditEvents.targetId,
+          metadata: auditEvents.metadata,
+          ip: auditEvents.ip,
+          createdAt: auditEvents.createdAt,
+          actorName: members.name,
+          actorImage: members.image,
+        })
         .from(auditEvents)
+        .leftJoin(members, and(eq(members.orgId, auditEvents.orgId), eq(members.userId, auditEvents.actorId)))
         .where(and(eq(auditEvents.orgId, org.id), before ? lt(auditEvents.createdAt, new Date(before)) : undefined))
         .orderBy(desc(auditEvents.createdAt))
         .limit(50);

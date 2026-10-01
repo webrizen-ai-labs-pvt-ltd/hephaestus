@@ -1,5 +1,5 @@
 import { can, PILLARS, type Pillar, type TermKey } from "@hephaestus/core";
-import { Badge, Button, Card, cn, Input, Label } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, Input, Label } from "@hephaestus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, SunMoon } from "lucide-react";
 import { useState } from "react";
@@ -154,39 +154,160 @@ interface AuditEvent {
   metadata: Record<string, unknown>;
   ip: string | null;
   createdAt: string;
+  actorName: string | null;
+  actorImage: string | null;
 }
 
 export function AuditPage({ me }: { me: Me }) {
   const allowed = can(me.org.permissions, "audit", "read");
+  const [older, setOlder] = useState<AuditEvent[]>([]);
+  const [area, setArea] = useState("");
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["audit"],
     queryFn: () => api<{ events: AuditEvent[] }>("audit"),
     enabled: allowed,
   });
+  const all = [...(data?.events ?? []), ...older];
+  const events = area ? all.filter((e) => areaOf(e) === area) : all;
+  const days = new Map<string, AuditEvent[]>();
+  for (const e of events) {
+    const key = new Date(e.createdAt).toDateString();
+    days.set(key, [...(days.get(key) ?? []), e]);
+  }
+
+  const loadMore = async () => {
+    const last = all.at(-1);
+    if (!last) return;
+    setLoadingMore(true);
+    try {
+      const r = await api<{ events: AuditEvent[] }>(`audit?before=${encodeURIComponent(new Date(last.createdAt).toISOString())}`);
+      setOlder((o) => [...o, ...r.events]);
+      if (r.events.length < 50) setExhausted(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 sm:p-8">
-      <PageHeader title="Audit log" description="Who did what, and when." />
-      <Card>
-        {!allowed ? <p className="p-6 text-sm text-muted-foreground">You don't have access to the audit log.</p> : null}
-        {isLoading ? <p className="p-6 text-sm text-muted-foreground">Loading…</p> : null}
-        {data && data.events.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">No events yet. Changes to settings and files will show up here.</p>
-        ) : null}
-        <ul className="divide-y divide-border">
-          {data?.events.map((e) => (
-            <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-sm">
-              <code className="font-mono text-xs text-accent">{e.action}</code>
-              <span className="text-muted-foreground">{e.targetType ? `${e.targetType}` : ""}</span>
-              <span className="ml-auto font-mono text-xs text-muted-foreground">
-                {new Date(e.createdAt).toLocaleString()}
-              </span>
-            </li>
+      <PageHeader title="Audit log" description="Who did what, and when. Only admins can see this." />
+      {allowed ? (
+        <div className="flex flex-wrap gap-1.5">
+          {AUDIT_AREAS.map((a) => (
+            <button
+              key={a.key}
+              type="button"
+              onClick={() => setArea(a.key)}
+              className={cn(
+                "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors",
+                area === a.key ? "border-border-strong bg-surface-3 text-foreground" : "border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+              )}
+            >
+              <span className="size-2 rounded-full" style={{ background: a.color }} />
+              {a.label}
+            </button>
           ))}
-        </ul>
-      </Card>
+        </div>
+      ) : null}
+      {!allowed ? (
+        <Card>
+          <p className="p-6 text-sm text-muted-foreground">You don't have access to the audit log.</p>
+        </Card>
+      ) : null}
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+      {data && events.length === 0 ? (
+        <Card>
+          <p className="p-6 text-sm text-muted-foreground">Nothing here yet. Changes across Hephaestus show up as they happen.</p>
+        </Card>
+      ) : null}
+      {[...days].map(([day, list]) => (
+        <section key={day} className="rise">
+          <h2 className="eyebrow mb-2">{dayLabel(day)}</h2>
+          <Card>
+            <ol className="divide-y divide-border">
+              {list.map((e) => {
+                const color = AUDIT_AREAS.find((a) => a.key === areaOf(e))?.color ?? "var(--muted-foreground)";
+                return (
+                  <li key={e.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                    <span className="relative">
+                      <Avatar name={e.actorName ?? "Hephaestus"} src={e.actorImage} className="size-8 text-[10px]" />
+                      <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface" style={{ background: color }} />
+                    </span>
+                    <p className="min-w-0 flex-1 text-muted-foreground">
+                      <span className="font-medium text-foreground">{e.actorName ?? (e.actorId ? "Someone" : "Hephaestus")}</span> {sentence(e)}
+                    </p>
+                    <code className="hidden rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10.5px] text-subtle-foreground md:inline">{e.action}</code>
+                    <span className="w-16 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+                      {new Date(e.createdAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </Card>
+        </section>
+      ))}
+      {allowed && data && data.events.length >= 50 && !exhausted ? (
+        <div className="flex justify-center">
+          <Button variant="secondary" disabled={loadingMore} onClick={loadMore}>
+            {loadingMore ? "Loading…" : "Load older"}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+const AUDIT_AREAS = [
+  { key: "", label: "Everything", color: "var(--ember)" },
+  { key: "people", label: "People", color: "var(--people)" },
+  { key: "work", label: "Work", color: "var(--work)" },
+  { key: "collab", label: "Collaboration", color: "var(--collab)" },
+  { key: "finance", label: "Finance", color: "var(--finance)" },
+  { key: "settings", label: "Settings", color: "var(--muted-foreground)" },
+];
+
+const AREA_BY_ENTITY: Record<string, string> = {
+  employee: "people", department: "people", team: "people", leave: "people", holiday: "people", onboarding: "people", document: "people",
+  project: "work", task: "work", milestone: "work", goal: "work", stage: "work",
+  channel: "collab", message: "collab", decision: "collab", comment: "collab",
+  invoice: "finance", quote: "finance", credit_note: "finance", payment: "finance", client: "finance", retainer: "finance", item: "finance", tax_rate: "finance",
+};
+
+function areaOf(e: AuditEvent) {
+  const entity = e.action.split(".")[0] ?? "";
+  return AREA_BY_ENTITY[entity] ?? AREA_BY_ENTITY[e.targetType ?? ""] ?? "settings";
+}
+
+const VERBS: Record<string, string> = {
+  created: "created", updated: "updated", deleted: "deleted", archived: "archived", issued: "issued", recorded: "recorded",
+  completed: "completed", approved: "approved", rejected: "declined", cancelled: "cancelled", voided: "voided", sent: "sent",
+  started: "started", marked: "recorded", uploaded: "uploaded", offboarded: "offboarded", imported: "imported", accepted: "accepted", declined: "declined",
+};
+
+/** "invoice.issued" + metadata → "issued invoice INV/26-27/0004" */
+function sentence(e: AuditEvent) {
+  const [entity = "", verb = ""] = e.action.split(".");
+  const m = e.metadata ?? {};
+  const label = (m.number ?? m.name ?? m.title ?? m.milestone ?? m.fileName) as string | undefined;
+  const thing = entity.replace(/_/g, " ");
+  const v = VERBS[verb] ?? verb.replace(/_/g, " ");
+  return (
+    <>
+      {v} {label ? <>{thing} <span className="text-foreground">{String(label)}</span></> : `${/^[aeiou]/.test(thing) ? "an" : "a"} ${thing}`}
+    </>
+  );
+}
+
+function dayLabel(day: string) {
+  const d = new Date(day);
+  const today = new Date();
+  const yest = new Date(Date.now() - 86_400_000);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yest.toDateString()) return "Yesterday";
+  return d.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
 }
 
 export function PreferencesPage() {
