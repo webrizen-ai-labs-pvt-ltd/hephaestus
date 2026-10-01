@@ -3,6 +3,7 @@ import { connectPglite, type Db, members, migrationsFolder } from "@hephaestus/d
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { consoleMailer, createApi, noopRealtime } from "./index.ts";
+import { createSecretBox } from "./secrets.ts";
 
 /*
  * Runs the real API against an in-memory Postgres (PGlite). Viewers are chosen
@@ -51,6 +52,8 @@ beforeAll(async () => {
     files: { put: async (key, body, contentType) => ({ key, size: body.byteLength, contentType }), getUrl: async (k) => `/f/${k}`, delete: async () => {} },
     realtime: noopRealtime,
     mailer: consoleMailer,
+    secrets: createSecretBox("test"),
+    appUrl: "http://localhost:5173",
     resolveViewer: async (req) => viewers[req.headers.get("x-test-viewer") ?? ""] ?? null,
   });
   // Each viewer's first request creates their org and membership.

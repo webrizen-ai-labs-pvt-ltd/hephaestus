@@ -12,6 +12,9 @@ import { projectRoutes } from "./routes/work/projects.ts";
 import { taskRoutes } from "./routes/work/tasks.ts";
 import { collabRoutes } from "./routes/collab.ts";
 import { eventRoutes } from "./routes/events.ts";
+import { financeDocumentRoutes } from "./finance/document-routes.ts";
+import { financePublicRoutes } from "./finance/public-routes.ts";
+import { financeSetupRoutes } from "./finance/setup-routes.ts";
 
 /**
  * Pillar routes. One group so the organization check runs once per request
@@ -29,7 +32,10 @@ const pillars = new Hono<AppEnv>()
   .route("/", taskRoutes)
   // Collaboration
   .route("/", collabRoutes)
-  .route("/", eventRoutes);
+  .route("/", eventRoutes)
+  // Finance
+  .route("/", financeSetupRoutes)
+  .route("/", financeDocumentRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
 export { audit } from "./audit.ts";
@@ -39,6 +45,8 @@ export { validate } from "./validate.ts";
 export { LocalFileStore, localFileRoutes } from "./adapters/local-files.ts";
 export { consoleMailer, noopRealtime } from "./adapters/noop.ts";
 export { MemoryRealtime } from "./adapters/memory-realtime.ts";
+export { createSecretBox, type SecretBox } from "./secrets.ts";
+export { runFinanceJobs } from "./finance/service.ts";
 
 /**
  * The edition-agnostic API, mounted at /api/v1. Each edition wraps it with its
@@ -54,6 +62,8 @@ export function createApi(deps: ApiDeps) {
     .get("/health", (c) => c.json({ ok: true, edition: deps.edition }))
     .route("/", coreRoutes)
     .route("/", fileRoutes)
+    // No sign-in: client invoice links and payment webhooks (each verifies its own token/signature).
+    .route("/", financePublicRoutes)
     .route("/", pillars);
 
   app.onError((err, c) => {

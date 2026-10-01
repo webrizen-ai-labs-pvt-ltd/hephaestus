@@ -2,11 +2,14 @@ import path from "node:path";
 import {
   consoleMailer,
   createApi,
+  createSecretBox,
   findOrg,
   LocalFileStore,
   localFileRoutes,
   MemoryRealtime,
   reconcileMembers,
+  runFinanceJobs,
+  type ApiDeps,
   syncViewer,
 } from "@hephaestus/api";
 import { allPermissions, type FileStore, type Realtime, type Viewer } from "@hephaestus/core";
@@ -74,14 +77,17 @@ export async function createCloudApp(env: Env) {
    */
   const viewers = new WeakMap<Request, Viewer | null>();
 
-  const api = createApi({
+  const apiDeps: ApiDeps = {
     edition: "cloud",
     db,
     files,
     realtime,
+    secrets: createSecretBox(env.ENCRYPTION_KEY ?? env.SESSION_SECRET),
+    appUrl: env.APP_URL,
     mailer: env.RESEND_API_KEY ? new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) : consoleMailer,
     resolveViewer: async (req) => viewers.get(req) ?? null,
-  });
+  };
+  const api = createApi(apiDeps);
 
   const app = new Hono();
 
@@ -292,6 +298,11 @@ export async function createCloudApp(env: Env) {
       synced++;
     }
     return c.json({ synced });
+  });
+
+  app.post("/api/cron/finance", async (c) => {
+    if (!env.CRON_SECRET || c.req.header("authorization") !== `Bearer ${env.CRON_SECRET}`) return c.text("Forbidden", 403);
+    return c.json(await runFinanceJobs(apiDeps));
   });
 
   /* ---------------- API ---------------- */

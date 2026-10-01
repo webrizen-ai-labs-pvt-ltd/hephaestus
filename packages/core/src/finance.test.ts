@@ -1,0 +1,88 @@
+import { describe, expect, it } from "vitest";
+import {
+  agingBucket,
+  amountInWords,
+  computeTotals,
+  documentNumber,
+  financialYear,
+  formatMoney,
+  isValidGstin,
+  supplyTypeFor,
+} from "./finance.ts";
+
+describe("GSTIN", () => {
+  it("accepts valid numbers and checks the check digit", () => {
+    expect(isValidGstin("27AAPFU0939F1ZV")).toBe(true);
+    expect(isValidGstin("27aapfu0939f1zv")).toBe(true);
+    expect(isValidGstin("27AAPFU0939F1ZX")).toBe(false); // wrong check digit
+    expect(isValidGstin("99AAPFU0939F1ZV")).toBe(false); // unknown state
+    expect(isValidGstin("27AAPFU0939F1")).toBe(false);
+  });
+});
+
+describe("supply type", () => {
+  it("decides CGST/SGST vs IGST vs export", () => {
+    expect(supplyTypeFor("27", "27")).toBe("intra");
+    expect(supplyTypeFor("27", "29")).toBe("inter");
+    expect(supplyTypeFor("27", null, "US")).toBe("export");
+  });
+});
+
+describe("totals", () => {
+  const lines = [
+    { quantity: 10, unitPrice: 150_000, taxRate: 18 }, // ₹15,000
+    { quantity: 1, unitPrice: 999_99, discountPct: 10, taxRate: 5 }, // ₹999.99 − 10%
+  ];
+
+  it("splits tax into CGST and SGST within a state", () => {
+    const t = computeTotals(lines, "intra");
+    expect(t.subtotal).toBe(1_599_999);
+    expect(t.discountTotal).toBe(10_000);
+    expect(t.taxableTotal).toBe(1_589_999);
+    // 18% of 15,00,000 = 2,70,000 → 1,35,000 each; 5% of 89,999 = 4,500 → 2,250 each
+    expect(t.cgst).toBe(137_250);
+    expect(t.sgst).toBe(137_250);
+    expect(t.igst).toBe(0);
+    expect(t.total % 100).toBe(0);
+    expect(t.total).toBe(t.taxableTotal + t.cgst + t.sgst + t.roundOff);
+    expect(t.byRate.map((b) => b.rate)).toEqual([5, 18]);
+  });
+
+  it("uses IGST between states and no tax for exports", () => {
+    expect(computeTotals(lines, "inter").igst).toBe(274_500);
+    const exp = computeTotals(lines, "export");
+    expect(exp.cgst + exp.sgst + exp.igst).toBe(0);
+  });
+
+  it("gives odd paise to SGST", () => {
+    const t = computeTotals([{ quantity: 1, unitPrice: 101, taxRate: 18 }], "intra", { roundOff: false });
+    expect(t.cgst + t.sgst).toBe(18);
+    expect(t.total).toBe(119);
+  });
+});
+
+describe("numbering", () => {
+  it("follows the Indian financial year", () => {
+    expect(financialYear("2026-10-01")).toBe("26-27");
+    expect(financialYear("2027-03-31")).toBe("26-27");
+    expect(financialYear("2027-04-01")).toBe("27-28");
+    expect(documentNumber("INV", "2026-10-01", 42)).toBe("INV/26-27/0042");
+    expect(documentNumber("WEBRIZEN", "2026-10-01", 1).length).toBeLessThanOrEqual(16);
+  });
+});
+
+describe("formatting", () => {
+  it("formats rupees with Indian grouping", () => {
+    expect(formatMoney(12_345_678)).toBe("₹1,23,456.78");
+  });
+
+  it("writes amounts in words", () => {
+    expect(amountInWords(4_850_050)).toBe("Rupees Forty Eight Thousand Five Hundred and Fifty Paise Only");
+    expect(amountInWords(12_500_000_00)).toBe("Rupees One Crore Twenty Five Lakh Only");
+    expect(amountInWords(0)).toBe("Rupees Zero Only");
+  });
+
+  it("buckets receivables", () => {
+    expect([0, 5, 45, 75, 200].map(agingBucket)).toEqual(["current", "1-30", "31-60", "61-90", "90+"]);
+  });
+});

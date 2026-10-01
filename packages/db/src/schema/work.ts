@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   date,
   doublePrecision,
   index,
@@ -16,6 +17,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { uuidv7 } from "@hephaestus/core";
 import { orgs } from "./foundation.ts";
+import { clients } from "./finance.ts";
 import { employees } from "./people.ts";
 
 const id = () => uuid("id").primaryKey().$defaultFn(uuidv7);
@@ -61,6 +63,8 @@ export const projects = pgTable(
     description: text("description"),
     goalId: uuid("goal_id").references(() => goals.id, { onDelete: "set null" }),
     leadEmployeeId: uuid("lead_employee_id").references(() => employees.id, { onDelete: "set null" }),
+    /** The client this work is for (Finance). */
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
     status: text("status", { enum: PROJECT_STATUSES }).notNull().default("active"),
     color: text("color").notNull().default("#ff5a1f"),
     startDate: date("start_date"),
@@ -117,6 +121,8 @@ export const milestones = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     dueDate: date("due_date"),
+    /** Amount billed when the milestone is completed (paise); null = not billable. */
+    amount: bigint("amount", { mode: "number" }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     position: integer("position").notNull().default(0),
     createdAt: createdAt(),

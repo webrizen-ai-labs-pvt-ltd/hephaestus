@@ -1,24 +1,27 @@
-import { addDays, DEFAULT_STAGES, isIsoDate, projectKeyFrom } from "@hephaestus/core";
+import { addDays, DEFAULT_STAGES, isIsoDate, projectKeyFrom, todayIn } from "@hephaestus/core";
 import {
   employees,
   GOAL_STATUSES,
   goals,
+  invoices,
   labels,
   milestones,
   PROJECT_STATUSES,
   projectMembers,
   projects,
   STAGE_CATEGORIES,
+  taxRates,
   tasks,
   workflowStages,
 } from "@hephaestus/db";
-import { and, asc, count, eq, inArray, ne, sql } from "drizzle-orm";
-import { Hono } from "hono";
+import { and, asc, count, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { audit } from "../../audit.ts";
 import type { AppEnv } from "../../context.ts";
-import { notFound } from "../../helpers.ts";
+import { loadClient, loadSettings, placeOfSupplyFor, writeLines } from "../../finance/service.ts";
+import { notFound, orgWorkSettings } from "../../helpers.ts";
 import { requirePermission } from "../../middleware.ts";
 import { validate } from "../../validate.ts";
 
@@ -69,6 +72,7 @@ const projectInput = z.object({
     .optional(),
   description: z.string().trim().max(2000).nullish(),
   goalId: z.uuid().nullish(),
+  clientId: z.uuid().nullish(),
   leadEmployeeId: z.uuid().nullish(),
   color: hex.optional(),
   startDate: isoDate.nullish(),
@@ -205,6 +209,7 @@ export const projectRoutes = new Hono<AppEnv>()
           startDate: projects.startDate,
           dueDate: projects.dueDate,
           goalId: projects.goalId,
+          clientId: projects.clientId,
           leadEmployeeId: projects.leadEmployeeId,
           leadName: employees.fullName,
           ...progressColumns,
@@ -240,6 +245,8 @@ export const projectRoutes = new Hono<AppEnv>()
         dueDate: projects.dueDate,
         goalId: projects.goalId,
         goalTitle: goals.title,
+        clientId: projects.clientId,
+        clientName: sql<string | null>`(select name from clients cl where cl.id = ${projects.clientId})`,
         leadEmployeeId: projects.leadEmployeeId,
         leadName: employees.fullName,
       })
@@ -256,8 +263,10 @@ export const projectRoutes = new Hono<AppEnv>()
         name: milestones.name,
         description: milestones.description,
         dueDate: milestones.dueDate,
+        amount: milestones.amount,
         completedAt: milestones.completedAt,
         position: milestones.position,
+        invoiceId: sql<string | null>`(select i.id from invoices i where i.milestone_id = ${milestones.id} and i.status <> 'void' limit 1)`,
         ...progressColumns,
       })
       .from(milestones)
@@ -287,6 +296,7 @@ export const projectRoutes = new Hono<AppEnv>()
         const [g] = await db.select({ id: goals.id }).from(goals).where(and(eq(goals.orgId, org.id), eq(goals.id, input.goalId)));
         if (!g) throw new HTTPException(422, { message: "Unknown goal" });
       }
+      if (input.clientId) await loadClient(db, org.id, input.clientId);
       const template = templateProjectId ? await assertProject(db, org.id, templateProjectId) : null;
       const key = input.key ?? (await freeKey(db, org.id, projectKeyFrom(input.name)));
 
@@ -383,6 +393,7 @@ export const projectRoutes = new Hono<AppEnv>()
         if (!perms.project?.includes("archive")) throw new HTTPException(403, { message: "Missing permission project:archive" });
       }
       await assertEmployees(db, org.id, [input.leadEmployeeId, ...(memberIds ?? [])]);
+      if (input.clientId) await loadClient(db, org.id, input.clientId);
       await db.transaction(async (tx) => {
         if (Object.keys(input).length) await tx.update(projects).set(input).where(eq(projects.id, id));
         if (memberIds) {
@@ -493,7 +504,15 @@ export const projectRoutes = new Hono<AppEnv>()
   .post(
     "/projects/:id/milestones",
     requirePermission("project", "update"),
-    validate("json", z.object({ name: z.string().trim().min(1).max(120), description: z.string().trim().max(2000).nullish(), dueDate: isoDate.nullish() })),
+    validate(
+      "json",
+      z.object({
+        name: z.string().trim().min(1).max(120),
+        description: z.string().trim().max(2000).nullish(),
+        dueDate: isoDate.nullish(),
+        amount: z.number().int().min(0).max(1e13).nullish(),
+      }),
+    ),
     async (c) => {
       const { db } = c.get("deps");
       const org = c.get("org");
@@ -515,6 +534,7 @@ export const projectRoutes = new Hono<AppEnv>()
           name: z.string().trim().min(1).max(120),
           description: z.string().trim().max(2000).nullable(),
           dueDate: isoDate.nullable(),
+          amount: z.number().int().min(0).max(1e13).nullable(),
           completed: z.boolean(),
         })
         .partial(),
@@ -526,12 +546,14 @@ export const projectRoutes = new Hono<AppEnv>()
         .update(milestones)
         .set({ ...input, ...(completed === undefined ? {} : { completedAt: completed ? new Date() : null }) })
         .where(and(eq(milestones.orgId, c.get("org").id), eq(milestones.id, c.req.param("id"))))
-        .returning({ id: milestones.id, projectId: milestones.projectId, name: milestones.name });
+        .returning({ id: milestones.id, projectId: milestones.projectId, name: milestones.name, amount: milestones.amount });
       if (!row) notFound("Milestone not found");
+      let invoiceId: string | null = null;
       if (completed !== undefined) {
         await audit(c, completed ? "milestone.completed" : "milestone.reopened", { type: "project", id: row.projectId }, { milestone: row.name });
+        if (completed) invoiceId = await billMilestone(c, row);
       }
-      return c.json({ ok: true });
+      return c.json({ ok: true, invoiceId });
     },
   )
 
@@ -578,3 +600,50 @@ export const projectRoutes = new Hono<AppEnv>()
     if (!row) notFound("Label not found");
     return c.json({ ok: true });
   });
+
+/**
+ * Completing a billable milestone (an amount, on a project with a client)
+ * creates a draft invoice for it, once. Returns the invoice id, if any.
+ */
+async function billMilestone(c: Context<AppEnv>, m: { id: string; projectId: string; name: string; amount: number | null }) {
+  if (!m.amount) return null;
+  const { db } = c.get("deps");
+  const org = c.get("org");
+  const [project] = await db.select({ name: projects.name, clientId: projects.clientId }).from(projects).where(eq(projects.id, m.projectId));
+  if (!project?.clientId) return null;
+  const [existing] = await db
+    .select({ id: invoices.id })
+    .from(invoices)
+    .where(and(eq(invoices.orgId, org.id), eq(invoices.milestoneId, m.id), ne(invoices.status, "void")));
+  if (existing) return existing.id;
+
+  const settings = await loadSettings(db, org.id);
+  const client = await loadClient(db, org.id, project.clientId);
+  const pos = placeOfSupplyFor(settings, client);
+  const [rate] = await db
+    .select({ rate: taxRates.rate })
+    .from(taxRates)
+    .where(and(eq(taxRates.orgId, org.id), eq(taxRates.isDefault, true), isNull(taxRates.archivedAt)));
+  const { timezone } = await orgWorkSettings(db, org.id);
+  const today = todayIn(timezone);
+  const [inv] = await db
+    .insert(invoices)
+    .values({
+      orgId: org.id,
+      kind: "invoice",
+      clientId: client.id,
+      projectId: m.projectId,
+      milestoneId: m.id,
+      issueDate: today,
+      dueDate: addDays(today, client.paymentTermsDays ?? settings.defaultDueDays),
+      currency: client.currency,
+      ...pos,
+      notes: settings.notes,
+      terms: settings.terms,
+      createdBy: c.get("viewer")!.userId,
+    })
+    .returning({ id: invoices.id });
+  await writeLines(db, org.id, inv!.id, [{ description: `${project.name}: ${m.name}`, quantity: 1, unitPrice: m.amount, taxRate: rate?.rate ?? 18 }], pos.supplyType, settings.roundOff);
+  await audit(c, "invoice.created", { type: "invoice", id: inv!.id }, { fromMilestone: m.name });
+  return inv!.id;
+}

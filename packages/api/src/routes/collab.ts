@@ -3,6 +3,8 @@ import {
   attachments,
   channelMembers,
   channels,
+  clients,
+  invoices,
   members,
   messageReactions,
   messages,
@@ -56,6 +58,8 @@ async function assertCanRead(c: Ctx, ch: Channel, memberId: string) {
 const SUBJECTS = {
   task: { resource: "task" as const, table: tasks },
   project: { resource: "project" as const, table: projects },
+  invoice: { resource: "invoice" as const, table: invoices },
+  client: { resource: "client" as const, table: clients },
 };
 type SubjectType = keyof typeof SUBJECTS;
 
@@ -511,11 +515,20 @@ export const collabRoutes = new Hono<AppEnv>()
       link = task!.projectId ? `/work/projects/${task!.projectId}?task=${subjectId}` : `/work?task=${subjectId}`;
       const assignees = await db.select({ id: taskAssignees.employeeId }).from(taskAssignees).where(eq(taskAssignees.taskId, subjectId));
       for (const u of await userIdsForEmployees(db, org.id, assignees.map((a) => a.id))) followers.add(u);
-    } else {
+    } else if (type === "project") {
       const [p] = await db.select({ name: projects.name, lead: projects.leadEmployeeId }).from(projects).where(eq(projects.id, subjectId));
       title = p!.name;
       link = `/work/projects/${subjectId}?view=discussion`;
       for (const u of await userIdsForEmployees(db, org.id, [p!.lead])) followers.add(u);
+    } else if (type === "invoice") {
+      const [inv] = await db.select({ number: invoices.number, createdBy: invoices.createdBy }).from(invoices).where(eq(invoices.id, subjectId));
+      title = inv!.number ?? "a draft";
+      link = `/finance/invoices/${subjectId}`;
+      if (inv!.createdBy && inv!.createdBy !== "system" && inv!.createdBy !== "razorpay") followers.add(inv!.createdBy);
+    } else {
+      const [cl] = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, subjectId));
+      title = cl!.name;
+      link = `/finance/clients/${subjectId}`;
     }
     const earlier = await db
       .selectDistinct({ userId: members.userId })

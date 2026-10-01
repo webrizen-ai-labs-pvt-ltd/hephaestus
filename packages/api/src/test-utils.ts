@@ -1,6 +1,7 @@
 import type { PermissionSet, Viewer } from "@hephaestus/core";
 import { connectPglite, type Db, migrationsFolder } from "@hephaestus/db";
 import { consoleMailer, createApi, noopRealtime } from "./index.ts";
+import { createSecretBox } from "./secrets.ts";
 
 export function viewer(userId: string, orgId: string, roles: string[], permissions: PermissionSet, email = `${userId}@${orgId}.test`): Viewer {
   return {
@@ -25,6 +26,8 @@ export async function createTestApi(viewers: Record<string, Viewer>) {
     },
     realtime: noopRealtime,
     mailer: consoleMailer,
+    secrets: createSecretBox("test-secret"),
+    appUrl: "http://localhost:5173",
     resolveViewer: async (req) => viewers[req.headers.get("x-test-viewer") ?? ""] ?? null,
   });
 
