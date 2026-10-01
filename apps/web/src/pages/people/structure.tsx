@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Avatar, Button, Card, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, Card, Dialog, DialogContent, Em, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
 import { Building2, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/app-shell.tsx";
@@ -175,49 +175,105 @@ function TeamDialog({ open, onOpenChange, team }: { open: boolean; onOpenChange:
   );
 }
 
-function DepartmentTree({
-  depts,
-  parentId,
-  depth,
+function IconAction({ label, onClick, danger, children }: { label: string; onClick: () => void; danger?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className={`rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 ${danger ? "hover:text-danger" : "hover:text-foreground"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** All descendants of a department, flattened. */
+function descendants(all: Department[], id: string): Department[] {
+  return all.filter((d) => d.parentId === id).flatMap((d) => [d, ...descendants(all, d.id)]);
+}
+
+function DepartmentCard({
+  d,
+  all,
+  total,
   canManage,
   onEdit,
   onDelete,
 }: {
-  depts: Department[];
-  parentId: string | null;
-  depth: number;
+  d: Department;
+  all: Department[];
+  total: number;
   canManage: boolean;
   onEdit: (d: Department) => void;
   onDelete: (d: Department) => void;
 }) {
-  const level = depts.filter((d) => d.parentId === parentId);
-  if (level.length === 0) return null;
+  const color = d.color ?? "var(--people)";
+  const subs = descendants(all, d.id);
+  const people = d.headcount + subs.reduce((a, s) => a + s.headcount, 0);
+  const share = total ? Math.round((people / total) * 100) : 0;
   return (
-    <ul className={depth ? "ml-6 border-l border-border pl-4" : ""}>
-      {level.map((d) => (
-        <li key={d.id}>
-          <div className="group flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-surface-2/60">
-            <span className="size-3 shrink-0 rounded" style={{ background: d.color ?? "var(--people)" }} />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{d.name}</div>
-              <div className="truncate text-xs text-muted-foreground">{d.headName ? `Head: ${d.headName}` : (d.description ?? "No head yet")}</div>
-            </div>
-            <span className="font-mono text-xs text-muted-foreground">{d.headcount}</span>
-            {canManage ? (
-              <span className="flex opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                <button type="button" aria-label={`Edit ${d.name}`} onClick={() => onEdit(d)} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                  <Pencil className="size-3.5" />
-                </button>
-                <button type="button" aria-label={`Delete ${d.name}`} onClick={() => onDelete(d)} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-danger">
-                  <Trash2 className="size-3.5" />
-                </button>
-              </span>
-            ) : null}
-          </div>
-          <DepartmentTree depts={depts} parentId={d.id} depth={depth + 1} canManage={canManage} onEdit={onEdit} onDelete={onDelete} />
-        </li>
-      ))}
-    </ul>
+    <Card className="group relative flex flex-col overflow-hidden p-5">
+      <div className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full blur-2xl" style={{ background: `color-mix(in srgb, ${color} 20%, transparent)` }} />
+      <div className="relative flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5" style={{ color, background: `color-mix(in srgb, ${color} 16%, transparent)` }}>
+          <Building2 />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-display text-[17px] font-bold leading-tight">{d.name}</h3>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{d.description ?? "No description"}</p>
+        </div>
+        {canManage ? (
+          <span className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+            <IconAction label={`Edit ${d.name}`} onClick={() => onEdit(d)}>
+              <Pencil className="size-3.5" />
+            </IconAction>
+            <IconAction label={`Delete ${d.name}`} onClick={() => onDelete(d)} danger>
+              <Trash2 className="size-3.5" />
+            </IconAction>
+          </span>
+        ) : null}
+      </div>
+      <div className="relative mt-5 flex items-end justify-between">
+        <div>
+          <div className="font-display text-3xl font-bold leading-none tabular">{people}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{people === 1 ? "person" : "people"}</div>
+        </div>
+        <div className="text-right text-xs text-muted-foreground">
+          {d.headName ? (
+            <>
+              <div className="text-[11px] text-subtle-foreground">Head</div>
+              <div className="font-medium text-foreground">{d.headName}</div>
+            </>
+          ) : (
+            <span>No head yet</span>
+          )}
+        </div>
+      </div>
+      <div className="relative mt-3">
+        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+          <div className="h-full rounded-full" style={{ width: `${share}%`, background: color }} />
+        </div>
+        <div className="mt-1 text-[11px] text-subtle-foreground">{share}% of the company</div>
+      </div>
+      {subs.length ? (
+        <div className="relative mt-4 flex flex-wrap gap-1.5 border-t border-border pt-3">
+          {subs.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              disabled={!canManage}
+              onClick={() => onEdit(s)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-[11.5px] text-muted-foreground enabled:hover:border-border-strong enabled:hover:text-foreground"
+            >
+              <span className="size-1.5 rounded-full" style={{ background: s.color ?? color }} />
+              {s.name}
+              <span className="font-mono text-[10px] text-subtle-foreground">{s.headcount}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
@@ -233,89 +289,114 @@ export function StructurePage({ me }: { me: Me }) {
     const ids = new Set(list.map((d) => d.id));
     return list.map((d) => (d.parentId && !ids.has(d.parentId) ? { ...d, parentId: null } : d));
   }, [list]);
+  const top = normalized.filter((d) => !d.parentId);
+  const total = normalized.reduce((a, d) => a + d.headcount, 0);
+  const teams = teamData?.teams ?? [];
 
   const removeDept = useApiMutation((id: string) => api(`departments/${id}`, { method: "DELETE" }), { invalidate: PEOPLE_KEYS, success: "Department deleted" });
   const removeTeam = useApiMutation((id: string) => api(`teams/${id}`, { method: "DELETE" }), { invalidate: PEOPLE_KEYS, success: "Team deleted" });
 
   return (
     <PageBody>
-      <PageHeader title="Departments and teams" description="How your organization is structured." />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-4">
-          <div className="flex items-center justify-between px-2 pb-3">
-            <h2 className="text-lg font-bold">Departments</h2>
-            {canManage ? (
-              <Button size="sm" onClick={() => setDeptDialog({ open: true })}>
-                <Plus /> New
+      <PageHeader
+        title="Departments and teams"
+        description={
+          list.length || teams.length ? (
+            <>
+              <Em tone="var(--people)">{list.length} departments</Em> group people by function. <Em>{teams.length} teams</Em> mix people across them.
+            </>
+          ) : (
+            "How your organization is structured."
+          )
+        }
+        actions={
+          canManage ? (
+            <>
+              <Button variant="secondary" onClick={() => setTeamDialog({ open: true })}>
+                <UsersRound /> New team
               </Button>
-            ) : null}
-          </div>
-          {list.length === 0 ? (
+              <Button variant="primary" onClick={() => setDeptDialog({ open: true })}>
+                <Plus /> New department
+              </Button>
+            </>
+          ) : null
+        }
+      />
+
+      <section className="rise rise-1 space-y-3">
+        <h2 className="eyebrow">Departments</h2>
+        {list.length === 0 ? (
+          <Card>
             <EmptyState icon={<Building2 />} title="No departments yet" description="Group people by function, like Sales, Operations or Engineering." />
-          ) : (
-            <DepartmentTree
-              depts={normalized}
-              parentId={null}
-              depth={0}
-              canManage={canManage}
-              onEdit={(d) => setDeptDialog({ open: true, dept: d })}
-              onDelete={(d) =>
-                confirm(`Delete ${d.name}? People in it stay in the directory without a department.`) && removeDept.mutate(d.id)
-              }
-            />
-          )}
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between px-2 pb-3">
-            <h2 className="text-lg font-bold">Teams</h2>
-            {canManage ? (
-              <Button size="sm" onClick={() => setTeamDialog({ open: true })}>
-                <Plus /> New
-              </Button>
-            ) : null}
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {top.map((d) => (
+              <DepartmentCard
+                key={d.id}
+                d={d}
+                all={normalized}
+                total={total}
+                canManage={canManage}
+                onEdit={(x) => setDeptDialog({ open: true, dept: x })}
+                onDelete={(x) => confirm(`Delete ${x.name}? People in it stay in the directory without a department.`) && removeDept.mutate(x.id)}
+              />
+            ))}
           </div>
-          {teamData?.teams.length === 0 ? (
+        )}
+      </section>
+
+      <section className="rise rise-2 space-y-3">
+        <h2 className="eyebrow">Teams</h2>
+        {teams.length === 0 ? (
+          <Card>
             <EmptyState icon={<UsersRound />} title="No teams yet" description="Teams can mix people from different departments." />
-          ) : (
-            <ul className="space-y-2">
-              {teamData?.teams.map((t) => (
-                <li key={t.id} className="group rounded-lg border border-border p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 truncate text-sm font-medium">{t.name}</span>
-                    <span className="font-mono text-xs text-muted-foreground">{t.members.length}</span>
-                    {canManage ? (
-                      <span className="flex">
-                        <button type="button" aria-label={`Edit ${t.name}`} onClick={() => setTeamDialog({ open: true, team: t })} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button type="button" aria-label={`Delete ${t.name}`} onClick={() => confirm(`Delete ${t.name}?`) && removeTeam.mutate(t.id)} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-danger">
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </span>
-                    ) : null}
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {teams.map((t) => (
+              <Card key={t.id} className="group flex flex-col p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-collab/15 text-collab [&_svg]:size-5">
+                    <UsersRound />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-display text-[17px] font-bold leading-tight">{t.name}</h3>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{t.description ?? "No description"}</p>
                   </div>
-                  {t.description ? <p className="mt-0.5 text-xs text-muted-foreground">{t.description}</p> : null}
-                  <div className="mt-3 flex -space-x-2">
-                    {t.members.slice(0, 10).map((m) => (
-                      <Avatar key={m.id} name={m.fullName} src={m.image} className="size-7 border-2 border-surface" />
+                  {canManage ? (
+                    <span className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                      <IconAction label={`Edit ${t.name}`} onClick={() => setTeamDialog({ open: true, team: t })}>
+                        <Pencil className="size-3.5" />
+                      </IconAction>
+                      <IconAction label={`Delete ${t.name}`} onClick={() => confirm(`Delete ${t.name}?`) && removeTeam.mutate(t.id)} danger>
+                        <Trash2 className="size-3.5" />
+                      </IconAction>
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-auto flex items-center justify-between pt-5">
+                  <div className="flex -space-x-2">
+                    {t.members.slice(0, 7).map((m) => (
+                      <Avatar key={m.id} name={m.fullName} src={m.image} className="size-8 border-2 border-surface" />
                     ))}
-                    {t.members.length > 10 ? (
-                      <span className="flex size-7 items-center justify-center rounded-full border-2 border-surface bg-surface-2 font-mono text-[10px]">
-                        +{t.members.length - 10}
-                      </span>
+                    {t.members.length > 7 ? (
+                      <span className="flex size-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 font-mono text-[10px]">+{t.members.length - 7}</span>
                     ) : null}
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+                  <span className="text-xs text-muted-foreground">
+                    {t.members.length} {t.members.length === 1 ? "member" : "members"}
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
 
       {deptDialog.open ? <DepartmentDialog key={deptDialog.dept?.id ?? "new"} open onOpenChange={(o) => setDeptDialog({ open: o })} dept={deptDialog.dept} /> : null}
       {teamDialog.open ? <TeamDialog key={teamDialog.team?.id ?? "new"} open onOpenChange={(o) => setTeamDialog({ open: o })} team={teamDialog.team} /> : null}
     </PageBody>
   );
 }
+

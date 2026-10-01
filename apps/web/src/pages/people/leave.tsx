@@ -1,5 +1,5 @@
 import { can, countLeaveDays } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { CalendarCheck, CalendarPlus, ChevronLeft, ChevronRight, Palmtree, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -19,6 +19,7 @@ import {
   useLeaveRequests,
   useLeaveTypes,
   useMyEmployee,
+  usePeopleSummary,
 } from "../../lib/people.ts";
 import { PageBody } from "./layout.tsx";
 
@@ -132,10 +133,17 @@ function RequestLeaveDialog({ open, onOpenChange, workWeek }: { open: boolean; o
 function RequestRow({ r, actions, showName }: { r: LeaveRequest; actions?: React.ReactNode; showName?: boolean }) {
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-      {showName ? <Avatar name={r.employeeName} src={r.image} /> : <span className="size-2.5 rounded-full" style={{ background: r.leaveTypeColor }} />}
+      <div
+        className="flex w-12 shrink-0 flex-col items-center rounded-lg border py-1"
+        style={{ borderColor: `color-mix(in srgb, ${r.leaveTypeColor} 40%, transparent)`, background: `color-mix(in srgb, ${r.leaveTypeColor} 10%, transparent)` }}
+      >
+        <span className="text-[10px] uppercase text-muted-foreground">{new Date(`${r.startDate}T00:00:00`).toLocaleDateString("en-IN", { month: "short" })}</span>
+        <span className="font-display text-lg font-bold leading-tight">{Number(r.startDate.slice(8))}</span>
+      </div>
+      {showName ? <Avatar name={r.employeeName} src={r.image} /> : null}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">
-          {showName ? `${r.employeeName} · ` : ""}
+        <div className="flex items-center gap-2 truncate text-sm font-medium">
+          {showName ? `${r.employeeName} · ` : <span className="size-2 shrink-0 rounded-full" style={{ background: r.leaveTypeColor }} />}
           {r.leaveTypeName}
         </div>
         <div className="truncate text-xs text-muted-foreground">
@@ -153,8 +161,7 @@ function RequestRow({ r, actions, showName }: { r: LeaveRequest; actions?: React
   );
 }
 
-function MyLeave({ workWeek }: { workWeek: number[] }) {
-  const [requesting, setRequesting] = useState(false);
+function MyLeave() {
   const { data: me } = useMyEmployee();
   const { data: balances } = useBalances();
   const { data: mine } = useLeaveRequests("mine");
@@ -178,25 +185,37 @@ function MyLeave({ workWeek }: { workWeek: number[] }) {
 
   return (
     <>
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setRequesting(true)}>
-          <CalendarPlus /> Request leave
-        </Button>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {balances?.balances.map((b) => (
-          <Card key={b.leaveTypeId} className="p-4 sm:p-5">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="size-2.5 rounded-full" style={{ background: b.color }} />
-              {b.name}
-            </div>
-            <div className="mt-2 font-display text-3xl font-bold">
-              {b.remaining ?? b.approved}
-              <span className="ml-1 text-sm font-normal text-muted-foreground">{b.remaining === null ? "used" : `/ ${b.quota} left`}</span>
-            </div>
-            {b.pending ? <div className="mt-1 text-xs text-muted-foreground">{b.pending} pending</div> : null}
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+        {balances?.balances.map((b) => {
+          const quota = b.quota ?? 0;
+          return (
+            <Card key={b.leaveTypeId} className="relative overflow-hidden p-4 sm:p-5">
+              <div className="pointer-events-none absolute -right-8 -top-8 size-24 rounded-full blur-2xl" style={{ background: `color-mix(in srgb, ${b.color} 18%, transparent)` }} />
+              <div className="relative flex items-center gap-4">
+                <ProgressRing value={quota ? ((b.remaining ?? 0) / quota) * 100 : 100} size={60} stroke={5} color={b.color}>
+                  <span className="text-sm">{b.remaining ?? b.approved}</span>
+                </ProgressRing>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">{b.name}</div>
+                  <div className="text-xs text-muted-foreground">{b.remaining === null ? `${b.approved} days used, no limit` : `of ${quota} days left`}</div>
+                </div>
+              </div>
+              {quota ? (
+                <div className="relative mt-4">
+                  <div className="flex h-1.5 gap-[2px] overflow-hidden rounded-full bg-surface-2">
+                    <span style={{ flex: b.approved, background: b.color }} />
+                    <span style={{ flex: b.pending, background: `color-mix(in srgb, ${b.color} 45%, transparent)` }} />
+                    <span style={{ flex: Math.max(0, quota - b.approved - b.pending) }} />
+                  </div>
+                  <div className="mt-1.5 flex justify-between text-[11px] text-subtle-foreground">
+                    <span>{b.approved} used</span>
+                    {b.pending ? <span className="text-work">{b.pending} pending</span> : null}
+                  </div>
+                </div>
+              ) : null}
+            </Card>
+          );
+        })}
       </div>
       <Card>
         <h2 className="border-b border-border px-4 py-3 font-bold">My requests</h2>
@@ -220,7 +239,6 @@ function MyLeave({ workWeek }: { workWeek: number[] }) {
           </ul>
         )}
       </Card>
-      <RequestLeaveDialog open={requesting} onOpenChange={setRequesting} workWeek={workWeek} />
     </>
   );
 }
@@ -306,6 +324,7 @@ function LeaveCalendar({ workWeek }: { workWeek: number[] }) {
   const from = cells.find(Boolean)!;
   const to = [...cells].reverse().find(Boolean)!;
   const { data } = useLeaveCalendar(from, to);
+  const { data: types } = useLeaveTypes();
   const today = now.toISOString().slice(0, 10);
   const move = (delta: number) =>
     setCursor((c) => {
@@ -366,6 +385,21 @@ function LeaveCalendar({ workWeek }: { workWeek: number[] }) {
             </div>
           );
         })}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+        {types?.types.map((t) => (
+          <span key={t.id} className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm" style={{ background: t.color }} />
+            {t.name}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2.5 rounded-sm bg-brass/40" />
+          Holiday
+        </span>
+        <span className="ml-auto">
+          {data ? `${new Set(data.requests.map((r) => r.employeeName)).size} people away this month` : null}
+        </span>
       </div>
     </Card>
   );
@@ -477,19 +511,47 @@ export function LeavePage({ me }: { me: Me }) {
     ...(canSettings ? [{ key: "settings", label: "Types and holidays" }] : []),
   ];
   const tab = tabs.some((t) => t.key === search.tab) ? search.tab! : "mine";
+  const [requesting, setRequesting] = useState(false);
+  const { data: summary } = usePeopleSummary();
+  const out = summary?.onLeaveToday ?? [];
+  const pending = approvals?.requests.length ?? 0;
 
   return (
     <PageBody>
-      <PageHeader title="Leave" description="Requests, approvals, and who's away." />
-      <div className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface p-1 text-sm sm:w-fit">
+      <PageHeader
+        title="Leave"
+        description={
+          <>
+            {out.length ? (
+              <>
+                <Em tone="var(--collab)">{out.length === 1 ? "1 person is" : `${out.length} people are`}</Em> out today
+              </>
+            ) : (
+              "Everyone's in today"
+            )}
+            {isApprover && pending ? (
+              <>
+                , and <Em tone="var(--ember)">{pending === 1 ? "1 request" : `${pending} requests`}</Em> need your decision
+              </>
+            ) : null}
+            .
+          </>
+        }
+        actions={
+          <Button variant="primary" onClick={() => setRequesting(true)}>
+            <CalendarPlus /> Request leave
+          </Button>
+        }
+      />
+      <div className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1 text-sm shadow-card sm:w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => navigate({ to: "/people/leave", search: { tab: t.key }, replace: true })}
             className={cn(
-              "flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 transition-colors",
-              tab === t.key ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground",
+              "flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 transition-colors",
+              tab === t.key ? "bg-surface-3 font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}
@@ -497,7 +559,8 @@ export function LeavePage({ me }: { me: Me }) {
           </button>
         ))}
       </div>
-      {tab === "mine" ? <MyLeave workWeek={me.settings.workWeek} /> : null}
+      <RequestLeaveDialog open={requesting} onOpenChange={setRequesting} workWeek={me.settings.workWeek} />
+      {tab === "mine" ? <MyLeave /> : null}
       {tab === "approvals" ? <Approvals /> : null}
       {tab === "calendar" ? <LeaveCalendar workWeek={me.settings.workWeek} /> : null}
       {tab === "settings" ? <LeaveSettings /> : null}

@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
   Kbd,
   Logo,
+  PageHero,
 } from "@hephaestus/ui";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -288,14 +289,14 @@ export function AppShell({ me }: { me: Me }) {
 }
 
 /** Kept for pages not yet moved to PageHero. */
-export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
+/** Page title block. The eyebrow and accent colour come from the section you're in. */
+export function PageHeader({ title, description, actions, eyebrow, children }: { title: string; description?: ReactNode; actions?: ReactNode; eyebrow?: ReactNode; children?: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const section = [...MAIN_NAV.slice(1), ...ADMIN_NAV].find((n) => pathname === n.to || pathname.startsWith(`${n.to}/`));
+  const isAdmin = section ? ADMIN_NAV.includes(section) : false;
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 rise">
-      <div>
-        <h1 className="text-[26px] font-bold leading-tight sm:text-[30px]">{title}</h1>
-        {description ? <p className="mt-1.5 text-[14.5px] text-muted-foreground">{description}</p> : null}
-      </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
-    </div>
+    <PageHero eyebrow={eyebrow ?? (isAdmin ? "Admin" : section?.label)} tone={isAdmin ? "var(--ember)" : section?.color} title={title} summary={description} actions={actions}>
+      {children}
+    </PageHero>
   );
 }
