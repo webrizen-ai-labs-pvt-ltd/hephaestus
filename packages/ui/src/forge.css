@@ -5,6 +5,9 @@
  * Palette: Obsidian, Forge, Ash (neutrals) · Ember (primary) · Molten (ember
  * text on light) · Brass (finance) · Patina (people, success) · Steel (collab,
  * info) · Slag (danger). Dark-first, with a full light theme.
+ *
+ * Surfaces step up in four levels: background (canvas) → surface (cards) →
+ * surface-2 (raised, hover) → surface-3 (pressed, chips).
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -21,13 +24,16 @@
   --slag: #d7263d;
 
   /* Light theme */
-  --background: #f5f1ea;
-  --surface: #fffdf9;
-  --surface-2: #efe9df;
+  --background: #f3efe8;
+  --surface: #fffdfa;
+  --surface-2: #f6f1e9;
+  --surface-3: #ebe4d8;
   --foreground: #1a1715;
-  --muted-foreground: #6b635a;
-  --border: #e2dace;
-  --input: #d8cfc2;
+  --muted-foreground: #6b6258;
+  --subtle-foreground: #9a9086;
+  --border: #e3dbce;
+  --border-strong: #d2c8b9;
+  --input: #d6ccbd;
   --ring: #ff5a1f;
   --primary: #ff5a1f;
   --primary-foreground: #121110;
@@ -40,19 +46,25 @@
   --work: #e14d15;
   --finance: #a8842e;
   --collab: #4c6e9e;
-  --sidebar: #ede6db;
+  --sidebar: #ece6dc;
+  --card-shadow: 0 1px 0 0 rgb(255 255 255 / 0.8) inset, 0 1px 2px 0 rgb(60 40 20 / 0.06), 0 8px 24px -16px rgb(60 40 20 / 0.18);
+  --pop-shadow: 0 16px 48px -16px rgb(60 40 20 / 0.28);
+  --glow: color-mix(in srgb, var(--ember) 9%, transparent);
   /* Finance chart pair, validated for colour-blind separation and contrast (light surface). */
   --chart-billed: #a8842e;
   --chart-collected: #3d68a8;
 }
 
 .dark {
-  --background: #121110;
-  --surface: #1a1816;
-  --surface-2: #231f1c;
+  --background: #0e0d0c;
+  --surface: #181614;
+  --surface-2: #211e1b;
+  --surface-3: #2b2723;
   --foreground: #f5f1ea;
-  --muted-foreground: #a39a8e;
-  --border: #2e2a26;
+  --muted-foreground: #a99f93;
+  --subtle-foreground: #776e64;
+  --border: #29251f;
+  --border-strong: #3a342e;
   --input: #3a3530;
   --ring: #ff5a1f;
   --primary: #ff5a1f;
@@ -66,7 +78,10 @@
   --work: #ff7a45;
   --finance: #d9b865;
   --collab: #7fa1d1;
-  --sidebar: #0d0c0b;
+  --sidebar: #0b0a09;
+  --card-shadow: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 12px 32px -20px rgb(0 0 0 / 0.8);
+  --pop-shadow: 0 24px 64px -16px rgb(0 0 0 / 0.75);
+  --glow: color-mix(in srgb, var(--ember) 7%, transparent);
   --chart-billed: #b08c2a;
   --chart-collected: #5a86c8;
 }
@@ -79,9 +94,12 @@
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
@@ -101,7 +119,9 @@
   --color-obsidian: var(--obsidian);
   --color-ash: var(--ash);
 
-  --radius-card: 12px;
+  --radius-card: 14px;
+  --shadow-card: var(--card-shadow);
+  --shadow-pop: var(--pop-shadow);
 }
 
 @layer base {
@@ -115,7 +135,12 @@
     color-scheme: dark;
   }
   body {
-    background: var(--background);
+    /* A faint ember light from the top-left: just enough to give the canvas depth. */
+    background:
+      radial-gradient(1100px 520px at 12% -12%, var(--glow), transparent 62%),
+      radial-gradient(900px 480px at 110% 0%, color-mix(in srgb, var(--steel) 5%, transparent), transparent 60%),
+      var(--background);
+    background-attachment: fixed;
     color: var(--foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
@@ -127,12 +152,20 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+  .font-mono,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
   ::selection {
     background: color-mix(in srgb, var(--ember) 35%, transparent);
   }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -141,5 +174,36 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+@layer components {
+  /* Small uppercase label above titles and inside tiles. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  /* Content fades up on first paint. */
+  .rise {
+    animation: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .rise-1 { animation-delay: 40ms; }
+  .rise-2 { animation-delay: 80ms; }
+  .rise-3 { animation-delay: 120ms; }
+  .rise-4 { animation-delay: 160ms; }
+  .rise-5 { animation-delay: 200ms; }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

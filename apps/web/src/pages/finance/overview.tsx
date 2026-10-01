@@ -1,9 +1,8 @@
 import { can } from "@hephaestus/core";
-import { Button, Card, cn, Stat } from "@hephaestus/ui";
-import { Link } from "@tanstack/react-router";
-import { AlertTriangle, FilePlus2, FileText, Landmark, Table2, TrendingUp, Wallet } from "lucide-react";
+import { Avatar, Button, cn, Em, EmptyState, KpiTile, Meter, PageHero, Panel, Sparkline } from "@hephaestus/ui";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, ArrowRight, BarChart3, FilePlus2, FileText, Hourglass, Landmark, Receipt, Table2, TrendingUp, Users, Wallet } from "lucide-react";
 import { useState } from "react";
-import { PageHeader } from "../../components/app-shell.tsx";
 import type { Me } from "../../lib/api.ts";
 import { compactMoney, money, PAYMENT_METHOD_LABEL, useFinanceSummary } from "../../lib/finance.ts";
 import { formatDate } from "../../lib/people.ts";
@@ -147,111 +146,181 @@ const AGING = [
 ] as const;
 
 export function FinanceOverviewPage({ me }: { me: Me }) {
+  const navigate = useNavigate();
   const { data } = useFinanceSummary();
   const fy = data ? `FY ${data.financialYearStart.slice(2, 4)}-${String(Number(data.financialYearStart.slice(2, 4)) + 1).padStart(2, "0")}` : "this year";
   const agingMax = Math.max(1, ...Object.values(data?.aging ?? { x: 0 }));
   const collectionRate = data && data.billedThisYear ? Math.round((data.collectedThisYear / data.billedThisYear) * 100) : null;
+  const thisMonth = data?.months.at(-1);
+  const lastMonth = data?.months.at(-2);
+  const delta = thisMonth && lastMonth && lastMonth.collected ? Math.round(((thisMonth.collected - lastMonth.collected) / lastMonth.collected) * 100) + 0 : null;
+  const canCreate = can(me.org.permissions, "invoice", "create");
 
   return (
     <FinanceBody>
-      <PageHeader
-        title="Finance"
-        description="What you've billed, what's come in, and what's still owed."
+      <PageHero
+        eyebrow={`Finance · ${fy}`}
+        tone="var(--finance)"
+        title="Money in, money owed"
+        summary={
+          data ? (
+            <>
+              Clients owe you <Em tone="var(--finance)">{money(data.outstanding)}</Em>
+              {data.overdue ? (
+                <>
+                  , of which <Em tone="var(--danger)">{money(data.overdue)}</Em> is overdue
+                </>
+              ) : (
+                <>, and nothing is overdue</>
+              )}
+              .{collectionRate !== null ? <> You've collected <Em>{collectionRate}%</Em> of what you billed this year.</> : null}
+            </>
+          ) : (
+            " "
+          )
+        }
         actions={
-          can(me.org.permissions, "invoice", "create") ? (
-            <Button variant="primary" asChild>
-              <Link to="/finance/new" search={{ kind: "invoice" }}>
-                <FilePlus2 /> New invoice
-              </Link>
-            </Button>
+          canCreate ? (
+            <>
+              <Button variant="secondary" asChild>
+                <Link to="/finance/new" search={{ kind: "quote" }}>
+                  <FileText /> New quote
+                </Link>
+              </Button>
+              <Button variant="primary" asChild>
+                <Link to="/finance/new" search={{ kind: "invoice" }}>
+                  <FilePlus2 /> New invoice
+                </Link>
+              </Button>
+            </>
           ) : null
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Outstanding" value={data ? compactMoney(data.outstanding) : "—"} icon={<Wallet />} tone="text-finance" hint={data ? [money(data.outstanding), ...data.foreignOutstanding.map((f) => `+ ${money(f.amount, f.currency)}`)].join(" ") : undefined} />
-        <Stat
-          label="Overdue"
-          value={data ? compactMoney(data.overdue) : "—"}
-          icon={<AlertTriangle />}
-          tone="text-danger"
-          hint={
-            data?.overdue ? (
-              <Link to="/finance/invoices" className="text-accent hover:underline">
-                Follow up
-              </Link>
-            ) : (
-              "Nothing late"
-            )
+      <div className="rise rise-1 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiTile
+          label="Outstanding"
+          icon={<Wallet />}
+          tone="var(--finance)"
+          value={data ? compactMoney(data.outstanding) : "—"}
+          hint={data ? [money(data.outstanding), ...data.foreignOutstanding.map((f) => `+ ${money(f.amount, f.currency)}`)].join(" ") : undefined}
+          onClick={() => navigate({ to: "/finance/invoices" })}
+          footer={
+            data ? (
+              <div>
+                <Meter value={data.aging.current} max={Math.max(1, data.outstanding)} color="var(--chart-collected)" label="Share not yet due" />
+                <div className="mt-1.5 text-[11px] text-subtle-foreground">{data.outstanding ? Math.round((data.aging.current / data.outstanding) * 100) : 100}% not yet due</div>
+              </div>
+            ) : null
           }
         />
-        <Stat label={`Billed, ${fy}`} value={data ? compactMoney(data.billedThisYear) : "—"} icon={<TrendingUp />} tone="text-finance" hint={data?.drafts ? `${data.drafts} draft${data.drafts === 1 ? "" : "s"} waiting` : undefined} />
-        <Stat label={`Collected, ${fy}`} value={data ? compactMoney(data.collectedThisYear) : "—"} icon={<Landmark />} tone="text-collab" hint={collectionRate !== null ? `${collectionRate}% of billed` : undefined} />
+        <KpiTile
+          label="Overdue"
+          icon={<AlertTriangle />}
+          tone="var(--danger)"
+          value={data ? compactMoney(data.overdue) : "—"}
+          hint={data?.overdue ? "Send a reminder or record a payment" : "Nothing late"}
+          trend={data?.overdue ? { label: "Follow up", good: false } : undefined}
+          onClick={() => navigate({ to: "/finance/invoices" })}
+        />
+        <KpiTile
+          label={`Billed, ${fy}`}
+          icon={<TrendingUp />}
+          tone="var(--chart-billed)"
+          value={data ? compactMoney(data.billedThisYear) : "—"}
+          hint={data?.drafts ? `${data.drafts} draft${data.drafts === 1 ? "" : "s"} waiting` : "No drafts waiting"}
+          footer={data ? <Sparkline values={data.months.map((m) => m.billed)} color="var(--chart-billed)" height={28} bars /> : null}
+        />
+        <KpiTile
+          label={`Collected, ${fy}`}
+          icon={<Landmark />}
+          tone="var(--chart-collected)"
+          value={data ? compactMoney(data.collectedThisYear) : "—"}
+          hint={collectionRate !== null ? `${collectionRate}% of billed` : "Nothing billed yet"}
+          trend={delta !== null ? { label: `${delta >= 0 ? "+" : ""}${delta}% MoM`, good: delta >= 0 } : undefined}
+          footer={data ? <Sparkline values={data.months.map((m) => m.collected)} color="var(--chart-collected)" height={28} /> : null}
+        />
       </div>
 
-      <Card className="p-5">
-        <h2 className="mb-1 text-lg font-bold">Last 12 months</h2>
+      <Panel title="Billed vs collected" icon={<BarChart3 />} tone="var(--finance)" meta="last 12 months" className="rise rise-2">
         {data ? <RevenueChart months={data.months} /> : <div className="h-60" />}
-      </Card>
+      </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="p-5">
-          <h2 className="text-lg font-bold">Receivables by age</h2>
-          <ul className="mt-4 space-y-3">
+      <div className="rise rise-3 grid gap-4 lg:grid-cols-3">
+        <Panel title="Receivables by age" icon={<Hourglass />} tone="var(--chart-billed)" meta={data ? compactMoney(data.outstanding) : undefined}>
+          <ul className="space-y-3.5">
             {AGING.map(([k, label]) => {
               const v = data?.aging[k] ?? 0;
               return (
                 <li key={k} className="text-sm">
                   <div className="flex justify-between">
                     <span className={cn(k !== "current" && v ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-                    <span className="font-mono">{money(v)}</span>
+                    <span className="font-mono text-[13px]">{money(v)}</span>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
                     <div className="h-full rounded-full" style={{ width: `${(v / agingMax) * 100}%`, background: k === "current" ? "var(--chart-collected)" : "var(--chart-billed)" }} />
                   </div>
                 </li>
               );
             })}
           </ul>
-        </Card>
+        </Panel>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold">Who owes the most</h2>
-          {data?.topClients.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">Everyone's paid up.</p> : null}
-          <ul className="mt-4 space-y-3">
+        <Panel
+          title="Who owes the most"
+          icon={<Users />}
+          tone="var(--finance)"
+          action={
+            <Link to="/finance/clients" className="inline-flex items-center gap-1 text-accent hover:underline">
+              Clients <ArrowRight className="size-3.5" />
+            </Link>
+          }
+        >
+          {data?.topClients.length === 0 ? <EmptyState icon={<Users />} title="Everyone's paid up" /> : null}
+          <ul className="space-y-1">
             {data?.topClients.map((c) => (
               <li key={c.clientId}>
-                <Link to="/finance/clients/$id" params={{ id: c.clientId }} className="flex items-center justify-between gap-3 text-sm hover:underline">
-                  <span className="truncate">{c.name}</span>
-                  <span className="text-right">
-                    <span className="block font-mono">{money(c.outstanding)}</span>
-                    {c.overdue ? <span className="block font-mono text-xs text-danger">{money(c.overdue)} late</span> : null}
+                <Link to="/finance/clients/$id" params={{ id: c.clientId }} className="flex items-center gap-3 rounded-lg p-1.5 text-sm hover:bg-surface-2">
+                  <Avatar name={c.name} className="size-8 rounded-lg text-[11px]" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{c.name}</span>
+                    {c.overdue ? <span className="block font-mono text-[11px] text-danger">{money(c.overdue)} late</span> : <span className="block text-[11px] text-muted-foreground">On time</span>}
                   </span>
+                  <span className="font-mono text-[13px]">{compactMoney(c.outstanding)}</span>
                 </Link>
               </li>
             ))}
           </ul>
-        </Card>
+        </Panel>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold">Recent payments</h2>
-          {data?.recentPayments.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">No payments recorded yet.</p> : null}
-          <ul className="mt-4 space-y-3">
+        <Panel
+          title="Recent payments"
+          icon={<Receipt />}
+          tone="var(--chart-collected)"
+          action={
+            <Link to="/finance/payments" className="inline-flex items-center gap-1 text-accent hover:underline">
+              All <ArrowRight className="size-3.5" />
+            </Link>
+          }
+        >
+          {data?.recentPayments.length === 0 ? <EmptyState icon={<Receipt />} title="No payments yet" description="Payments you record or receive online show up here." /> : null}
+          <ol className="space-y-3 border-l border-border pl-4">
             {data?.recentPayments.map((p) => (
-              <li key={p.id}>
+              <li key={p.id} className="relative">
+                <span className="absolute -left-[21px] top-1.5 size-2.5 rounded-full border-2 border-surface bg-[var(--chart-collected)]" />
                 <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="flex items-center justify-between gap-3 text-sm hover:underline">
                   <span className="min-w-0">
                     <span className="block truncate">{p.clientName}</span>
-                    <span className="block text-xs text-muted-foreground">
+                    <span className="block text-[11.5px] text-muted-foreground">
                       {formatDate(p.paidOn, { day: "numeric", month: "short" })} · {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
                     </span>
                   </span>
-                  <span className="font-mono">{money(p.amount, p.currency)}</span>
+                  <span className="font-mono text-[13px] text-success">+{compactMoney(p.amount, p.currency)}</span>
                 </Link>
               </li>
             ))}
-          </ul>
-        </Card>
+          </ol>
+        </Panel>
       </div>
       {data && !data.billedThisYear && !data.outstanding ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">

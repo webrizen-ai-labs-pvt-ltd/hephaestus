@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../cn.ts";
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-card border border-border bg-surface", className)} {...props} />;
+  return <div className={cn("min-w-0 rounded-card border border-border bg-surface shadow-card", className)} {...props} />;
 }
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
@@ -23,7 +23,7 @@ export function Label({ className, ...props }: ComponentProps<"label">) {
 }
 
 const tones = {
-  neutral: "bg-surface-2 text-muted-foreground",
+  neutral: "bg-surface-3 text-muted-foreground",
   ember: "bg-[color-mix(in_srgb,var(--work)_14%,transparent)] text-work",
   people: "bg-[color-mix(in_srgb,var(--people)_14%,transparent)] text-people",
   finance: "bg-[color-mix(in_srgb,var(--finance)_16%,transparent)] text-finance",

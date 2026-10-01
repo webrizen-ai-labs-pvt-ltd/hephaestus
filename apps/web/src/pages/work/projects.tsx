@@ -1,10 +1,9 @@
 import { can, projectKeyFrom } from "@hephaestus/core";
-import { Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Badge, Button, Card, cn, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, FolderKanban, Plus } from "lucide-react";
+import { FolderKanban, Plus } from "lucide-react";
 import { useState } from "react";
-import { PageHeader } from "../../components/app-shell.tsx";
 import { api, type Me } from "../../lib/api.ts";
 import { formatDate, useApiMutation, useEmployees } from "../../lib/people.ts";
 import { type ProjectSummary, useGoals, useProjects, WORK_KEYS } from "../../lib/work.ts";
@@ -179,35 +178,49 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
   );
 }
 
-function ProjectCard({ p }: { p: ProjectSummary }) {
+function ProjectCard({ p, today }: { p: ProjectSummary; today: string }) {
   const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
+  const late = p.dueDate && p.dueDate < today && p.status !== "completed";
+  const daysLeft = p.dueDate ? Math.round((Date.parse(p.dueDate) - Date.parse(today)) / 86_400_000) : null;
   return (
     <Link to="/work/projects/$id" params={{ id: p.id }} className="group">
-      <Card className="relative h-full overflow-hidden p-5 transition-colors group-hover:border-input">
-        <div className="absolute inset-y-0 left-0 w-1" style={{ background: p.color }} />
-        <div className="flex items-start gap-3">
+      <Card className="relative flex h-full flex-col overflow-hidden p-5 transition-all group-hover:-translate-y-0.5 group-hover:border-border-strong">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-70" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${p.color} 16%, transparent), transparent)` }} />
+        <div className="relative flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl font-mono text-[11px] font-bold text-white shadow-card" style={{ background: p.color }}>
+            {p.key.slice(0, 4)}
+          </span>
           <div className="min-w-0 flex-1">
-            <div className="font-mono text-xs text-muted-foreground">{p.key}</div>
-            <h3 className="truncate text-lg font-bold">{p.name}</h3>
+            <h3 className="truncate text-[17px] font-bold leading-tight">{p.name}</h3>
+            <div className="mt-0.5 truncate text-xs text-muted-foreground">{p.leadName ? `Led by ${p.leadName}` : "No lead yet"}</div>
           </div>
           {p.status === "paused" ? <Badge>Paused</Badge> : null}
           {p.status === "completed" ? <Badge tone="people">Completed</Badge> : null}
         </div>
-        <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">{p.description ?? (p.leadName ? `Led by ${p.leadName}` : "No description")}</p>
-        <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            {p.done}/{p.total} done
-          </span>
-          {p.overdue ? (
-            <span className="flex items-center gap-1 text-danger">
-              <AlertTriangle className="size-3.5" /> {p.overdue} overdue
-            </span>
-          ) : p.dueDate ? (
-            <span>Due {formatDate(p.dueDate, { day: "numeric", month: "short" })}</span>
-          ) : null}
-        </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
-          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: p.color }} />
+        <p className="relative mt-3 line-clamp-2 min-h-10 text-sm text-muted-foreground">{p.description ?? "No description"}</p>
+        <div className="relative mt-auto flex items-center gap-4 pt-4">
+          <ProgressRing value={pct} size={52} stroke={5} color={p.color}>
+            <span className="text-[11px]">{pct}%</span>
+          </ProgressRing>
+          <dl className="grid flex-1 grid-cols-3 gap-2 text-center">
+            <div>
+              <dt className="text-[10.5px] text-muted-foreground">Done</dt>
+              <dd className="font-display text-base font-bold tabular">
+                {p.done}
+                <span className="text-xs font-normal text-subtle-foreground">/{p.total}</span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10.5px] text-muted-foreground">Overdue</dt>
+              <dd className={cn("font-display text-base font-bold tabular", p.overdue ? "text-danger" : "text-subtle-foreground")}>{p.overdue}</dd>
+            </div>
+            <div>
+              <dt className="text-[10.5px] text-muted-foreground">Due</dt>
+              <dd className={cn("pt-0.5 font-mono text-xs", late ? "text-danger" : "text-foreground")}>
+                {p.dueDate ? (daysLeft !== null && daysLeft >= 0 && daysLeft <= 14 ? `${daysLeft}d left` : formatDate(p.dueDate, { day: "numeric", month: "short" })) : "—"}
+              </dd>
+            </div>
+          </dl>
         </div>
       </Card>
     </Link>
@@ -220,12 +233,33 @@ export function ProjectsPage({ me }: { me: Me }) {
   const { data } = useProjects(status);
   const canCreate = can(me.org.permissions, "project", "create");
   const projects = data?.projects ?? [];
+  const today = new Date().toISOString().slice(0, 10);
+  const total = projects.reduce((a, p) => a + p.total, 0);
+  const done = projects.reduce((a, p) => a + p.done, 0);
+  const overdue = projects.reduce((a, p) => a + p.overdue, 0);
+  const many = me.settings.terms.project.many;
 
   return (
     <WorkBody>
-      <PageHeader
-        title={me.settings.terms.project.many}
-        description="Everything your team is delivering."
+      <PageHero
+        eyebrow={`Work · ${many}`}
+        tone="var(--work)"
+        title="Everything in flight"
+        summary={
+          projects.length ? (
+            <>
+              <Em tone="var(--work)">{projects.length}</Em> {status} {projects.length === 1 ? me.settings.terms.project.one.toLowerCase() : many.toLowerCase()}, <Em>{total ? Math.round((done / total) * 100) : 0}%</Em> of their tasks done
+              {overdue ? (
+                <>
+                  , <Em tone="var(--danger)">{overdue} overdue</Em>
+                </>
+              ) : null}
+              .
+            </>
+          ) : (
+            "Projects hold tasks, stages and milestones."
+          )
+        }
         actions={
           canCreate ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -234,7 +268,7 @@ export function ProjectsPage({ me }: { me: Me }) {
           ) : null
         }
       />
-      <div className="flex gap-1 text-sm">
+      <div className="inline-flex gap-1 rounded-xl border border-border bg-surface p-1 text-sm shadow-card">
         {[
           ["current", "Current"],
           ["completed", "Completed"],
@@ -244,7 +278,7 @@ export function ProjectsPage({ me }: { me: Me }) {
             key={k}
             type="button"
             onClick={() => setStatus(k!)}
-            className={cn("rounded-md px-2.5 py-1", status === k ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}
+            className={cn("rounded-lg px-3 py-1.5", status === k ? "bg-surface-3 font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
             {label}
           </button>
@@ -254,7 +288,7 @@ export function ProjectsPage({ me }: { me: Me }) {
         <Card>
           <EmptyState
             icon={<FolderKanban />}
-            title={status === "current" ? `No ${me.settings.terms.project.many.toLowerCase()} yet` : "Nothing here"}
+            title={status === "current" ? `No ${many.toLowerCase()} yet` : "Nothing here"}
             description="Projects hold tasks, stages and milestones. Start with one your team is working on now."
             action={
               canCreate && status === "current" ? (
@@ -266,13 +300,23 @@ export function ProjectsPage({ me }: { me: Me }) {
           />
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="rise rise-1 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((p) => (
-            <ProjectCard key={p.id} p={p} />
+            <ProjectCard key={p.id} p={p} today={today} />
           ))}
+          {canCreate && status === "current" ? (
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-border text-sm text-muted-foreground transition-colors hover:border-border-strong hover:bg-surface/60 hover:text-foreground"
+            >
+              <Plus className="size-5" /> New {me.settings.terms.project.one.toLowerCase()}
+            </button>
+          ) : null}
         </div>
       )}
       {creating ? <ProjectDialog open onOpenChange={setCreating} /> : null}
     </WorkBody>
   );
 }
+

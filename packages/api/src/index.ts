@@ -12,6 +12,7 @@ import { projectRoutes } from "./routes/work/projects.ts";
 import { taskRoutes } from "./routes/work/tasks.ts";
 import { collabRoutes } from "./routes/collab.ts";
 import { eventRoutes } from "./routes/events.ts";
+import { homeRoutes } from "./routes/home.ts";
 import { financeDocumentRoutes } from "./finance/document-routes.ts";
 import { financePublicRoutes } from "./finance/public-routes.ts";
 import { financeSetupRoutes } from "./finance/setup-routes.ts";
@@ -22,6 +23,7 @@ import { financeSetupRoutes } from "./finance/setup-routes.ts";
  */
 const pillars = new Hono<AppEnv>()
   .use(requireOrg)
+  .route("/", homeRoutes)
   // People
   .route("/", employeeRoutes)
   .route("/", structureRoutes)

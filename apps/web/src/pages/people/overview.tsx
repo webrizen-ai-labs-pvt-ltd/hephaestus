@@ -1,158 +1,258 @@
-import { Avatar, Button, Card, Stat } from "@hephaestus/ui";
-import { Link } from "@tanstack/react-router";
-import { CalendarOff, CheckSquare, ClipboardCheck, Sparkles, Users } from "lucide-react";
-import { PageHeader } from "../../components/app-shell.tsx";
+import { Avatar, Button, Em, EmptyState, KpiTile, PageHero, Panel, ProgressRing } from "@hephaestus/ui";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, CalendarDays, CalendarOff, CheckSquare, ClipboardCheck, PieChart, Plus, Sparkles, UserPlus, Users } from "lucide-react";
 import { formatDate, plural, useBalances, useMyOnboardingItems, usePeopleSummary } from "../../lib/people.ts";
 import { PageBody } from "./layout.tsx";
 
+const short = (d: string | null) => formatDate(d, { day: "numeric", month: "short" });
+
 export function PeopleOverviewPage() {
+  const navigate = useNavigate();
   const { data: s } = usePeopleSummary();
   const { data: balances } = useBalances();
   const { data: myItems } = useMyOnboardingItems();
-  const maxDept = Math.max(1, ...(s?.byDepartment.map((d) => d.count) ?? [1]));
+
+  const depts = s?.byDepartment ?? [];
+  const placed = depts.reduce((a, d) => a + d.count, 0);
+  const unplaced = Math.max(0, (s?.headcount ?? 0) - placed);
+  const out = s?.onLeaveToday ?? [];
 
   return (
     <PageBody>
-      <PageHeader
-        title="People"
-        description="Your team at a glance."
+      <PageHero
+        eyebrow="People"
+        tone="var(--people)"
+        title="Your team"
+        summary={
+          s ? (
+            <>
+              <Em tone="var(--people)">{plural(s.headcount, "person", "people")}</Em>
+              {depts.length ? <> across {plural(depts.length, "department")}</> : null}.{" "}
+              {out.length ? (
+                <>
+                  <Em>{out.length}</Em> out today
+                </>
+              ) : (
+                <>Everyone's in today</>
+              )}
+              {s.pendingLeave ? (
+                <>
+                  , and <Em tone="var(--ember)">{plural(s.pendingLeave, "leave request")}</Em> waiting for approval
+                </>
+              ) : null}
+              .
+            </>
+          ) : (
+            " "
+          )
+        }
         actions={
-          <Button variant="primary" asChild>
-            <Link to="/people/directory" search={{ add: true }}>
-              Add employee
-            </Link>
-          </Button>
+          <>
+            <Button variant="secondary" asChild>
+              <Link to="/people/leave">
+                <CalendarDays /> Request leave
+              </Link>
+            </Button>
+            <Button variant="primary" asChild>
+              <Link to="/people/directory" search={{ add: true }}>
+                <Plus /> Add employee
+              </Link>
+            </Button>
+          </>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Headcount" value={s?.headcount ?? "—"} icon={<Users />} tone="text-people" />
-        <Stat
-          label="On leave today"
-          value={s?.onLeaveToday.length ?? "—"}
+      <div className="rise rise-1 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiTile
+          label="Headcount"
+          icon={<Users />}
+          tone="var(--people)"
+          value={s?.headcount ?? "—"}
+          hint={s?.joinersThisMonth.length ? `${plural(s.joinersThisMonth.length, "new joiner")} this month` : "No new joiners this month"}
+          onClick={() => navigate({ to: "/people/directory" })}
+        />
+        <KpiTile
+          label="Out today"
           icon={<CalendarOff />}
-          tone="text-collab"
-          hint={s?.onLeaveToday.map((p) => p.fullName.split(" ")[0]).join(", ") || "Everyone's in"}
+          tone="var(--collab)"
+          value={out.length}
+          hint={out.length ? out.map((p) => p.fullName.split(" ")[0]).join(", ") : "Everyone's in"}
+          onClick={() => navigate({ to: "/people/leave", search: { tab: "calendar" } } as never)}
         />
-        <Stat
+        <KpiTile
           label="Leave to approve"
-          value={s?.pendingLeave ?? "—"}
           icon={<ClipboardCheck />}
-          tone="text-work"
-          hint={
-            s?.pendingLeave ? (
-              <Link to="/people/leave" search={{ tab: "approvals" }} className="text-accent hover:underline">
-                Review requests
-              </Link>
-            ) : (
-              "All caught up"
-            )
-          }
+          tone="var(--work)"
+          value={s?.pendingLeave ?? "—"}
+          hint={s?.pendingLeave ? "Waiting on you" : "All caught up"}
+          trend={s?.pendingLeave ? { label: "Review", good: null } : undefined}
+          onClick={() => navigate({ to: "/people/leave", search: { tab: "approvals" } } as never)}
         />
-        <Stat label="Onboarding" value={s?.activeOnboarding ?? "—"} icon={<Sparkles />} tone="text-finance" hint="Joiners in progress" />
+        <KpiTile
+          label="Onboarding"
+          icon={<Sparkles />}
+          tone="var(--finance)"
+          value={s?.activeOnboarding ?? "—"}
+          hint={s?.activeOnboarding ? "Joiners settling in" : "No one onboarding"}
+          onClick={() => navigate({ to: "/people/onboarding" })}
+        />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">By department</h2>
-            <Link to="/people/structure" className="text-sm text-accent hover:underline">
-              Manage
+      <div className="rise rise-2 grid gap-4 lg:grid-cols-12">
+        <Panel
+          title="Team makeup"
+          icon={<PieChart />}
+          tone="var(--people)"
+          meta={depts.length ? plural(depts.length, "department") : undefined}
+          action={
+            <Link to="/people/structure" className="inline-flex items-center gap-1 text-accent hover:underline">
+              Manage <ArrowRight className="size-3.5" />
             </Link>
-          </div>
-          {s && s.byDepartment.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              No departments yet.{" "}
-              <Link to="/people/structure" className="text-accent hover:underline">
-                Create your first one
-              </Link>
-              .
-            </p>
+          }
+          className="lg:col-span-7"
+        >
+          {s && depts.length === 0 ? (
+            <EmptyState
+              icon={<PieChart />}
+              title="No departments yet"
+              description="Group people into departments to see how your team is shaped."
+              action={
+                <Button size="sm" asChild>
+                  <Link to="/people/structure">Create a department</Link>
+                </Button>
+              }
+            />
           ) : (
-            <ul className="mt-5 space-y-3">
-              {s?.byDepartment.map((d) => (
-                <li key={d.id} className="grid grid-cols-[140px_1fr_32px] items-center gap-3 text-sm">
-                  <span className="truncate">{d.name}</span>
-                  <span className="h-2 overflow-hidden rounded-full bg-surface-2">
-                    <span
-                      className="block h-full rounded-full"
-                      style={{ width: `${(d.count / maxDept) * 100}%`, background: d.color ?? "var(--people)" }}
-                    />
-                  </span>
-                  <span className="text-right font-mono text-xs text-muted-foreground">{d.count}</span>
+            <>
+              {/* One stacked bar: the whole company, split by department. */}
+              <div className="flex h-3 gap-[2px] overflow-hidden rounded-full" role="img" aria-label="Share of people by department">
+                {depts.map((d) => (
+                  <span key={d.id} className="h-full first:rounded-l-full" style={{ flex: d.count, background: d.color ?? "var(--people)" }} title={`${d.name}: ${d.count}`} />
+                ))}
+                {unplaced ? <span className="h-full bg-surface-3" style={{ flex: unplaced }} title={`No department: ${unplaced}`} /> : null}
+              </div>
+              <ul className="mt-5 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                {depts.map((d) => {
+                  const pct = s?.headcount ? Math.round((d.count / s.headcount) * 100) : 0;
+                  return (
+                    <li key={d.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface-2/50 px-3 py-2.5">
+                      <span className="size-2.5 shrink-0 rounded-full" style={{ background: d.color ?? "var(--people)" }} />
+                      <span className="min-w-0 flex-1 truncate text-sm">{d.name}</span>
+                      <span className="font-display text-lg font-bold tabular">{d.count}</span>
+                      <span className="w-9 text-right font-mono text-[11px] text-subtle-foreground">{pct}%</span>
+                    </li>
+                  );
+                })}
+                {unplaced ? (
+                  <li className="flex items-center gap-3 rounded-lg border border-dashed border-border px-3 py-2.5 text-muted-foreground">
+                    <span className="size-2.5 shrink-0 rounded-full bg-surface-3" />
+                    <span className="flex-1 text-sm">No department</span>
+                    <span className="font-display text-lg font-bold tabular">{unplaced}</span>
+                  </li>
+                ) : null}
+              </ul>
+            </>
+          )}
+        </Panel>
+
+        <Panel
+          title="My leave"
+          icon={<CalendarDays />}
+          tone="var(--collab)"
+          meta={balances?.year}
+          action={
+            <Link to="/people/leave" className="inline-flex items-center gap-1 text-accent hover:underline">
+              Request <ArrowRight className="size-3.5" />
+            </Link>
+          }
+          className="lg:col-span-5"
+        >
+          {balances && balances.balances.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Your account isn't linked to an employee profile yet.</p>
+          ) : (
+            <ul className="grid grid-cols-2 gap-3">
+              {balances?.balances.map((b) => (
+                <li key={b.leaveTypeId} className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/50 p-3">
+                  <ProgressRing value={b.quota ? ((b.remaining ?? 0) / b.quota) * 100 : 100} size={44} color={b.color}>
+                    <span className="text-[11px]">{b.remaining ?? "∞"}</span>
+                  </ProgressRing>
+                  <div className="min-w-0">
+                    <div className="truncate text-[13px] font-medium">{b.name}</div>
+                    <div className="text-[11.5px] text-muted-foreground">
+                      {b.quota === null ? `${b.approved} used` : `of ${b.quota} left`}
+                      {b.pending ? <span className="text-work"> · {b.pending} pending</span> : null}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">My leave</h2>
-            <Link to="/people/leave" className="text-sm text-accent hover:underline">
-              Request leave
-            </Link>
-          </div>
-          <ul className="mt-4 space-y-3">
-            {balances?.balances.map((b) => (
-              <li key={b.leaveTypeId} className="flex items-center gap-3 text-sm">
-                <span className="size-2.5 rounded-full" style={{ background: b.color }} />
-                <span className="flex-1">{b.name}</span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {b.remaining === null ? `${b.approved} used` : `${b.remaining} of ${b.quota} left`}
-                </span>
-              </li>
-            ))}
-            {balances && balances.balances.length === 0 ? (
-              <li className="text-sm text-muted-foreground">Your account isn't linked to an employee profile yet.</li>
-            ) : null}
-          </ul>
-        </Card>
+        </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-6">
-          <h2 className="text-lg font-bold">Joining this month</h2>
-          <ul className="mt-4 space-y-3">
-            {s?.joinersThisMonth.length === 0 ? <li className="text-sm text-muted-foreground">No new joiners this month.</li> : null}
+      <div className="rise rise-3 grid gap-4 lg:grid-cols-3">
+        <Panel title="Who's out" icon={<CalendarOff />} tone="var(--collab)" meta="today">
+          {out.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Everyone's in today.</p>
+          ) : (
+            <ul className="space-y-2.5">
+              {out.map((p) => (
+                <li key={p.id}>
+                  <Link to="/people/$id" params={{ id: p.id }} className="flex items-center gap-3 rounded-lg p-1 hover:bg-surface-2">
+                    <Avatar name={p.fullName} src={p.image} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{p.fullName}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">until {short(p.endDate)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel title="Joining this month" icon={<UserPlus />} tone="var(--people)" meta={s?.joinersThisMonth.length || undefined}>
+          {s?.joinersThisMonth.length === 0 ? <p className="text-sm text-muted-foreground">No new joiners this month.</p> : null}
+          <ul className="space-y-2.5">
             {s?.joinersThisMonth.map((j) => (
               <li key={j.id}>
-                <Link to="/people/$id" params={{ id: j.id }} className="flex items-center gap-3 rounded-lg hover:bg-surface-2">
+                <Link to="/people/$id" params={{ id: j.id }} className="flex items-center gap-3 rounded-lg p-1 hover:bg-surface-2">
                   <Avatar name={j.fullName} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{j.fullName}</div>
                     <div className="truncate text-xs text-muted-foreground">{j.jobTitle ?? "—"}</div>
                   </div>
-                  <span className="font-mono text-xs text-muted-foreground">{formatDate(j.joinDate, { day: "numeric", month: "short" })}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">{short(j.joinDate)}</span>
                 </Link>
               </li>
             ))}
           </ul>
-        </Card>
+        </Panel>
 
-        <Card className="p-6">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="size-4 text-people" />
-            <h2 className="text-lg font-bold">My onboarding steps</h2>
-          </div>
-          <ul className="mt-4 space-y-2">
-            {myItems?.items.length === 0 ? <li className="text-sm text-muted-foreground">Nothing assigned to you.</li> : null}
+        <Panel
+          title="My onboarding steps"
+          icon={<CheckSquare />}
+          tone="var(--finance)"
+          meta={myItems?.items.length || undefined}
+          action={
+            myItems?.items.length ? (
+              <Link to="/people/onboarding" className="inline-flex items-center gap-1 text-accent hover:underline">
+                All <ArrowRight className="size-3.5" />
+              </Link>
+            ) : undefined
+          }
+        >
+          {myItems?.items.length === 0 ? <p className="text-sm text-muted-foreground">Nothing assigned to you.</p> : null}
+          <ul className="space-y-2">
             {myItems?.items.slice(0, 6).map((i) => (
               <li key={i.id} className="flex items-center gap-3 text-sm">
-                <span className="size-1.5 rounded-full bg-people" />
-                <span className="flex-1 truncate">
+                <span className="size-4 shrink-0 rounded-md border-2 border-input" />
+                <span className="min-w-0 flex-1 truncate">
                   {i.title} <span className="text-muted-foreground">· {i.employeeName}</span>
                 </span>
-                <span className="font-mono text-xs text-muted-foreground">{formatDate(i.dueDate, { day: "numeric", month: "short" })}</span>
+                <span className="font-mono text-[11px] text-muted-foreground">{short(i.dueDate)}</span>
               </li>
             ))}
           </ul>
-          {myItems && myItems.items.length > 0 ? (
-            <Link to="/people/onboarding" className="mt-4 inline-block text-sm text-accent hover:underline">
-              {plural(myItems.items.length, "open step")}
-            </Link>
-          ) : null}
-        </Card>
+        </Panel>
       </div>
     </PageBody>
   );

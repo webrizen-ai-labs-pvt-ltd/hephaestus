@@ -22,6 +22,7 @@ export function onLiveEvent(fn: (e: LiveEvent) => void) {
 
 /** Events only say *what* changed; refetch the affected data through the API. */
 function route(qc: QueryClient, e: LiveEvent) {
+  void qc.invalidateQueries({ queryKey: ["home"] });
   const [kind, a, b] = e.scope.split(":");
   if (kind === "user") void qc.invalidateQueries({ queryKey: ["notifications"] });
   if (kind === "channel") {

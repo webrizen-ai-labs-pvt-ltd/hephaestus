@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../cn.ts";
+import { KpiTile } from "./data.tsx";
 
 const control =
   "w-full rounded-lg border border-input bg-surface text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none disabled:opacity-60";
@@ -71,7 +72,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-obsidian/60 backdrop-blur-sm" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-[min(520px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col rounded-card border border-border bg-surface shadow-[0_24px_64px_-16px_rgb(0_0_0/0.6)]",
+          "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-[min(520px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col rounded-card border border-border-strong bg-surface shadow-pop",
           className,
         )}
       >
@@ -98,7 +99,7 @@ export function DialogContent({
 export function EmptyState({ icon, title, description, action }: { icon?: ReactNode; title: string; description?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      {icon ? <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-surface-2 text-muted-foreground [&_svg]:size-6">{icon}</div> : null}
+      {icon ? <div className="mb-4 flex size-14 items-center justify-center rounded-2xl border border-border bg-surface-2 text-muted-foreground shadow-card [&_svg]:size-6">{icon}</div> : null}
       <h3 className="text-base font-bold">{title}</h3>
       {description ? <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
@@ -107,16 +108,9 @@ export function EmptyState({ icon, title, description, action }: { icon?: ReactN
 }
 
 export function Stat({ label, value, hint, tone, icon }: { label: string; value: ReactNode; hint?: ReactNode; tone?: string; icon?: ReactNode }) {
-  return (
-    <div className="rounded-card border border-border bg-surface p-5">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        {icon ? <span className={cn("[&_svg]:size-4", tone)}>{icon}</span> : null}
-        {label}
-      </div>
-      <div className="mt-2 font-display text-3xl font-bold tracking-tight">{value}</div>
-      {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
-    </div>
-  );
+  // Tone arrives as a text-* class (e.g. "text-people"); map it to the matching colour.
+  const colour = tone?.startsWith("text-") ? `var(--${tone.slice(5)})` : (tone ?? "var(--muted-foreground)");
+  return <KpiTile label={label} value={value} hint={hint} icon={icon} tone={colour} />;
 }
 
 /** A panel that slides in from the right (task details, filters). */

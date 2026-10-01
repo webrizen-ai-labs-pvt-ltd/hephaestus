@@ -227,7 +227,8 @@ export function useApiMutation<TVars, TResult = unknown>(
   return useMutation({
     mutationFn: fn,
     onSuccess: async (result, vars) => {
-      await Promise.all(opts.invalidate.map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      // Every change can move a number on the home screen or a sidebar badge.
+      await Promise.all([...opts.invalidate, "home"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       if (opts.success) toast.success(opts.success);
       opts.onSuccess?.(result, vars);
     },

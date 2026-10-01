@@ -25,7 +25,6 @@ import { MyWorkPage } from "./pages/work/my-work.tsx";
 import { ProjectPage } from "./pages/work/project.tsx";
 import { ProjectsPage } from "./pages/work/projects.tsx";
 import { WorkloadPage } from "./pages/work/workload.tsx";
-import { PillarPage } from "./pages/pillars.tsx";
 import { AuditPage, OrgSettingsPage, PreferencesPage } from "./pages/settings.tsx";
 import { SignInPage } from "./pages/sign-in.tsx";
 

@@ -1,3 +1,4 @@
+import { can } from "@hephaestus/core";
 import {
   Avatar,
   Button,
@@ -11,61 +12,135 @@ import {
   Kbd,
   Logo,
 } from "@hephaestus/ui";
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { ArrowLeftRight, LogOut, Menu, Moon, Search, Sun, SunMoon, X } from "lucide-react";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  ArrowLeftRight,
+  CalendarPlus,
+  FilePlus2,
+  Hash,
+  ListPlus,
+  LogOut,
+  Menu,
+  Moon,
+  Plus,
+  Search,
+  Sun,
+  SunMoon,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { type Me, signIn, signOut } from "../lib/api.ts";
-import { ADMIN_NAV, MAIN_NAV, type NavItem } from "../lib/nav.ts";
-import { useTheme } from "../lib/theme.ts";
 import { useChannels } from "../lib/collab.ts";
+import { useHome } from "../lib/home.ts";
+import { ADMIN_NAV, MAIN_NAV, type NavItem } from "../lib/nav.ts";
 import { useLiveEvents } from "../lib/realtime.ts";
+import { useTheme } from "../lib/theme.ts";
 import { CommandPalette, useCommandPalette } from "./command-palette.tsx";
 import { NotificationBell } from "./notification-bell.tsx";
 
-function NavLink({ item, onNavigate, badge }: { item: NavItem; onNavigate?: () => void; badge?: number }) {
+function isActive(pathname: string, to: string) {
+  return to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function NavLink({ item, onNavigate, badge, badgeTone }: { item: NavItem; onNavigate?: () => void; badge?: number; badgeTone?: string }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const active = item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(`${item.to}/`);
+  const active = isActive(pathname, item.to);
   return (
     <Link
       to={item.to}
       onClick={onNavigate}
       className={cn(
-        "group relative flex h-9 items-center gap-3 rounded-lg px-3 text-sm transition-colors",
-        active ? "bg-surface-2 font-medium text-foreground" : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
+        "group relative flex h-10 items-center gap-3 rounded-xl px-2.5 text-[13.5px] transition-colors",
+        active ? "bg-surface-2 font-medium text-foreground shadow-card" : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
       )}
     >
-      {active ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary" /> : null}
-      <item.icon className={cn("size-4 shrink-0", item.tone ?? (active ? "text-foreground" : ""))} />
+      <span
+        className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors [&_svg]:size-4", !active && "group-hover:opacity-100")}
+        style={{
+          color: active ? item.color : undefined,
+          background: active ? `color-mix(in srgb, ${item.color} 16%, transparent)` : "transparent",
+        }}
+      >
+        <item.icon />
+      </span>
       <span className="truncate">{item.label}</span>
-      {badge ? <span className="ml-auto rounded-full bg-collab/20 px-1.5 font-mono text-[10px] text-collab">{badge > 99 ? "99+" : badge}</span> : null}
+      {badge ? (
+        <span
+          className="ml-auto min-w-5 rounded-full px-1.5 text-center font-mono text-[10.5px] leading-5"
+          style={{ background: `color-mix(in srgb, ${badgeTone ?? item.color} 18%, transparent)`, color: badgeTone ?? item.color }}
+        >
+          {badge > 99 ? "99+" : badge}
+        </span>
+      ) : null}
     </Link>
+  );
+}
+
+function ThemeSwitch() {
+  const [pref, setPref] = useTheme();
+  const options = [
+    { key: "light", icon: Sun, label: "Light" },
+    { key: "dark", icon: Moon, label: "Dark" },
+    { key: "system", icon: SunMoon, label: "Match system" },
+  ] as const;
+  return (
+    <div className="flex rounded-lg border border-border bg-surface p-0.5" role="radiogroup" aria-label="Theme">
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          role="radio"
+          aria-checked={pref === o.key}
+          aria-label={o.label}
+          title={o.label}
+          onClick={() => setPref(o.key)}
+          className={cn("flex size-7 items-center justify-center rounded-md transition-colors", pref === o.key ? "bg-surface-3 text-foreground" : "text-muted-foreground hover:text-foreground")}
+        >
+          <o.icon className="size-3.5" />
+        </button>
+      ))}
+    </div>
   );
 }
 
 function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
   const enabled = new Set(me.settings.enabledPillars);
+  const { data: home } = useHome();
   const { data: chats } = useChannels();
   const unreadChats = (chats?.channels ?? []).reduce((n, c) => n + c.unread, 0);
+  const badges: Record<string, { n?: number; tone?: string }> = {
+    "/": { n: home?.counts.attention, tone: "var(--ember)" },
+    "/work": { n: home?.counts.myOpenTasks },
+    "/collab": { n: unreadChats },
+  };
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center gap-2.5 px-4">
-        <Logo className="size-7 text-foreground" />
-        <span className="font-display text-[17px] font-bold tracking-tight">Hephaestus</span>
+      <div className="flex h-16 items-center gap-2.5 px-5">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-foreground text-background shadow-card">
+          <Logo className="size-6" />
+        </span>
+        <div className="leading-tight">
+          <div className="font-display text-[16px] font-bold tracking-tight">Hephaestus</div>
+          <div className="text-[10.5px] text-muted-foreground">by Webrizen</div>
+        </div>
       </div>
 
-      <div className="px-3 pb-2">
-        <div className="flex items-center gap-2.5 rounded-lg border border-border bg-surface px-2.5 py-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary font-display text-xs font-bold text-primary-foreground">
+      <div className="px-3">
+        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-2.5 py-2 shadow-card">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--ember),var(--molten))] font-display text-sm font-bold text-white">
             {me.org.name.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{me.org.name}</div>
-            <div className="truncate text-xs text-muted-foreground">{me.org.roles.join(", ") || "member"}</div>
+            <div className="truncate text-[13px] font-medium">{me.org.name}</div>
+            <div className="truncate text-[11px] capitalize text-muted-foreground">{me.org.roles.join(", ") || "member"}</div>
           </div>
           {me.edition === "cloud" ? (
             <button
               type="button"
               title="Switch organization"
+              aria-label="Switch organization"
               onClick={() => signIn("/", "select_account")}
               className="rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
             >
@@ -75,37 +150,62 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3 pt-4">
+        <div className="eyebrow px-2.5 pb-1.5">Workspace</div>
         {MAIN_NAV.filter((n) => !n.pillar || enabled.has(n.pillar)).map((n) => (
-          <NavLink key={n.to} item={n} onNavigate={onNavigate} badge={n.pillar === "collab" ? unreadChats : undefined} />
+          <NavLink key={n.to} item={n} onNavigate={onNavigate} badge={badges[n.to]?.n} badgeTone={badges[n.to]?.tone} />
         ))}
-        <div className="px-3 pb-1 pt-5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Admin</div>
+        <div className="eyebrow px-2.5 pb-1.5 pt-6">Admin</div>
         {ADMIN_NAV.map((n) => (
           <NavLink key={n.to} item={n} onNavigate={onNavigate} />
         ))}
       </nav>
 
-      <div className="border-t border-border px-4 py-3 text-[11px] text-muted-foreground">
-        {me.edition === "cloud" ? "Cloud" : "Offline edition"} · Webrizen AI Labs
+      <div className="border-t border-border p-3">
+        <div className="flex items-center gap-2.5 rounded-xl px-1.5 py-1">
+          <Avatar name={me.user.name} src={me.user.image} className="size-8" />
+          <div className="min-w-0 flex-1 leading-tight">
+            <div className="truncate text-[13px] font-medium">{me.user.name}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{me.edition === "cloud" ? "Cloud" : "Offline edition"}</div>
+          </div>
+          <ThemeSwitch />
+        </div>
       </div>
     </div>
   );
 }
 
-function ThemeMenuItems() {
-  const [pref, setPref] = useTheme();
-  const options = [
-    { key: "dark", label: "Dark", icon: Moon },
-    { key: "light", label: "Light", icon: Sun },
-    { key: "system", label: "Match system", icon: SunMoon },
-  ] as const;
-  return options.map((o) => (
-    <DropdownMenuItem key={o.key} onSelect={() => setPref(o.key)}>
-      <o.icon />
-      {o.label}
-      {pref === o.key ? <span className="ml-auto size-1.5 rounded-full bg-primary" /> : null}
-    </DropdownMenuItem>
-  ));
+/** "New …" menu in the header: the most common things to create, wherever you are. */
+function CreateMenu({ me }: { me: Me }) {
+  const navigate = useNavigate();
+  const p = me.org.permissions;
+  const items = [
+    { show: can(p, "task", "create"), icon: ListPlus, label: "Task", hint: "Add to My work", go: () => navigate({ to: "/work" }) },
+    { show: can(p, "invoice", "create"), icon: FilePlus2, label: "Invoice", hint: "GST invoice", go: () => navigate({ to: "/finance/new", search: { kind: "invoice" } }) },
+    { show: can(p, "leave", "request"), icon: CalendarPlus, label: "Leave request", hint: "Time off", go: () => navigate({ to: "/people/leave" }) },
+    { show: can(p, "employee", "create"), icon: UserPlus, label: "Employee", hint: "Add to directory", go: () => navigate({ to: "/people/directory", search: { add: true } }) },
+    { show: can(p, "channel", "create"), icon: Hash, label: "Channel", hint: "Start a conversation", go: () => navigate({ to: "/collab" }) },
+  ].filter((i) => i.show);
+  if (!items.length) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="primary" size="sm" className="h-9 gap-1.5 rounded-lg px-3">
+          <Plus /> <span className="hidden sm:inline">New</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60">
+        <DropdownMenuLabel>Create</DropdownMenuLabel>
+        {items.map((i) => (
+          <DropdownMenuItem key={i.label} onSelect={i.go}>
+            <i.icon />
+            <span className="flex-1">{i.label}</span>
+            <span className="text-xs text-muted-foreground">{i.hint}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function AppShell({ me }: { me: Me }) {
@@ -117,21 +217,21 @@ export function AppShell({ me }: { me: Me }) {
 
   return (
     <div className="flex h-dvh overflow-hidden">
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-sidebar lg:block">
+      <aside className="hidden w-[248px] shrink-0 border-r border-border bg-sidebar/80 backdrop-blur lg:block">
         <Sidebar me={me} />
       </aside>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-obsidian/60" onClick={() => setMobileOpen(false)} />
-          <aside className="relative h-full w-72 max-w-[85vw] border-r border-border bg-sidebar">
+          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-obsidian/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="relative h-full w-72 max-w-[85vw] border-r border-border bg-sidebar shadow-pop">
             <Sidebar me={me} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
+        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur sm:px-6">
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
             {mobileOpen ? <X /> : <Menu />}
           </Button>
@@ -139,21 +239,22 @@ export function AppShell({ me }: { me: Me }) {
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="flex h-9 w-full max-w-md items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:border-input"
+            className="flex h-9 w-full min-w-0 max-w-md items-center gap-2.5 rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground shadow-card transition-colors hover:border-border-strong"
           >
             <Search className="size-4" />
-            <span className="flex-1 text-left">Search or jump to…</span>
+            <span className="flex-1 truncate text-left">Search people, projects, invoices…</span>
             <span className="hidden gap-1 sm:flex">
               <Kbd>Ctrl</Kbd>
               <Kbd>K</Kbd>
             </span>
           </button>
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1.5">
+            <CreateMenu me={me} />
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="rounded-full" aria-label="Account menu">
+                <button type="button" className="ml-1 rounded-full ring-2 ring-transparent transition hover:ring-border-strong" aria-label="Account menu">
                   <Avatar name={me.user.name} src={me.user.image} />
                 </button>
               </DropdownMenuTrigger>
@@ -163,7 +264,9 @@ export function AppShell({ me }: { me: Me }) {
                   <div className="truncate">{me.user.email}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <ThemeMenuItems />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings/preferences">Preferences</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => void signOut()}>
                   <LogOut />
@@ -184,14 +287,15 @@ export function AppShell({ me }: { me: Me }) {
   );
 }
 
+/** Kept for pages not yet moved to PageHero. */
 export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="flex flex-wrap items-end justify-between gap-4 rise">
       <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+        <h1 className="text-[26px] font-bold leading-tight sm:text-[30px]">{title}</h1>
+        {description ? <p className="mt-1.5 text-[14.5px] text-muted-foreground">{description}</p> : null}
       </div>
-      {actions ? <div className="flex gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
 }
