@@ -89,6 +89,8 @@ export interface Milestone {
   name: string;
   description: string | null;
   dueDate: string | null;
+  amount: number | null;
+  invoiceId: string | null;
   completedAt: string | null;
   total: number;
   done: number;
@@ -105,6 +107,7 @@ export interface ProjectSummary {
   startDate: string | null;
   dueDate: string | null;
   goalId: string | null;
+  clientId: string | null;
   leadEmployeeId: string | null;
   leadName: string | null;
   total: number;
@@ -113,7 +116,7 @@ export interface ProjectSummary {
 }
 
 export interface ProjectDetail {
-  project: Omit<ProjectSummary, "total" | "done" | "overdue"> & { goalTitle: string | null };
+  project: Omit<ProjectSummary, "total" | "done" | "overdue"> & { goalTitle: string | null; clientName: string | null };
   stages: Stage[];
   milestones: Milestone[];
   members: { id: string; fullName: string; jobTitle: string | null }[];

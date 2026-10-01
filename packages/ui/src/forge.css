@@ -41,6 +41,9 @@
   --finance: #a8842e;
   --collab: #4c6e9e;
   --sidebar: #ede6db;
+  /* Finance chart pair, validated for colour-blind separation and contrast (light surface). */
+  --chart-billed: #a8842e;
+  --chart-collected: #3d68a8;
 }
 
 .dark {
@@ -64,6 +67,8 @@
   --finance: #d9b865;
   --collab: #7fa1d1;
   --sidebar: #0d0c0b;
+  --chart-billed: #b08c2a;
+  --chart-collected: #5a86c8;
 }
 
 @theme inline {

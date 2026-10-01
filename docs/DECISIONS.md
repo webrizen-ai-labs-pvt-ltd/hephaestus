@@ -30,3 +30,12 @@
 | D26 | 2026-10-01 | Live updates send ids only; browsers refetch through the API. Cloud: one Supabase Realtime topic per org. Local/offline: in-process bus + Server-Sent Events filtered per connection | One access-control path (the API); private content never travels over the realtime layer |
 | D27 | 2026-10-01 | Comment threads attach to records by (type, id); tasks and projects for now, finance records later | Any pillar can add discussion without new tables |
 | D28 | 2026-10-01 | Emails only for mentions, DMs, task assignment and leave; everything else stays in-app | Avoids notification fatigue |
+| D29 | 2026-10-01 | Money is integer paise; all GST maths lives in `packages/core/src/finance.ts`, shared by the server (source of truth) and the editor preview | No float rounding errors; the preview always matches the saved invoice |
+| D30 | 2026-10-01 | Quotes, invoices and credit notes share one table; numbers are assigned on issue, gap-free per kind and Indian financial year (INV/26-27/0001) | Meets GST serial-number rules; drafts don't burn numbers |
+| D31 | 2026-10-01 | Issued documents are locked except due date and notes; corrections go through credit notes, which reduce the invoice balance | GST compliance and a clean audit trail |
+| D32 | 2026-10-01 | Default GST slabs 0/5/18/40% (2025 rationalisation); orgs can add others | Current law, still flexible |
+| D33 | 2026-10-01 | Invoice PDFs come from a print-styled HTML document (browser "Save as PDF") | Exact branding and ₹ glyphs, works offline, no PDF engine to ship |
+| D34 | 2026-10-01 | Client links are HMAC-derived from the invoice id (stable across reminders); only the hash is stored | Every email carries the same working link; nothing reusable in the database |
+| D35 | 2026-10-01 | Each org connects its own Razorpay; key and webhook secrets are AES-GCM encrypted (ENCRYPTION_KEY); webhooks are signature-checked and idempotent by payment id | Tenants collect into their own accounts; replays can't double-count |
+| D36 | 2026-10-01 | Retainers and reminders run from a daily job (cloud cron) and lazily on the finance dashboard (offline) | No scheduler required in the offline edition |
+| D37 | 2026-10-01 | Dashboard totals use the org currency only; foreign-currency balances are listed separately | Never add dollars to rupees |

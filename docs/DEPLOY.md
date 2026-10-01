@@ -44,10 +44,11 @@ Copy the client ID, client secret and webhook signing secret.
    | `DATABASE_URL` | Supabase **transaction pooler** URL |
    | `SUPABASE_URL` / `SUPABASE_SECRET_KEY` / `SUPABASE_JWT_SECRET` / `SUPABASE_PUBLISHABLE_KEY` | from Supabase (the publishable key lets browsers connect to Realtime) |
    | `RESEND_API_KEY` / `EMAIL_FROM` | from Resend, for mention, message, assignment and leave emails (optional) |
-   | `CRON_SECRET` | random string (also used in the pg_cron job) |
+   | `CRON_SECRET` | random string (also used in the pg_cron jobs) |
+   | `ENCRYPTION_KEY` | 32+ random characters; encrypts tenants' Razorpay secrets. Set it once and keep it (defaults to SESSION_SECRET) |
 
 4. Add the custom domain.
-5. Optionally, enable the nightly member sync at the bottom of `supabase-setup.sql`.
+5. Enable the scheduled jobs at the bottom of `supabase-setup.sql`: nightly member sync, and the daily finance job (`/api/cron/finance`: retainers and overdue reminders).
 
 ## Every release
 - If the schema changed, run `pnpm db:migrate` against the direct URL **before** deploying.

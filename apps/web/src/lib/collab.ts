@@ -31,7 +31,7 @@ export interface Message {
 }
 
 export interface ContextMessage extends Message {
-  context: { kind: "channel" | "task" | "project"; label: string; link: string };
+  context: { kind: "channel" | ThreadType; label: string; link: string };
 }
 
 export interface Notification {
@@ -80,7 +80,9 @@ export const useChannelMessages = (id: string) =>
     getNextPageParam: (last) => (last.hasMore ? last.messages[0]?.createdAt : undefined),
   });
 
-export const useThread = (type: "task" | "project", id: string) =>
+export type ThreadType = "task" | "project" | "invoice" | "client";
+
+export const useThread = (type: ThreadType, id: string) =>
   useQuery({ queryKey: ["thread", type, id], queryFn: () => api<{ messages: Message[] }>(`collab/threads/${type}/${id}`) });
 
 export const useMembers = () =>

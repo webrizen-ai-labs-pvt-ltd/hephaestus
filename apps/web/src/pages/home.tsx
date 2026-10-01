@@ -28,7 +28,7 @@ function greeting() {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-const PHASE: Record<string, string> = { people: "Live", work: "Live", collab: "Live", finance: "Phase 4" };
+const PHASE: Record<string, string> = { people: "Live", work: "Live", collab: "Live", finance: "Live" };
 
 export function HomePage({ me }: { me: Me }) {
   const { data } = useMembers();

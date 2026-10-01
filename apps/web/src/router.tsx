@@ -5,6 +5,11 @@ import { AppShell } from "./components/app-shell.tsx";
 import { ApiError, signIn, signOut, useMe } from "./lib/api.ts";
 import { ChannelPage, CollabIndexPage, DecisionsPage, MentionsPage } from "./pages/collab/channel.tsx";
 import { CollabLayout } from "./pages/collab/layout.tsx";
+import { ClientPage, ClientsPage } from "./pages/finance/clients.tsx";
+import { DocumentPage, DocumentsPage, NewDocumentPage } from "./pages/finance/documents.tsx";
+import { FinanceLayout } from "./pages/finance/layout.tsx";
+import { FinanceSettingsPage, PaymentsPage, RetainersPage } from "./pages/finance/more.tsx";
+import { FinanceOverviewPage } from "./pages/finance/overview.tsx";
 import { HomePage } from "./pages/home.tsx";
 import { DirectoryPage } from "./pages/people/directory.tsx";
 import { PeopleLayout } from "./pages/people/layout.tsx";
@@ -115,6 +120,13 @@ const collabRoute = createRoute({ getParentRoute: () => rootRoute, path: "/colla
 const collabPage = <P extends string>(path: P, Component: () => React.ReactNode) =>
   createRoute({ getParentRoute: () => collabRoute, path, component: Component });
 
+const financeRoute = createRoute({ getParentRoute: () => rootRoute, path: "/finance", component: FinanceLayout });
+const financePage = <P extends string>(
+  path: P,
+  Component: () => React.ReactNode,
+  validateSearch?: (s: Record<string, unknown>) => { kind?: "invoice" | "quote"; clientId?: string; projectId?: string },
+) => createRoute({ getParentRoute: () => financeRoute, path, component: Component, ...(validateSearch ? { validateSearch } : {}) });
+
 const routeTree = rootRoute.addChildren([
   page("/", () => <HomePage me={useViewer()} />),
   peopleRoute.addChildren([
@@ -139,7 +151,22 @@ const routeTree = rootRoute.addChildren([
     collabPage("mentions", () => <MentionsPage />),
     collabPage("decisions", () => <DecisionsPage />),
   ]),
-  page("/finance", () => <PillarPage me={useViewer()} path="/finance" />),
+  financeRoute.addChildren([
+    financePage("/", () => <FinanceOverviewPage me={useViewer()} />),
+    financePage("invoices", () => <DocumentsPage me={useViewer()} kind="invoice" />),
+    financePage("quotes", () => <DocumentsPage me={useViewer()} kind="quote" />),
+    financePage("new", () => <NewDocumentPage me={useViewer()} />, (s) => ({
+      ...(s.kind === "quote" || s.kind === "invoice" ? { kind: s.kind } : {}),
+      ...(typeof s.clientId === "string" ? { clientId: s.clientId } : {}),
+      ...(typeof s.projectId === "string" ? { projectId: s.projectId } : {}),
+    })),
+    financePage("invoices/$id", () => <DocumentPage me={useViewer()} />),
+    financePage("clients", () => <ClientsPage me={useViewer()} />),
+    financePage("clients/$id", () => <ClientPage me={useViewer()} />),
+    financePage("payments", () => <PaymentsPage />),
+    financePage("retainers", () => <RetainersPage me={useViewer()} />),
+    financePage("settings", () => <FinanceSettingsPage me={useViewer()} />),
+  ]),
   page("/settings", () => <OrgSettingsPage me={useViewer()} />),
   page("/settings/audit", () => <AuditPage me={useViewer()} />),
   page("/settings/preferences", () => <PreferencesPage />),

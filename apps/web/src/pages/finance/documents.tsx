@@ -1,0 +1,571 @@
+import { can, supplyTypeFor } from "@hephaestus/core";
+import { Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { ArrowLeft, Ban, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Trash2 } from "lucide-react";
+import { useDeferredValue, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { PageHeader } from "../../components/app-shell.tsx";
+import { Thread } from "../../components/collab/thread.tsx";
+import { api, type Me } from "../../lib/api.ts";
+import {
+  type DocDetail,
+  type DocKind,
+  displayStatus,
+  FINANCE_KEYS,
+  KIND_LABEL,
+  type Line,
+  money,
+  PAYMENT_METHOD_LABEL,
+  toPaise,
+  toRupees,
+  useClients,
+  useDoc,
+  useDocs,
+  useFinanceSettings,
+  useTaxRates,
+} from "../../lib/finance.ts";
+import { formatDate, useApiMutation } from "../../lib/people.ts";
+import { useProjects } from "../../lib/work.ts";
+import { ClientDialog } from "./clients.tsx";
+import { InvoiceDocument } from "./invoice-document.tsx";
+import { FinanceBody, StatusPill } from "./layout.tsx";
+import { emptyLine, LineEditor } from "./line-editor.tsx";
+
+const todayLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+/* ---------------- Lists ---------------- */
+
+const FILTERS = {
+  invoice: [
+    ["", "All"],
+    ["draft", "Drafts"],
+    ["open", "Unpaid"],
+    ["overdue", "Overdue"],
+    ["paid", "Paid"],
+    ["void", "Void"],
+  ],
+  quote: [
+    ["", "All"],
+    ["draft", "Drafts"],
+    ["sent", "Sent"],
+    ["accepted", "Accepted"],
+    ["declined", "Declined"],
+  ],
+  credit_note: [["", "All"]],
+} as const;
+
+export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" }) {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState("");
+  const [q, setQ] = useState("");
+  const deferred = useDeferredValue(q.trim());
+  const [showCredit, setShowCredit] = useState(false);
+  const effectiveKind = kind === "invoice" && showCredit ? "credit_note" : kind;
+  const { data, isLoading } = useDocs({ kind: effectiveKind, status: status || undefined, q: deferred || undefined });
+  const docs = data?.documents ?? [];
+  const today = data?.today ?? todayLocal();
+  const label = KIND_LABEL[effectiveKind];
+  const canCreate = can(me.org.permissions, "invoice", "create");
+
+  return (
+    <FinanceBody>
+      <PageHeader
+        title={KIND_LABEL[kind].many}
+        description={kind === "invoice" ? "GST invoices, payments and credit notes." : "Estimates you send before the work starts."}
+        actions={
+          canCreate ? (
+            <Button variant="primary" asChild>
+              <Link to="/finance/new" search={{ kind }}>
+                <FilePlus2 /> New {KIND_LABEL[kind].one.toLowerCase()}
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
+      <Card>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+          <div className="flex gap-1 overflow-x-auto text-sm">
+            {FILTERS[effectiveKind].map(([k, l]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setStatus(k)}
+                className={cn("shrink-0 rounded-md px-2.5 py-1", status === k ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}
+              >
+                {l}
+              </button>
+            ))}
+            {kind === "invoice" ? (
+              <button
+                type="button"
+                onClick={() => (setShowCredit((s) => !s), setStatus(""))}
+                className={cn("shrink-0 rounded-md px-2.5 py-1", showCredit ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}
+              >
+                Credit notes
+              </button>
+            ) : null}
+          </div>
+          <div className="relative ml-auto w-full sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Number or client" className="h-8 pl-9" />
+          </div>
+        </div>
+        {isLoading ? <Skeleton className="m-4 h-24" /> : null}
+        {!isLoading && docs.length === 0 ? (
+          <EmptyState
+            icon={<FileText />}
+            title={status || deferred ? "Nothing matches" : `No ${label.many.toLowerCase()} yet`}
+            description={kind === "invoice" ? "Create an invoice, or complete a billable milestone and a draft appears here." : undefined}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="px-4 py-2.5 font-medium">Number</th>
+                  <th className="px-4 py-2.5 font-medium">Client</th>
+                  <th className="px-4 py-2.5 font-medium">Date</th>
+                  <th className="px-4 py-2.5 font-medium">{effectiveKind === "quote" ? "Valid until" : "Due"}</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Amount</th>
+                  {effectiveKind === "invoice" ? <th className="px-4 py-2.5 text-right font-medium">Balance</th> : null}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {docs.map((d) => {
+                  const st = displayStatus(d, today);
+                  return (
+                    <tr key={d.id} className="cursor-pointer hover:bg-surface-2/60" onClick={() => navigate({ to: "/finance/invoices/$id", params: { id: d.id } })}>
+                      <td className="px-4 py-3 font-mono text-xs">
+                        {d.number ?? <span className="text-muted-foreground">Draft</span>}
+                        {d.recurringId ? <span className="ml-2 font-sans text-[11px] text-finance">Retainer</span> : null}
+                      </td>
+                      <td className="px-4 py-3">{d.clientName}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(d.issueDate, { day: "numeric", month: "short" })}</td>
+                      <td className={cn("px-4 py-3", st === "overdue" ? "text-danger" : "text-muted-foreground")}>{formatDate(d.dueDate, { day: "numeric", month: "short" })}</td>
+                      <td className="px-4 py-3">
+                        <StatusPill status={st} />
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono">{money(d.total, d.currency)}</td>
+                      {effectiveKind === "invoice" ? (
+                        <td className="px-4 py-3 text-right font-mono">{["sent", "partially_paid"].includes(d.status) ? money(d.total - d.amountPaid, d.currency) : "—"}</td>
+                      ) : null}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </FinanceBody>
+  );
+}
+
+/* ---------------- Editor (new and drafts) ---------------- */
+
+function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDetail }) {
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { clientId?: string; projectId?: string };
+  const { data: clients } = useClients();
+  const { data: projects } = useProjects("current");
+  const { data: settings } = useFinanceSettings();
+  const { data: rates } = useTaxRates();
+  const defaultRate = rates?.taxRates.find((r) => r.isDefault)?.rate ?? 18;
+  const [clientId, setClientId] = useState(initial?.document.clientId ?? search.clientId ?? "");
+  const [projectId, setProjectId] = useState(initial?.document.projectId ?? search.projectId ?? "");
+  const [issueDate, setIssueDate] = useState(initial?.document.issueDate ?? todayLocal());
+  const [dueDate, setDueDate] = useState(initial?.document.dueDate ?? "");
+  const [lines, setLines] = useState<Line[]>(initial?.lines.map((l) => ({ ...l, quantity: Number(l.quantity), discountPct: Number(l.discountPct), taxRate: Number(l.taxRate) })) ?? [emptyLine(defaultRate)]);
+  const [notes, setNotes] = useState(initial?.document.notes ?? "");
+  const [terms, setTerms] = useState(initial?.document.terms ?? "");
+  const [addingClient, setAddingClient] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // New documents start with the organisation's default notes and terms.
+  useEffect(() => {
+    if (!initial && settings) {
+      setNotes((n) => n || settings.settings.notes || "");
+      setTerms((t) => t || settings.settings.terms || "");
+    }
+  }, [initial, settings]);
+  useEffect(() => {
+    if (!initial) setLines((l) => (l.length === 1 && !l[0]!.description ? [emptyLine(defaultRate)] : l));
+  }, [defaultRate, initial]);
+
+  const client = clients?.clients.find((c) => c.id === clientId);
+  const supplyType = client ? supplyTypeFor(settings?.settings.stateCode, client.stateCode, client.country) : "intra";
+  const currency = client?.currency ?? "INR";
+
+  const save = useApiMutation(
+    async (andIssue: boolean) => {
+      const body = {
+        clientId,
+        projectId: projectId || null,
+        issueDate,
+        dueDate: dueDate || null,
+        notes: notes || null,
+        terms: terms || null,
+        lines: lines.filter((l) => l.description.trim()).map((l) => ({ ...l, id: undefined, amount: undefined, taxAmount: undefined, hsnSac: l.hsnSac || null })),
+      };
+      let id = initial?.document.id;
+      if (id) await api(`finance/documents/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+      else id = (await api<{ document: { id: string } }>("finance/documents", { method: "POST", body: JSON.stringify({ ...body, kind }) })).document.id;
+      if (andIssue) {
+        const r = await api<{ number: string; emailed: boolean }>(`finance/documents/${id}/issue`, { method: "POST", body: JSON.stringify({ email: true }) });
+        toast.success(`${KIND_LABEL[kind].one} ${r.number} issued${r.emailed ? " and emailed" : ""}`);
+      } else toast.success("Draft saved");
+      return id;
+    },
+    { invalidate: FINANCE_KEYS, onSuccess: (id) => navigate({ to: "/finance/invoices/$id", params: { id }, replace: true }) },
+  );
+
+  const submit = (andIssue: boolean) => {
+    if (!clientId) return setError("Choose a client");
+    if (!lines.some((l) => l.description.trim() && l.unitPrice > 0)) return setError("Add at least one line with a rate");
+    setError(null);
+    save.mutate(andIssue);
+  };
+
+  const remove = useApiMutation(() => api(`finance/documents/${initial!.document.id}`, { method: "DELETE" }), {
+    invalidate: FINANCE_KEYS,
+    success: "Draft deleted",
+    onSuccess: () => navigate({ to: kind === "quote" ? "/finance/quotes" : "/finance/invoices" }),
+  });
+
+  return (
+    <FinanceBody className="max-w-6xl">
+      <Link to={kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="size-4" /> {KIND_LABEL[kind === "credit_note" ? "invoice" : kind].many}
+      </Link>
+      <PageHeader title={initial ? `Draft ${KIND_LABEL[kind].one.toLowerCase()}` : `New ${KIND_LABEL[kind].one.toLowerCase()}`} description={settings && !settings.settings.gstin ? <span className="text-warning">Add your GSTIN and legal name in Finance settings so invoices are valid tax invoices.</span> : undefined} />
+
+      <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="Client" className="lg:col-span-2" hint={client ? (supplyType === "intra" ? "Same state: CGST + SGST" : supplyType === "inter" ? "Different state: IGST" : `Export in ${client.currency}, zero-rated`) : undefined}>
+          <div className="flex gap-2">
+            <Select value={clientId} onChange={(e) => setClientId(e.target.value)} disabled={kind === "credit_note"}>
+              <option value="">Choose a client</option>
+              {clients?.clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+            {kind !== "credit_note" && can(me.org.permissions, "client", "create") ? (
+              <Button type="button" onClick={() => setAddingClient(true)}>
+                New
+              </Button>
+            ) : null}
+          </div>
+        </Field>
+        <Field label="Date">
+          <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+        </Field>
+        {kind !== "credit_note" ? (
+          <Field label={kind === "quote" ? "Valid until" : "Due date"} hint={dueDate ? undefined : "Blank uses the client's terms"}>
+            <Input type="date" value={dueDate} min={issueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </Field>
+        ) : null}
+        <Field label="Project" className="lg:col-span-2" hint="Optional: links revenue to the work">
+          <Select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            <option value="">None</option>
+            {projects?.projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </Card>
+
+      <Card className="p-5">
+        <LineEditor lines={lines} onChange={setLines} supplyType={supplyType} currency={currency} roundOff={settings?.settings.roundOff ?? true} />
+      </Card>
+
+      <Card className="grid gap-4 p-5 sm:grid-cols-2">
+        <Field label="Notes" hint="Shown on the document, e.g. a thank-you or PO number">
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={4000} />
+        </Field>
+        <Field label="Terms">
+          <Textarea value={terms} onChange={(e) => setTerms(e.target.value)} maxLength={4000} />
+        </Field>
+      </Card>
+
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {initial ? (
+          <Button variant="ghost" className="mr-auto" onClick={() => confirm("Delete this draft?") && remove.mutate(undefined)}>
+            <Trash2 /> Delete draft
+          </Button>
+        ) : null}
+        <Button onClick={() => submit(false)} disabled={save.isPending}>
+          Save draft
+        </Button>
+        {can(me.org.permissions, "invoice", "send") ? (
+          <Button variant="primary" onClick={() => submit(true)} disabled={save.isPending}>
+            <Send /> Save and issue
+          </Button>
+        ) : null}
+      </div>
+      {addingClient ? <ClientDialog open onOpenChange={setAddingClient} onSaved={(id) => setClientId(id)} /> : null}
+    </FinanceBody>
+  );
+}
+
+export function NewDocumentPage({ me }: { me: Me }) {
+  const search = useSearch({ strict: false }) as { kind?: DocKind };
+  const kind: DocKind = search.kind === "quote" ? "quote" : "invoice";
+  return <Editor me={me} kind={kind} />;
+}
+
+/* ---------------- Issued documents ---------------- */
+
+function RecordPaymentDialog({ open, onOpenChange, detail }: { open: boolean; onOpenChange: (o: boolean) => void; detail: DocDetail }) {
+  const balance = detail.document.total - detail.document.amountPaid;
+  const [amount, setAmount] = useState(toRupees(balance));
+  const [method, setMethod] = useState("bank_transfer");
+  const [paidOn, setPaidOn] = useState(todayLocal());
+  const [reference, setReference] = useState("");
+  const record = useApiMutation(
+    () => api(`finance/documents/${detail.document.id}/payments`, { method: "POST", body: JSON.stringify({ amount: toPaise(amount), method, paidOn, reference: reference || null }) }),
+    { invalidate: FINANCE_KEYS, success: "Payment recorded", onSuccess: () => onOpenChange(false) },
+  );
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title="Record a payment"
+        description={`Balance due ${money(balance, detail.document.currency)}`}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" disabled={record.isPending || toPaise(amount) <= 0} onClick={() => record.mutate(undefined)}>
+              Record payment
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Amount (₹)">
+            <Input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" autoFocus />
+          </Field>
+          <Field label="Received on">
+            <Input type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+          </Field>
+          <Field label="Method">
+            <Select value={method} onChange={(e) => setMethod(e.target.value)}>
+              {["bank_transfer", "upi", "cash", "cheque", "card", "other"].map((m) => (
+                <option key={m} value={m}>
+                  {PAYMENT_METHOD_LABEL[m]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Reference" hint="UTR, cheque number, …">
+            <Input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} />
+          </Field>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
+  const navigate = useNavigate();
+  const [paying, setPaying] = useState(false);
+  const d = detail.document;
+  const today = todayLocal();
+  const status = displayStatus(d, today);
+  const balance = d.total - d.amountPaid;
+  const p = me.org.permissions;
+  const unpaid = d.kind === "invoice" && (d.status === "sent" || d.status === "partially_paid");
+  const go = (id: string) => navigate({ to: "/finance/invoices/$id", params: { id } });
+
+  const remind = useApiMutation(() => api(`finance/documents/${d.id}/remind`, { method: "POST" }), { invalidate: FINANCE_KEYS, success: "Reminder sent" });
+  const voidDoc = useApiMutation(() => api(`finance/documents/${d.id}/void`, { method: "POST" }), { invalidate: FINANCE_KEYS, success: "Marked as void" });
+  const copy = useApiMutation((as: "duplicate" | "invoice" | "credit_note") => api<{ document: { id: string } }>(`finance/documents/${d.id}/copy`, { method: "POST", body: JSON.stringify({ as }) }), {
+    invalidate: FINANCE_KEYS,
+    onSuccess: (r) => go(r.document.id),
+  });
+  const quoteStatus = useApiMutation((status: string) => api(`finance/documents/${d.id}/quote-status`, { method: "POST", body: JSON.stringify({ status }) }), { invalidate: FINANCE_KEYS });
+  const link = useApiMutation(() => api<{ url: string }>(`finance/documents/${d.id}/payment-link`, { method: "POST" }), {
+    invalidate: FINANCE_KEYS,
+    onSuccess: (r) => {
+      void navigator.clipboard?.writeText(r.url);
+      toast.success("Payment link copied");
+    },
+  });
+  const voidPayment = useApiMutation((id: string) => api(`finance/payments/${id}/void`, { method: "POST" }), { invalidate: FINANCE_KEYS, success: "Payment voided" });
+
+  return (
+    <FinanceBody className="max-w-7xl">
+      <Link to={d.kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground print:hidden">
+        <ArrowLeft className="size-4" /> {KIND_LABEL[d.kind === "credit_note" ? "invoice" : d.kind].many}
+      </Link>
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-6">
+          <div className="overflow-x-auto rounded-card border border-border shadow-[0_24px_64px_-32px_rgb(0_0_0/0.5)]">
+            <InvoiceDocument doc={d} lines={detail.lines} seller={detail.seller} client={detail.client} className="min-w-[640px]" />
+          </div>
+          <Card className="p-4 sm:p-6 print:hidden">
+            <h2 className="mb-3 font-bold">Internal notes</h2>
+            <Thread type="invoice" id={d.id} placeholder="Notes for your team (the client never sees these)" />
+          </Card>
+        </div>
+
+        <aside className="space-y-4 print:hidden">
+          <Card className="p-5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-sm">{d.number}</span>
+              <StatusPill status={status} />
+            </div>
+            <div className="mt-3 font-display text-3xl font-bold">{money(d.kind === "invoice" && d.status !== "void" ? balance : d.total, d.currency)}</div>
+            <div className="text-sm text-muted-foreground">
+              {d.kind === "invoice" ? (d.status === "paid" ? `Paid in full${d.paidAt ? ` on ${formatDate(d.paidAt.slice(0, 10))}` : ""}` : d.status === "void" ? "Void" : `due ${formatDate(d.dueDate)}`) : `${KIND_LABEL[d.kind].one} total`}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {detail.client.name}
+              {detail.project ? (
+                <>
+                  {" · "}
+                  <Link to="/work/projects/$id" params={{ id: detail.project.id }} className="hover:underline">
+                    {detail.project.name}
+                  </Link>
+                </>
+              ) : null}
+            </p>
+
+            <div className="mt-4 grid gap-2">
+              {unpaid && can(p, "payment", "record") ? (
+                <Button variant="primary" onClick={() => setPaying(true)}>
+                  <ReceiptIndianRupee /> Record payment
+                </Button>
+              ) : null}
+              {unpaid && detail.seller.razorpayConnected && can(p, "invoice", "send") ? (
+                d.paymentLinkUrl ? (
+                  <Button onClick={() => (void navigator.clipboard?.writeText(d.paymentLinkUrl!), toast.success("Payment link copied"))}>
+                    <Link2 /> Copy payment link
+                  </Button>
+                ) : (
+                  <Button onClick={() => link.mutate(undefined)} disabled={link.isPending}>
+                    <Link2 /> Create Razorpay link
+                  </Button>
+                )
+              ) : null}
+              {unpaid && can(p, "invoice", "send") ? (
+                <Button onClick={() => remind.mutate(undefined)} disabled={remind.isPending}>
+                  <BellRing /> Send reminder
+                </Button>
+              ) : null}
+              {d.kind === "quote" && d.status === "sent" ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={() => quoteStatus.mutate("accepted")}>Accepted</Button>
+                  <Button onClick={() => quoteStatus.mutate("declined")}>Declined</Button>
+                </div>
+              ) : null}
+              {d.kind === "quote" && d.status !== "void" && d.status !== "declined" && can(p, "invoice", "create") ? (
+                <Button variant={d.status === "accepted" ? "primary" : "secondary"} onClick={() => copy.mutate("invoice")}>
+                  <FileText /> Convert to invoice
+                </Button>
+              ) : null}
+              {detail.publicUrl ? (
+                <Button asChild>
+                  <a href={detail.publicUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink /> Client view
+                  </a>
+                </Button>
+              ) : null}
+              <Button onClick={() => window.print()}>
+                <Printer /> Print or save PDF
+              </Button>
+              {can(p, "invoice", "create") ? (
+                <Button variant="ghost" onClick={() => copy.mutate("duplicate")}>
+                  <Copy /> Duplicate
+                </Button>
+              ) : null}
+              {d.kind === "invoice" && d.status !== "void" && can(p, "invoice", "create") ? (
+                <Button variant="ghost" onClick={() => copy.mutate("credit_note")}>
+                  <FilePlus2 /> Issue a credit note
+                </Button>
+              ) : null}
+              {d.status !== "void" && can(p, "invoice", "void") ? (
+                <Button variant="ghost" className="text-danger" onClick={() => confirm(`Void ${d.number}? The number stays used, and it no longer counts as owed.`) && voidDoc.mutate(undefined)}>
+                  <Ban /> Void
+                </Button>
+              ) : null}
+            </div>
+          </Card>
+
+          {d.kind === "invoice" ? (
+            <Card className="p-5">
+              <h2 className="font-bold">Payments</h2>
+              {detail.payments.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Nothing received yet.</p> : null}
+              <ul className="mt-2 divide-y divide-border">
+                {detail.payments.map((pay) => (
+                  <li key={pay.id} className={cn("flex items-center gap-2 py-2 text-sm", pay.voidedAt && "text-muted-foreground line-through")}>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono">{money(pay.amount, d.currency)}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {formatDate(pay.paidOn, { day: "numeric", month: "short" })} · {PAYMENT_METHOD_LABEL[pay.method] ?? pay.method}
+                        {pay.reference ? ` · ${pay.reference}` : ""}
+                      </div>
+                    </div>
+                    {!pay.voidedAt && pay.method !== "credit_note" && can(p, "payment", "refund") ? (
+                      <Button size="sm" variant="ghost" onClick={() => confirm("Void this payment?") && voidPayment.mutate(pay.id)}>
+                        Void
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+
+          {detail.related.length ? (
+            <Card className="p-5">
+              <h2 className="font-bold">Related</h2>
+              <ul className="mt-2 space-y-1 text-sm">
+                {detail.related.map((r) => (
+                  <li key={r.id}>
+                    <Link to="/finance/invoices/$id" params={{ id: r.id }} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                      <span>
+                        {KIND_LABEL[r.kind].one} <span className="font-mono text-xs">{r.number ?? "Draft"}</span>
+                      </span>
+                      <StatusPill status={r.status} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+        </aside>
+      </div>
+      {paying ? <RecordPaymentDialog open onOpenChange={setPaying} detail={detail} /> : null}
+    </FinanceBody>
+  );
+}
+
+export function DocumentPage({ me }: { me: Me }) {
+  const { id } = useParams({ strict: false }) as { id: string };
+  const { data, isLoading, error } = useDoc(id);
+  if (isLoading) {
+    return (
+      <FinanceBody>
+        <Skeleton className="h-[600px] w-full" />
+      </FinanceBody>
+    );
+  }
+  if (error || !data) {
+    return (
+      <FinanceBody>
+        <p className="text-sm text-muted-foreground">{error?.message ?? "Not found"}</p>
+      </FinanceBody>
+    );
+  }
+  if (data.document.status === "draft" && can(me.org.permissions, "invoice", "update")) return <Editor key={id} me={me} kind={data.document.kind} initial={data} />;
+  return <DocumentView me={me} detail={data} />;
+}

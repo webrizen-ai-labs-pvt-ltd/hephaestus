@@ -30,3 +30,12 @@ create policy "hephaestus members listen to their org"
 --        headers := jsonb_build_object('authorization', 'Bearer <CRON_SECRET>')
 --      ) $$
 -- );
+
+-- 4. Daily finance job: retainer invoices and overdue reminders (09:00 IST).
+-- select cron.schedule(
+--   'hephaestus-finance', '30 3 * * *',
+--   $$ select net.http_post(
+--        url := 'https://hephaestus.webrizen.com/api/cron/finance',
+--        headers := jsonb_build_object('authorization', 'Bearer <CRON_SECRET>')
+--      ) $$
+-- );

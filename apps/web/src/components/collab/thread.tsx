@@ -1,12 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { MessagesSquare } from "lucide-react";
 import { api } from "../../lib/api.ts";
-import { type Message, useChannels, useThread } from "../../lib/collab.ts";
+import { type Message, type ThreadType, useChannels, useThread } from "../../lib/collab.ts";
 import { Composer } from "./composer.tsx";
 import { MessageList } from "./message-list.tsx";
 
 /** Comments on a record (a task, a project), with mentions, reactions and decisions. */
-export function Thread({ type, id, placeholder = "Write a comment" }: { type: "task" | "project"; id: string; placeholder?: string }) {
+export function Thread({ type, id, placeholder = "Write a comment" }: { type: ThreadType; id: string; placeholder?: string }) {
   const qc = useQueryClient();
   const { data } = useThread(type, id);
   const { data: me } = useChannels();

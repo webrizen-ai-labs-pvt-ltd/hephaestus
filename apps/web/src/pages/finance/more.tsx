@@ -1,0 +1,513 @@
+import { can, INDIAN_STATES, isValidGstin, stateOfGstin, supplyTypeFor } from "@hephaestus/core";
+import { Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Link } from "@tanstack/react-router";
+import { Check, Copy, CreditCard, Plus, Repeat, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { PageHeader } from "../../components/app-shell.tsx";
+import { api, type Me } from "../../lib/api.ts";
+import {
+  FINANCE_KEYS,
+  type Line,
+  money,
+  PAYMENT_METHOD_LABEL,
+  toPaise,
+  useClients,
+  useFinanceSettings,
+  useItems,
+  usePayments,
+  useRecurring,
+  useTaxRates,
+} from "../../lib/finance.ts";
+import { formatDate, useApiMutation } from "../../lib/people.ts";
+import { FinanceBody } from "./layout.tsx";
+import { emptyLine, LineEditor } from "./line-editor.tsx";
+
+/* ---------------- Payments ---------------- */
+
+export function PaymentsPage() {
+  const { data } = usePayments();
+  const list = data?.payments ?? [];
+  const total = list.filter((p) => !p.voidedAt && p.method !== "credit_note").reduce((s, p) => s + p.amount, 0);
+  return (
+    <FinanceBody>
+      <PageHeader title="Payments" description={list.length ? `${money(total)} received across ${list.length} payments shown` : "Money received against invoices."} />
+      <Card>
+        {data && list.length === 0 ? (
+          <EmptyState icon={<CreditCard />} title="No payments yet" description="Record a payment from an invoice, or connect Razorpay so clients can pay online." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="px-4 py-2.5 font-medium">Date</th>
+                  <th className="px-4 py-2.5 font-medium">Client</th>
+                  <th className="px-4 py-2.5 font-medium">Invoice</th>
+                  <th className="px-4 py-2.5 font-medium">Method</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {list.map((p) => (
+                  <tr key={p.id} className={cn(p.voidedAt && "text-muted-foreground line-through")}>
+                    <td className="px-4 py-3">{formatDate(p.paidOn)}</td>
+                    <td className="px-4 py-3">{p.clientName}</td>
+                    <td className="px-4 py-3">
+                      <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="font-mono text-xs text-accent hover:underline">
+                        {p.invoiceNumber}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
+                      {p.reference ? <span className="ml-1 font-mono text-xs">· {p.reference}</span> : null}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">{money(p.amount, p.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </FinanceBody>
+  );
+}
+
+/* ---------------- Retainers ---------------- */
+
+function RetainerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { data: clients } = useClients();
+  const { data: settings } = useFinanceSettings();
+  const { data: rates } = useTaxRates();
+  const [clientId, setClientId] = useState("");
+  const [name, setName] = useState("");
+  const [frequency, setFrequency] = useState("monthly");
+  const [nextIssueDate, setNext] = useState(() => {
+    const d = new Date();
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth() + 1, 1)).toISOString().slice(0, 10);
+  });
+  const [dueDays, setDueDays] = useState("15");
+  const [autoSend, setAutoSend] = useState(false);
+  const [lines, setLines] = useState<Line[]>([emptyLine(rates?.taxRates.find((r) => r.isDefault)?.rate ?? 18)]);
+  const [error, setError] = useState<string | null>(null);
+  const client = clients?.clients.find((c) => c.id === clientId);
+  const create = useApiMutation(
+    () =>
+      api("finance/recurring", {
+        method: "POST",
+        body: JSON.stringify({ clientId, name, frequency, nextIssueDate, dueDays: Number(dueDays) || 0, autoSend, lines: lines.filter((l) => l.description.trim()).map((l) => ({ ...l, hsnSac: l.hsnSac || null })) }),
+      }),
+    { invalidate: FINANCE_KEYS, success: "Retainer set up", onSuccess: () => onOpenChange(false) },
+  );
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title="New retainer"
+        description="An invoice created automatically every month, quarter or year."
+        className="w-[min(960px,calc(100vw-32px))]"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={create.isPending}
+              onClick={() => {
+                if (!clientId || !name.trim()) return setError("Choose a client and give it a name");
+                if (!lines.some((l) => l.description.trim() && l.unitPrice > 0)) return setError("Add a line with a rate");
+                create.mutate(undefined);
+              }}
+            >
+              Create retainer
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Client">
+            <Select value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="">Choose a client</option>
+              {clients?.clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Name">
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Monthly SEO retainer" maxLength={120} />
+          </Field>
+          <Field label="Repeats">
+            <Select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+              <option value="monthly">Every month</option>
+              <option value="quarterly">Every quarter</option>
+              <option value="yearly">Every year</option>
+            </Select>
+          </Field>
+          <Field label="First invoice on">
+            <Input type="date" value={nextIssueDate} onChange={(e) => setNext(e.target.value)} />
+          </Field>
+          <Field label="Due after (days)">
+            <Input type="number" min={0} max={365} value={dueDays} onChange={(e) => setDueDays(e.target.value)} />
+          </Field>
+          <Field label="When it's created">
+            <Select value={autoSend ? "send" : "draft"} onChange={(e) => setAutoSend(e.target.value === "send")}>
+              <option value="draft">Save as a draft for review</option>
+              <option value="send">Issue and email the client</option>
+            </Select>
+          </Field>
+        </div>
+        <div className="mt-5">
+          <LineEditor lines={lines} onChange={setLines} supplyType={client ? supplyTypeFor(settings?.settings.stateCode, client.stateCode, client.country) : "intra"} currency={client?.currency ?? "INR"} />
+        </div>
+        {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function RetainersPage({ me }: { me: Me }) {
+  const { data } = useRecurring();
+  const [creating, setCreating] = useState(false);
+  const toggle = useApiMutation((v: { id: string; active: boolean }) => api(`finance/recurring/${v.id}`, { method: "PATCH", body: JSON.stringify({ active: v.active }) }), {
+    invalidate: FINANCE_KEYS,
+  });
+  const list = data?.recurring ?? [];
+  return (
+    <FinanceBody>
+      <PageHeader
+        title="Retainers"
+        description="Recurring invoices for ongoing work."
+        actions={
+          can(me.org.permissions, "invoice", "create") ? (
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              <Plus /> New retainer
+            </Button>
+          ) : null
+        }
+      />
+      {data && list.length === 0 ? (
+        <Card>
+          <EmptyState icon={<Repeat />} title="No retainers yet" description="Set one up for monthly support, maintenance or subscriptions, and the invoices make themselves." />
+        </Card>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {list.map((r) => {
+            const amount = r.lines.reduce((s, l) => s + Math.round(l.quantity * l.unitPrice * (1 - (l.discountPct ?? 0) / 100)), 0);
+            return (
+              <Card key={r.id} className={cn("p-5", !r.active && "opacity-60")}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold">{r.name}</h3>
+                    <p className="text-sm text-muted-foreground">{r.clientName}</p>
+                  </div>
+                  <Badge tone={r.active ? "finance" : "neutral"}>{r.active ? (r.autoSend ? "Auto-send" : "Drafts") : "Paused"}</Badge>
+                </div>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="font-display text-2xl font-bold">{money(amount)}</span>
+                  <span className="text-sm text-muted-foreground">+ GST, {r.frequency}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {r.active ? `Next on ${formatDate(r.nextIssueDate)}` : "Paused"}
+                  {r.lastIssuedAt ? ` · last ${formatDate(r.lastIssuedAt.slice(0, 10), { day: "numeric", month: "short" })}` : ""}
+                </p>
+                <Button size="sm" variant="ghost" className="mt-2 -ml-2" onClick={() => toggle.mutate({ id: r.id, active: !r.active })}>
+                  {r.active ? "Pause" : "Resume"}
+                </Button>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+      {creating ? <RetainerDialog open onOpenChange={setCreating} /> : null}
+    </FinanceBody>
+  );
+}
+
+/* ---------------- Settings ---------------- */
+
+export function FinanceSettingsPage({ me }: { me: Me }) {
+  const canManage = can(me.org.permissions, "settings", "manage");
+  const { data } = useFinanceSettings();
+  const { data: rates } = useTaxRates();
+  const { data: items } = useItems();
+  const [f, setF] = useState<Record<string, string | boolean>>({});
+  const [bank, setBank] = useState<Record<string, string>>({});
+  const [secret, setSecret] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [rate, setRate] = useState({ name: "", rate: "" });
+  const [item, setItem] = useState({ name: "", hsnSac: "", unitPrice: "", taxRate: "18", unit: "unit" });
+
+  useEffect(() => {
+    if (!data) return;
+    const s = data.settings;
+    setF({
+      legalName: s.legalName ?? "",
+      gstin: s.gstin ?? "",
+      pan: s.pan ?? "",
+      stateCode: s.stateCode ?? "",
+      address: s.address ?? "",
+      email: s.email ?? "",
+      phone: s.phone ?? "",
+      invoicePrefix: s.invoicePrefix,
+      quotePrefix: s.quotePrefix,
+      creditNotePrefix: s.creditNotePrefix,
+      defaultDueDays: String(s.defaultDueDays),
+      terms: s.terms ?? "",
+      notes: s.notes ?? "",
+      roundOff: s.roundOff,
+      razorpayKeyId: s.razorpayKeyId ?? "",
+    });
+    setBank({ accountName: s.bank.accountName ?? "", accountNumber: s.bank.accountNumber ?? "", ifsc: s.bank.ifsc ?? "", bankName: s.bank.bankName ?? "", upiId: s.bank.upiId ?? "" });
+  }, [data]);
+
+  const str = (k: string) => String(f[k] ?? "");
+  const set = (k: string, v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
+  const gstinValid = !str("gstin") || isValidGstin(str("gstin"));
+
+  const save = useApiMutation(
+    () =>
+      api("finance/settings", {
+        method: "PATCH",
+        body: JSON.stringify({
+          legalName: str("legalName") || null,
+          gstin: str("gstin") || null,
+          pan: str("pan") || null,
+          stateCode: str("stateCode") || null,
+          address: str("address") || null,
+          email: str("email") || null,
+          phone: str("phone") || null,
+          invoicePrefix: str("invoicePrefix"),
+          quotePrefix: str("quotePrefix"),
+          creditNotePrefix: str("creditNotePrefix"),
+          defaultDueDays: Number(str("defaultDueDays")) || 0,
+          terms: str("terms") || null,
+          notes: str("notes") || null,
+          roundOff: Boolean(f.roundOff),
+          bank: Object.fromEntries(Object.entries(bank).map(([k, v]) => [k, v || null])),
+          razorpayKeyId: str("razorpayKeyId") || null,
+          ...(secret ? { razorpayKeySecret: secret } : {}),
+          ...(webhookSecret ? { razorpayWebhookSecret: webhookSecret } : {}),
+        }),
+      }),
+    { invalidate: FINANCE_KEYS, success: "Finance settings saved", onSuccess: () => (setSecret(""), setWebhookSecret("")) },
+  );
+  const disconnect = useApiMutation(() => api("finance/settings", { method: "PATCH", body: JSON.stringify({ razorpayKeyId: null, razorpayKeySecret: null, razorpayWebhookSecret: null }) }), {
+    invalidate: FINANCE_KEYS,
+    success: "Razorpay disconnected",
+  });
+  const addRate = useApiMutation(() => api("finance/tax-rates", { method: "POST", body: JSON.stringify({ name: rate.name, rate: Number(rate.rate) }) }), {
+    invalidate: FINANCE_KEYS,
+    onSuccess: () => setRate({ name: "", rate: "" }),
+  });
+  const removeRate = useApiMutation((id: string) => api(`finance/tax-rates/${id}`, { method: "DELETE" }), { invalidate: FINANCE_KEYS });
+  const addItem = useApiMutation(
+    () => api("finance/items", { method: "POST", body: JSON.stringify({ name: item.name, hsnSac: item.hsnSac || null, unitPrice: toPaise(item.unitPrice), taxRate: Number(item.taxRate), unit: item.unit || "unit" }) }),
+    { invalidate: FINANCE_KEYS, success: "Item saved", onSuccess: () => setItem({ name: "", hsnSac: "", unitPrice: "", taxRate: "18", unit: "unit" }) },
+  );
+  const removeItem = useApiMutation((id: string) => api(`finance/items/${id}`, { method: "DELETE" }), { invalidate: FINANCE_KEYS });
+
+  if (!data) return <FinanceBody>{null}</FinanceBody>;
+  const s = data.settings;
+
+  return (
+    <FinanceBody className="max-w-4xl">
+      <PageHeader title="Finance settings" description="Appears on every invoice. Only admins can change these." />
+
+      <Card className="p-6">
+        <h2 className="text-lg font-bold">Your business</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Legal name">
+            <Input value={str("legalName")} onChange={(e) => set("legalName", e.target.value)} disabled={!canManage} placeholder="Webrizen AI Labs Pvt Ltd" />
+          </Field>
+          <Field label="GSTIN" error={gstinValid ? null : "That GSTIN isn't valid"} hint={str("gstin") && gstinValid ? INDIAN_STATES[stateOfGstin(str("gstin"))] : undefined}>
+            <Input value={str("gstin")} onChange={(e) => set("gstin", e.target.value.toUpperCase().replace(/\s/g, "").slice(0, 15))} disabled={!canManage} className="font-mono" placeholder="27AAPFU0939F1ZV" />
+          </Field>
+          <Field label="PAN">
+            <Input value={str("pan")} onChange={(e) => set("pan", e.target.value.toUpperCase().slice(0, 10))} disabled={!canManage} className="font-mono" />
+          </Field>
+          <Field label="State" hint="Taken from your GSTIN when set">
+            <Select value={str("stateCode")} onChange={(e) => set("stateCode", e.target.value)} disabled={!canManage || Boolean(str("gstin") && gstinValid)}>
+              <option value="">Choose your state</option>
+              {Object.entries(INDIAN_STATES).map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Address" className="sm:col-span-2">
+            <Textarea value={str("address")} onChange={(e) => set("address", e.target.value)} disabled={!canManage} className="min-h-16" />
+          </Field>
+          <Field label="Billing email">
+            <Input type="email" value={str("email")} onChange={(e) => set("email", e.target.value)} disabled={!canManage} />
+          </Field>
+          <Field label="Phone">
+            <Input value={str("phone")} onChange={(e) => set("phone", e.target.value)} disabled={!canManage} />
+          </Field>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-lg font-bold">Numbering and defaults</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Numbers restart every financial year, e.g. {str("invoicePrefix") || "INV"}/26-27/0001.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-4">
+          <Field label="Invoice prefix">
+            <Input value={str("invoicePrefix")} onChange={(e) => set("invoicePrefix", e.target.value.toUpperCase().slice(0, 6))} disabled={!canManage} className="font-mono" />
+          </Field>
+          <Field label="Quote prefix">
+            <Input value={str("quotePrefix")} onChange={(e) => set("quotePrefix", e.target.value.toUpperCase().slice(0, 6))} disabled={!canManage} className="font-mono" />
+          </Field>
+          <Field label="Credit note prefix">
+            <Input value={str("creditNotePrefix")} onChange={(e) => set("creditNotePrefix", e.target.value.toUpperCase().slice(0, 6))} disabled={!canManage} className="font-mono" />
+          </Field>
+          <Field label="Pay within (days)">
+            <Input type="number" min={0} max={365} value={str("defaultDueDays")} onChange={(e) => set("defaultDueDays", e.target.value)} disabled={!canManage} />
+          </Field>
+          <Field label="Default notes" className="sm:col-span-2">
+            <Textarea value={str("notes")} onChange={(e) => set("notes", e.target.value)} disabled={!canManage} placeholder="Thank you for your business!" />
+          </Field>
+          <Field label="Default terms" className="sm:col-span-2">
+            <Textarea value={str("terms")} onChange={(e) => set("terms", e.target.value)} disabled={!canManage} placeholder="Payment due within 15 days. Interest at 18% p.a. on late payments." />
+          </Field>
+          <label className="flex items-center gap-2 text-sm sm:col-span-4">
+            <input type="checkbox" checked={Boolean(f.roundOff)} onChange={(e) => set("roundOff", e.target.checked)} disabled={!canManage} className="accent-[var(--primary)]" />
+            Round totals to the nearest rupee
+          </label>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-lg font-bold">Bank details</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Printed on invoices so clients can pay by transfer or UPI.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {(
+            [
+              ["accountName", "Account name"],
+              ["accountNumber", "Account number"],
+              ["ifsc", "IFSC"],
+              ["bankName", "Bank and branch"],
+              ["upiId", "UPI ID"],
+            ] as const
+          ).map(([k, label]) => (
+            <Field key={k} label={label}>
+              <Input value={bank[k] ?? ""} onChange={(e) => setBank((b) => ({ ...b, [k]: k === "ifsc" ? e.target.value.toUpperCase() : e.target.value }))} disabled={!canManage} className={k === "accountNumber" || k === "ifsc" ? "font-mono" : ""} />
+            </Field>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold">Razorpay</h2>
+          {s.razorpayConnected ? (
+            <Badge tone="people">
+              <Check className="size-3" /> Connected
+            </Badge>
+          ) : null}
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">Let clients pay invoices online by UPI, card or netbanking. Find your keys in the Razorpay Dashboard under Account and settings, then API keys.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Key ID">
+            <Input value={str("razorpayKeyId")} onChange={(e) => set("razorpayKeyId", e.target.value.trim())} disabled={!canManage} className="font-mono" placeholder="rzp_live_…" />
+          </Field>
+          <Field label="Key secret" hint={s.razorpayConnected ? "Saved and encrypted. Enter a new one to replace it." : "Stored encrypted; never shown again"}>
+            <Input type="password" value={secret} onChange={(e) => setSecret(e.target.value)} disabled={!canManage} autoComplete="off" placeholder={s.razorpayConnected ? "••••••••" : ""} />
+          </Field>
+          <Field label="Webhook URL" hint="In Razorpay: Webhooks → Add, event payment_link.paid" className="sm:col-span-2">
+            <div className="flex gap-2">
+              <Input value={data.webhookUrl} readOnly className="font-mono text-xs" />
+              <Button type="button" onClick={() => (void navigator.clipboard?.writeText(data.webhookUrl), toast.success("Copied"))} aria-label="Copy webhook URL">
+                <Copy />
+              </Button>
+            </div>
+          </Field>
+          <Field label="Webhook secret" hint={s.webhookConfigured ? "Saved. Enter a new one to replace it." : "The secret you set when adding the webhook"}>
+            <Input type="password" value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)} disabled={!canManage} autoComplete="off" placeholder={s.webhookConfigured ? "••••••••" : ""} />
+          </Field>
+          {s.razorpayConnected && canManage ? (
+            <div className="flex items-end">
+              <Button variant="ghost" onClick={() => confirm("Disconnect Razorpay? Existing payment links stop updating invoices.") && disconnect.mutate(undefined)}>
+                Disconnect
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </Card>
+
+      {canManage ? (
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={() => save.mutate(undefined)} disabled={save.isPending || !gstinValid}>
+            Save settings
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="p-6">
+          <h2 className="text-lg font-bold">GST rates</h2>
+          <ul className="mt-3 divide-y divide-border">
+            {rates?.taxRates.map((r) => (
+              <li key={r.id} className="flex items-center gap-3 py-2 text-sm">
+                <span className="flex-1">{r.name}</span>
+                <span className="font-mono">{Number(r.rate)}%</span>
+                {r.isDefault ? <Badge>Default</Badge> : null}
+                {canManage ? (
+                  <button type="button" aria-label={`Remove ${r.name}`} onClick={() => removeRate.mutate(r.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {canManage ? (
+            <form className="mt-3 flex gap-2" onSubmit={(e) => (e.preventDefault(), rate.name && rate.rate !== "" && addRate.mutate(undefined))}>
+              <Input value={rate.name} onChange={(e) => setRate({ ...rate, name: e.target.value })} placeholder="GST 3% (gold)" />
+              <Input type="number" min={0} max={100} step="0.25" value={rate.rate} onChange={(e) => setRate({ ...rate, rate: e.target.value })} className="w-24" placeholder="%" aria-label="Rate" />
+              <Button type="submit" aria-label="Add rate">
+                <Plus />
+              </Button>
+            </form>
+          ) : null}
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-bold">Saved items</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Services and products you bill often. Pick them when adding a line.</p>
+          <ul className="mt-3 divide-y divide-border">
+            {items?.items.map((it) => (
+              <li key={it.id} className="flex items-center gap-3 py-2 text-sm">
+                <span className="min-w-0 flex-1 truncate">
+                  {it.name}
+                  {it.hsnSac ? <span className="ml-2 font-mono text-xs text-muted-foreground">{it.hsnSac}</span> : null}
+                </span>
+                <span className="font-mono">{money(it.unitPrice)}</span>
+                <span className="font-mono text-xs text-muted-foreground">{Number(it.taxRate)}%</span>
+                <button type="button" aria-label={`Remove ${it.name}`} onClick={() => removeItem.mutate(it.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                  <Trash2 className="size-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <form className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_90px_100px_70px_auto]" onSubmit={(e) => (e.preventDefault(), item.name && addItem.mutate(undefined))}>
+            <Input value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} placeholder="Website maintenance" className="col-span-2 sm:col-span-1" />
+            <Input value={item.hsnSac} onChange={(e) => setItem({ ...item, hsnSac: e.target.value.replace(/\D/g, "").slice(0, 8) })} placeholder="SAC" className="font-mono" aria-label="HSN or SAC" />
+            <Input type="number" min={0} step="0.01" value={item.unitPrice} onChange={(e) => setItem({ ...item, unitPrice: e.target.value })} placeholder="₹ rate" className="font-mono" aria-label="Rate in rupees" />
+            <Select value={item.taxRate} onChange={(e) => setItem({ ...item, taxRate: e.target.value })} aria-label="GST rate">
+              {(rates?.taxRates ?? []).map((r) => (
+                <option key={r.id} value={Number(r.rate)}>
+                  {Number(r.rate)}%
+                </option>
+              ))}
+            </Select>
+            <Button type="submit" aria-label="Add item">
+              <Plus />
+            </Button>
+          </form>
+          <p className="mt-2 text-xs text-muted-foreground">Rates are in rupees; e.g. 15000 for ₹15,000.</p>
+        </Card>
+      </div>
+    </FinanceBody>
+  );
+}

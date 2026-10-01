@@ -5,6 +5,7 @@ import {
   DOCUMENT_STATUSES,
   invoiceLines,
   invoices,
+  orgSettings,
   orgs,
   PAYMENT_METHODS,
   payments,
@@ -537,6 +538,11 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     // Retainers are generated lazily too, so the offline edition never misses one.
     await generateDueRecurring(deps, org.id, today);
 
+    // Totals are in the organisation's currency; foreign-currency balances are listed separately.
+    const [cur] = await db.select({ currency: orgSettings.currency }).from(orgSettings).where(eq(orgSettings.orgId, org.id));
+    const currency = cur?.currency ?? "INR";
+    const inCurrency = eq(invoices.currency, currency);
+
     const [y, m] = today.split("-").map(Number) as [number, number];
     const fyStart = `${m >= 4 ? y : y - 1}-04-01`;
     const start12 = new Date(Date.UTC(y, m - 12, 1)).toISOString().slice(0, 10);
@@ -548,7 +554,12 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       .where(and(eq(invoices.orgId, org.id), eq(invoices.kind, "invoice"), inArray(invoices.status, ["sent", "partially_paid"])));
     const aging = { current: 0, "1-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
     const byClient = new Map<string, { clientId: string; name: string; outstanding: number; overdue: number }>();
+    const foreign = new Map<string, number>();
     for (const i of open) {
+      if (i.currency !== currency) {
+        foreign.set(i.currency, (foreign.get(i.currency) ?? 0) + i.total - i.paid);
+        continue;
+      }
       const balance = i.total - i.paid;
       const days = i.dueDate ? Math.round((Date.parse(today) - Date.parse(i.dueDate)) / 86_400_000) : 0;
       aging[agingBucket(days)] += balance;
@@ -561,29 +572,31 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     const billedByMonth = await db
       .select({ month: sql<string>`to_char(${invoices.issueDate}, 'YYYY-MM')`, amount: sql<number>`sum(${invoices.total})`.mapWith(Number) })
       .from(invoices)
-      .where(and(eq(invoices.orgId, org.id), eq(invoices.kind, "invoice"), ne(invoices.status, "draft"), ne(invoices.status, "void"), gte(invoices.issueDate, start12)))
+      .where(and(eq(invoices.orgId, org.id), inCurrency, eq(invoices.kind, "invoice"), ne(invoices.status, "draft"), ne(invoices.status, "void"), gte(invoices.issueDate, start12)))
       .groupBy(sql`1`);
     const collectedByMonth = await db
       .select({ month: sql<string>`to_char(${payments.paidOn}, 'YYYY-MM')`, amount: sql<number>`sum(${payments.amount})`.mapWith(Number) })
       .from(payments)
-      .where(and(eq(payments.orgId, org.id), isNull(payments.voidedAt), ne(payments.method, "credit_note"), gte(payments.paidOn, start12)))
+      .innerJoin(invoices, eq(invoices.id, payments.invoiceId))
+      .where(and(eq(payments.orgId, org.id), inCurrency, isNull(payments.voidedAt), ne(payments.method, "credit_note"), gte(payments.paidOn, start12)))
       .groupBy(sql`1`);
     const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(y, m - 12 + i, 1)).toISOString().slice(0, 7));
 
     const [fy] = await db
       .select({ billed: sql<number>`coalesce(sum(${invoices.total}), 0)`.mapWith(Number) })
       .from(invoices)
-      .where(and(eq(invoices.orgId, org.id), eq(invoices.kind, "invoice"), ne(invoices.status, "draft"), ne(invoices.status, "void"), gte(invoices.issueDate, fyStart)));
+      .where(and(eq(invoices.orgId, org.id), inCurrency, eq(invoices.kind, "invoice"), ne(invoices.status, "draft"), ne(invoices.status, "void"), gte(invoices.issueDate, fyStart)));
     const [fyPaid] = await db
       .select({ collected: sql<number>`coalesce(sum(${payments.amount}), 0)`.mapWith(Number) })
       .from(payments)
-      .where(and(eq(payments.orgId, org.id), isNull(payments.voidedAt), ne(payments.method, "credit_note"), gte(payments.paidOn, fyStart)));
+      .innerJoin(invoices, eq(invoices.id, payments.invoiceId))
+      .where(and(eq(payments.orgId, org.id), inCurrency, isNull(payments.voidedAt), ne(payments.method, "credit_note"), gte(payments.paidOn, fyStart)));
     const [drafts] = await db
       .select({ n: sql<number>`count(*)`.mapWith(Number) })
       .from(invoices)
       .where(and(eq(invoices.orgId, org.id), eq(invoices.status, "draft"), eq(invoices.kind, "invoice")));
     const recentPayments = await db
-      .select({ id: payments.id, amount: payments.amount, paidOn: payments.paidOn, method: payments.method, clientName: clients.name, invoiceId: payments.invoiceId, invoiceNumber: invoices.number })
+      .select({ id: payments.id, amount: payments.amount, currency: invoices.currency, paidOn: payments.paidOn, method: payments.method, clientName: clients.name, invoiceId: payments.invoiceId, invoiceNumber: invoices.number })
       .from(payments)
       .innerJoin(clients, eq(clients.id, payments.clientId))
       .innerJoin(invoices, eq(invoices.id, payments.invoiceId))
@@ -593,10 +606,12 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
 
     return c.json({
       today,
+      currency,
       financialYearStart: fyStart,
       billedThisYear: fy?.billed ?? 0,
       collectedThisYear: fyPaid?.collected ?? 0,
-      outstanding: open.reduce((s, i) => s + i.total - i.paid, 0),
+      outstanding: open.filter((i) => i.currency === currency).reduce((s, i) => s + i.total - i.paid, 0),
+      foreignOutstanding: [...foreign.entries()].map(([code, amount]) => ({ currency: code, amount })),
       overdue: Object.entries(aging).reduce((s, [k, v]) => (k === "current" ? s : s + v), 0),
       drafts: drafts?.n ?? 0,
       aging,

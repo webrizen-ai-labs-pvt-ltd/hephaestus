@@ -178,22 +178,44 @@ function CalendarView({ tasks, today, onOpen }: { tasks: TaskCard[]; today: stri
 }
 
 function MilestonesView({ detail, canEdit, today }: { detail: ProjectDetail; canEdit: boolean; today: string }) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [due, setDue] = useState("");
+  const [amount, setAmount] = useState("");
+  const billable = Boolean(detail.project.clientId);
   const add = useApiMutation(
-    () => api(`projects/${detail.project.id}/milestones`, { method: "POST", body: JSON.stringify({ name, dueDate: due || null }) }),
-    { invalidate: WORK_KEYS, success: "Milestone added", onSuccess: () => (setName(""), setDue("")) },
+    () =>
+      api(`projects/${detail.project.id}/milestones`, {
+        method: "POST",
+        body: JSON.stringify({ name, dueDate: due || null, amount: amount ? Math.round(Number(amount) * 100) : null }),
+      }),
+    { invalidate: WORK_KEYS, success: "Milestone added", onSuccess: () => (setName(""), setDue(""), setAmount("")) },
   );
-  const toggle = useApiMutation((v: { id: string; completed: boolean }) => api(`milestones/${v.id}`, { method: "PATCH", body: JSON.stringify({ completed: v.completed }) }), {
-    invalidate: WORK_KEYS,
-  });
+  const toggle = useApiMutation(
+    (v: { id: string; completed: boolean }) =>
+      api<{ invoiceId: string | null }>(`milestones/${v.id}`, { method: "PATCH", body: JSON.stringify({ completed: v.completed }) }),
+    {
+      invalidate: [...WORK_KEYS, "finance-docs", "finance-summary"],
+      onSuccess: (r, v) => {
+        if (v.completed && r.invoiceId) {
+          toast.success("Milestone complete. A draft invoice is ready.", {
+            action: { label: "Open", onClick: () => navigate({ to: "/finance/invoices/$id", params: { id: r.invoiceId! } }) },
+          });
+        }
+      },
+    },
+  );
   const remove = useApiMutation((id: string) => api(`milestones/${id}`, { method: "DELETE" }), { invalidate: WORK_KEYS, success: "Milestone removed" });
 
   return (
     <div className="space-y-4">
       {detail.milestones.length === 0 ? (
         <Card>
-          <EmptyState icon={<Flag />} title="No milestones yet" description="Milestones mark the big moments, like a launch or a client hand-off. Later, they can trigger invoices." />
+          <EmptyState
+            icon={<Flag />}
+            title="No milestones yet"
+            description={billable ? "Milestones mark the big moments. Give one an amount and completing it creates a draft invoice for the client." : "Milestones mark the big moments, like a launch or a hand-off. Set a client on the project to bill by milestone."}
+          />
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -214,6 +236,19 @@ function MilestonesView({ detail, canEdit, today }: { detail: ProjectDetail; can
                   </button>
                   <div className="min-w-0 flex-1">
                     <h3 className={cn("font-bold", m.completedAt && "text-muted-foreground line-through")}>{m.name}</h3>
+                    {m.amount ? (
+                      <p className="text-xs text-finance">
+                        Bills {(m.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })} + GST on completion
+                        {m.invoiceId ? (
+                          <>
+                            {" · "}
+                            <Link to="/finance/invoices/$id" params={{ id: m.invoiceId }} className="underline">
+                              invoice
+                            </Link>
+                          </>
+                        ) : null}
+                      </p>
+                    ) : null}
                     <p className={cn("text-xs", late ? "text-danger" : "text-muted-foreground")}>
                       {m.dueDate ? `Due ${formatDate(m.dueDate)}` : "No due date"}
                       {m.completedAt ? ` · completed ${formatDate(m.completedAt.slice(0, 10), { day: "numeric", month: "short" })}` : ""}
@@ -249,6 +284,9 @@ function MilestonesView({ detail, canEdit, today }: { detail: ProjectDetail; can
         >
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New milestone, e.g. Beta launch" maxLength={120} className="flex-1" />
           <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="w-44" aria-label="Due date" />
+          {billable ? (
+            <Input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="₹ to bill (optional)" className="w-48 font-mono" aria-label="Amount to bill in rupees" />
+          ) : null}
           <Button type="submit">
             <Plus /> Add
           </Button>

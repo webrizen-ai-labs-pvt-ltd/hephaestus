@@ -1,5 +1,6 @@
 import { can, projectKeyFrom } from "@hephaestus/core";
 import { Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, FolderKanban, Plus } from "lucide-react";
 import { useState } from "react";
@@ -22,6 +23,8 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
   const [description, setDescription] = useState(project?.description ?? "");
   const [lead, setLead] = useState(project?.leadEmployeeId ?? "");
   const [goalId, setGoal] = useState(project?.goalId ?? "");
+  const [clientId, setClient] = useState(project?.clientId ?? "");
+  const { data: clientData } = useQuery({ queryKey: ["clients", ""], queryFn: () => api<{ clients: { id: string; name: string }[] }>("clients"), retry: false });
   const [color, setColor] = useState(project?.color ?? PROJECT_COLORS[0]!);
   const [startDate, setStart] = useState(project?.startDate ?? new Date().toISOString().slice(0, 10));
   const [dueDate, setDue] = useState(project?.dueDate ?? "");
@@ -35,6 +38,7 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
         description: description || null,
         leadEmployeeId: lead || null,
         goalId: goalId || null,
+        ...(clientData ? { clientId: clientId || null } : {}),
         color,
         startDate: startDate || null,
         dueDate: dueDate || null,
@@ -124,6 +128,18 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
               ))}
             </Select>
           </Field>
+          {clientData ? (
+            <Field label="Client" hint="Billable milestones invoice this client" className="sm:col-span-2">
+              <Select value={clientId} onChange={(e) => setClient(e.target.value)}>
+                <option value="">Internal (no client)</option>
+                {clientData.clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
           <Field label="Start">
             <Input type="date" value={startDate} onChange={(e) => setStart(e.target.value)} />
           </Field>
