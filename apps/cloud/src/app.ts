@@ -152,7 +152,8 @@ export async function createCloudApp(env: Env) {
       state,
     };
     const prompt = c.req.query("prompt");
-    if (prompt === "select_account" || prompt === "login" || prompt === "create") params.prompt = prompt;
+    // Webrizen SSO supports "login" and "create". Its org picker appears on every sign-in for multi-org users.
+    if (prompt === "login" || prompt === "create") params.prompt = prompt;
     return c.redirect(client.buildAuthorizationUrl(config, params).href);
   });
 

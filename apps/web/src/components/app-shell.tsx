@@ -143,7 +143,7 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
               type="button"
               title="Switch organization"
               aria-label="Switch organization"
-              onClick={() => signIn("/", "select_account")}
+              onClick={() => signIn("/")}
               className="rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
             >
               <ArrowLeftRight className="size-4" />

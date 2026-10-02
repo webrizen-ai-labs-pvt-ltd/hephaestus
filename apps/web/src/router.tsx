@@ -48,7 +48,7 @@ function NoOrganization() {
           Hephaestus works inside an organization. Create one in your Webrizen account, or ask your admin for an invite.
         </p>
         <div className="mt-6 flex flex-col gap-2">
-          <Button variant="primary" onClick={() => signIn("/", "select_account")}>
+          <Button variant="primary" onClick={() => signIn("/")}>
             Choose an organization
           </Button>
           <Button variant="ghost" onClick={() => void signOut()}>
