@@ -78,8 +78,7 @@ export function claimsToIdentity(raw: unknown): Pick<SessionData, "user" | "org"
  */
 export async function identityFromTokens(config: client.Configuration, tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers, subject: string) {
   const claims = tokens.claims();
-  if (claims?.name && claims.email) return claimsToIdentity(claims);
-  const info = await client.fetchUserInfo(config, tokens.access_token, claims?.sub ?? subject);
+  const info = claims?.name && claims.email ? null : await client.fetchUserInfo(config, tokens.access_token, claims?.sub ?? subject);
   // ID token claims win (they carry the org the user signed in to); userinfo fills the gaps.
   const merged: Record<string, unknown> = { ...info };
   for (const [k, v] of Object.entries(claims ?? {})) if (v !== undefined && v !== null && v !== "") merged[k] = v;
