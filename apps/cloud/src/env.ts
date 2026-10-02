@@ -7,7 +7,7 @@ const schema = z.object({
   APP_URL: z.url().default("http://localhost:5173"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
   /** Encrypts stored gateway secrets. Defaults to SESSION_SECRET; set separately so sessions can rotate. */
-  ENCRYPTION_KEY: z.string().min(32).optional(),
+  ENCRYPTION_KEY: optional.pipe(z.string().min(32, "ENCRYPTION_KEY must be at least 32 characters").optional()),
 
   WEBRIZEN_SSO_ISSUER: z.url().default("https://accounts.webrizen.com/api/auth"),
   WEBRIZEN_SSO_CLIENT_ID: optional,

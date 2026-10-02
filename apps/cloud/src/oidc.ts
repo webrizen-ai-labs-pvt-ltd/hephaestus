@@ -13,8 +13,11 @@ export function getConfig(env: Env) {
   if (!env.WEBRIZEN_SSO_CLIENT_ID || !env.WEBRIZEN_SSO_CLIENT_SECRET) {
     throw new Error("Webrizen SSO is not configured");
   }
+  const issuer = new URL(env.WEBRIZEN_SSO_ISSUER);
+  // A local accounts server runs on plain http. Production always needs https.
+  const insecure = issuer.protocol === "http:" && !env.isProd;
   configPromise ??= client
-    .discovery(new URL(env.WEBRIZEN_SSO_ISSUER), env.WEBRIZEN_SSO_CLIENT_ID, env.WEBRIZEN_SSO_CLIENT_SECRET)
+    .discovery(issuer, env.WEBRIZEN_SSO_CLIENT_ID, env.WEBRIZEN_SSO_CLIENT_SECRET, undefined, insecure ? { execute: [client.allowInsecureRequests] } : undefined)
     .catch((err) => {
       configPromise = null;
       throw err;
