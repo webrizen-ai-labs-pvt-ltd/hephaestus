@@ -1,4 +1,4 @@
-import type { ViewerOrg } from "@hephaestus/core";
+import { allPermissions, type ViewerOrg } from "@hephaestus/core";
 import * as client from "openid-client";
 import { z } from "zod";
 import type { Env } from "./env.ts";
@@ -62,13 +62,28 @@ export function claimsToIdentity(raw: unknown): Pick<SessionData, "user" | "org"
         slug: c.org.slug,
         logo: c.org.logo ?? null,
         roles: c.org.roles,
-        permissions: c.org.permissions,
+        // Owners control everything in their organization. Other roles get what Webrizen SSO grants.
+        permissions: c.org.roles.includes("owner") ? allPermissions() : c.org.permissions,
       }
     : null;
   return {
     user: { id: c.sub, email: c.email, name: c.name ?? c.email, image: c.picture ?? null },
     org,
   };
+}
+
+/**
+ * Identity from the ID token, topped up from the userinfo endpoint when the
+ * token leaves out profile fields (name, email, picture) or has no ID token at all.
+ */
+export async function identityFromTokens(config: client.Configuration, tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers, subject: string) {
+  const claims = tokens.claims();
+  if (claims?.name && claims.email) return claimsToIdentity(claims);
+  const info = await client.fetchUserInfo(config, tokens.access_token, claims?.sub ?? subject);
+  // ID token claims win (they carry the org the user signed in to); userinfo fills the gaps.
+  const merged: Record<string, unknown> = { ...info };
+  for (const [k, v] of Object.entries(claims ?? {})) if (v !== undefined && v !== null && v !== "") merged[k] = v;
+  return claimsToIdentity(merged);
 }
 
 export function tokensToSession(tokens: client.TokenEndpointResponse, identity: Pick<SessionData, "user" | "org">, previous?: SessionData): SessionData {
@@ -90,11 +105,7 @@ export async function refreshSession(env: Env, session: SessionData): Promise<Se
   try {
     const config = await getConfig(env);
     const tokens = await client.refreshTokenGrant(config, session.refreshToken);
-    const idClaims = tokens.claims();
-    const identity = idClaims
-      ? claimsToIdentity(idClaims)
-      : claimsToIdentity(await client.fetchUserInfo(config, tokens.access_token, session.user.id));
-    return tokensToSession(tokens, identity, session);
+    return tokensToSession(tokens, await identityFromTokens(config, tokens, session.user.id), session);
   } catch (err) {
     console.warn("Session refresh failed", err instanceof Error ? err.message : err);
     return null;

@@ -23,7 +23,7 @@ import { Webhook } from "standardwebhooks";
 import { z } from "zod";
 import { directoryMember, directoryOrg, listAllMembers, toSnapshot } from "./directory.ts";
 import type { Env } from "./env.ts";
-import { claimsToIdentity, getConfig, refreshSession, SCOPES, safeReturnTo, tokensToSession } from "./oidc.ts";
+import { getConfig, identityFromTokens, refreshSession, SCOPES, safeReturnTo, tokensToSession } from "./oidc.ts";
 import {
   clearSession,
   deriveKey,
@@ -168,7 +168,7 @@ export async function createCloudApp(env: Env) {
         pkceCodeVerifier: tx.verifier,
         expectedState: tx.state,
       });
-      const session = tokensToSession(tokens, claimsToIdentity(tokens.claims()));
+      const session = tokensToSession(tokens, await identityFromTokens(config, tokens, ""));
       await writeSession(c, session, key, secure);
       const org = await syncViewer(db, toViewer(session));
       // Best effort: bring the people directory up to date (the nightly job covers misses).
