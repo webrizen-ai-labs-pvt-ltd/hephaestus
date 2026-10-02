@@ -17,7 +17,14 @@ export function getConfig(env: Env) {
   // A local accounts server runs on plain http. Production always needs https.
   const insecure = issuer.protocol === "http:" && !env.isProd;
   configPromise ??= client
-    .discovery(issuer, env.WEBRIZEN_SSO_CLIENT_ID, env.WEBRIZEN_SSO_CLIENT_SECRET, undefined, insecure ? { execute: [client.allowInsecureRequests] } : undefined)
+    // Webrizen SSO registers confidential clients for client_secret_basic (secret in the Authorization header).
+    .discovery(
+      issuer,
+      env.WEBRIZEN_SSO_CLIENT_ID,
+      undefined,
+      client.ClientSecretBasic(env.WEBRIZEN_SSO_CLIENT_SECRET),
+      insecure ? { execute: [client.allowInsecureRequests] } : undefined,
+    )
     .catch((err) => {
       configPromise = null;
       throw err;
