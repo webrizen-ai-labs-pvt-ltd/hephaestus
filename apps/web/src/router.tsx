@@ -38,15 +38,19 @@ function Splash() {
   );
 }
 
-function NoOrganization() {
+function NoOrganization({ reason }: { reason: string }) {
+  const removed = /no longer have access/i.test(reason);
   return (
     <div className="flex min-h-dvh items-center justify-center p-6">
       <div className="max-w-sm text-center">
         <Logo className="mx-auto size-10 text-foreground" />
-        <h1 className="mt-6 text-2xl font-bold">Join an organization</h1>
+        <h1 className="mt-6 text-2xl font-bold">{removed ? "You no longer have access" : "Join an organization"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Hephaestus works inside an organization. Create one in your Webrizen account, or ask your admin for an invite.
+          {removed
+            ? "An admin removed you from this organization in Webrizen. Ask them to add you back, or sign in to another organization."
+            : "Hephaestus works inside an organization. Create one in your Webrizen account, or ask your admin for an invite."}
         </p>
+        <p className="mt-3 font-mono text-xs text-subtle-foreground">{reason}</p>
         <div className="mt-6 flex flex-col gap-2">
           <Button variant="primary" onClick={() => signIn("/")}>
             Choose an organization
@@ -64,7 +68,7 @@ function Root() {
   const { data: me, error, isLoading } = useMe();
   if (isLoading) return <Splash />;
   if (error instanceof ApiError && error.status === 401) return <SignInPage />;
-  if (error instanceof ApiError && error.status === 403) return <NoOrganization />;
+  if (error instanceof ApiError && error.status === 403) return <NoOrganization reason={error.message} />;
   if (error || !me) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-6 text-center">
