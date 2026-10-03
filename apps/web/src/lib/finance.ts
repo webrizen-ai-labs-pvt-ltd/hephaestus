@@ -250,7 +250,7 @@ export const useFinanceSummary = () =>
         overdue: number;
         drafts: number;
         aging: Record<"current" | "1-30" | "31-60" | "61-90" | "90+", number>;
-        months: { month: string; billed: number; collected: number }[];
+        months: { month: string; billed: number; collected: number; due: number }[];
         topClients: { clientId: string; name: string; outstanding: number; overdue: number }[];
         recentPayments: { id: string; amount: number; currency: string; paidOn: string; method: string; clientName: string; invoiceId: string; invoiceNumber: string | null }[];
       }>("finance/summary"),

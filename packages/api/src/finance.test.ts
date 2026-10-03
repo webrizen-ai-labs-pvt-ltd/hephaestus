@@ -224,9 +224,13 @@ describe("access", () => {
   });
 
   it("reports receivables", async () => {
-    const s = await t.call<{ outstanding: number; aging: Record<string, number>; months: unknown[] }>("ace", "/finance/summary");
+    const s = await t.call<{ outstanding: number; aging: Record<string, number>; months: { due: number }[] }>("ace", "/finance/summary");
     expect(s.json.outstanding).toBeGreaterThan(0);
     expect(s.json.months).toHaveLength(12);
+    // Still due, month by month: part of what is outstanding (older invoices fall outside the window).
+    const due = s.json.months.reduce((a, m) => a + m.due, 0);
+    expect(due).toBeGreaterThan(0);
+    expect(due).toBeLessThanOrEqual(s.json.outstanding);
   });
 });
 

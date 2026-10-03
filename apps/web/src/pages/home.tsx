@@ -372,13 +372,14 @@ function MainChart({ data, me }: { data: HomeData; me: Me }) {
     const labels = months.map((m) => new Date(`${m.month}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short" }));
     const billed = fin.months.reduce((a, m) => a + m.billed, 0);
     const collected = fin.months.reduce((a, m) => a + m.collected, 0);
+    const due = fin.months.reduce((a, m) => a + m.due, 0);
     return (
       <Card
         className="lg:col-span-8"
-        title="Billed vs collected"
+        title="Billed, collected and due"
         description={
           <>
-            {money(collected)} collected of {money(billed)} billed in the last 12 months.
+            {money(collected)} collected of {money(billed)} billed in the last 12 months; {money(due)} still due.
           </>
         }
         action={
@@ -399,6 +400,7 @@ function MainChart({ data, me }: { data: HomeData; me: Me }) {
           series={[
             { key: "billed", label: "Billed", color: "var(--chart-billed)", values: months.map((m) => m.billed), format: (v) => money(v) },
             { key: "collected", label: "Collected", color: "var(--chart-collected)", values: months.map((m) => m.collected), format: (v) => money(v) },
+            { key: "due", label: "Due", color: "var(--chart-due)", values: months.map((m) => m.due), format: (v) => money(v) },
           ]}
         />
       </Card>

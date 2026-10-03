@@ -33,6 +33,21 @@
   --finance: #b8860b;
   --chart-billed: #a8842e;
   --chart-collected: #3d68a8;
+  --chart-due: #1a9a78;
+  --chart-late: #d92d20;
+  /* Client share: fixed slot order (validated), "Other" is neutral. */
+  --chart-c1: #3d68a8;
+  --chart-c2: #d0573a;
+  --chart-c3: #1a9a78;
+  --chart-c4: #a8842e;
+  --chart-c5: #c2477a;
+  --chart-other: #a4a7ae;
+  /* Receivables by age: one hue, light (not due) to dark (90+ days). */
+  --chart-age-1: #d4a94a;
+  --chart-age-2: #c09332;
+  --chart-age-3: #a07a24;
+  --chart-age-4: #7f5f1a;
+  --chart-age-5: #5f4612;
 }
 
 .dark-mode {
@@ -42,6 +57,20 @@
   --finance: #e3b341;
   --chart-billed: #b08c2a;
   --chart-collected: #5a86c8;
+  --chart-due: #22a07e;
+  --chart-late: #f04438;
+  --chart-c1: #5a86c8;
+  --chart-c2: #e0704f;
+  --chart-c3: #22a07e;
+  --chart-c4: #b08c2a;
+  --chart-c5: #d5608f;
+  --chart-other: #61656c;
+  /* On dark, later is lighter. */
+  --chart-age-1: #6e5216;
+  --chart-age-2: #8a6a1e;
+  --chart-age-3: #a07a24;
+  --chart-age-4: #c09332;
+  --chart-age-5: #e8c46a;
 }
 
 @theme inline {

@@ -583,6 +583,12 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       .innerJoin(invoices, eq(invoices.id, payments.invoiceId))
       .where(and(eq(payments.orgId, org.id), inCurrency, isNull(payments.voidedAt), ne(payments.method, "credit_note"), gte(payments.paidOn, start12)))
       .groupBy(sql`1`);
+    // What's still unpaid from each month's invoices.
+    const dueByMonth = await db
+      .select({ month: sql<string>`to_char(${invoices.issueDate}, 'YYYY-MM')`, amount: sql<number>`sum(${invoices.total} - ${invoices.amountPaid})`.mapWith(Number) })
+      .from(invoices)
+      .where(and(eq(invoices.orgId, org.id), inCurrency, eq(invoices.kind, "invoice"), inArray(invoices.status, ["sent", "partially_paid"]), gte(invoices.issueDate, start12)))
+      .groupBy(sql`1`);
     const months = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(y, m - 12 + i, 1)).toISOString().slice(0, 7));
 
     const [fy] = await db
@@ -622,6 +628,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
         month,
         billed: billedByMonth.find((b) => b.month === month)?.amount ?? 0,
         collected: collectedByMonth.find((b) => b.month === month)?.amount ?? 0,
+        due: dueByMonth.find((b) => b.month === month)?.amount ?? 0,
       })),
       topClients: [...byClient.values()].sort((a, b) => b.outstanding - a.outstanding).slice(0, 6),
       recentPayments,

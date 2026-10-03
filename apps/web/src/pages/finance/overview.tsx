@@ -1,18 +1,19 @@
 import { can } from "@hephaestus/core";
 import { Avatar, Button, cn, Em, EmptyState, KpiTile, Meter, PageHero, Panel, Sparkline } from "@hephaestus/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, BarChart3, FilePlus2, FileText, Hourglass, Landmark, Receipt, Table2, TrendingUp, Users, Wallet } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, ArrowRight, BarChart3, FilePlus2, FileText, Hourglass, Landmark, PieChart, Receipt, Table2, TrendingUp, Users, Wallet } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import type { Me } from "../../lib/api.ts";
 import { compactMoney, money, PAYMENT_METHOD_LABEL, useFinanceSummary } from "../../lib/finance.ts";
 import { formatDate } from "../../lib/people.ts";
 import { FinanceBody } from "./layout.tsx";
 
-type Month = { month: string; billed: number; collected: number };
+type Month = { month: string; billed: number; collected: number; due: number };
 
 const SERIES = [
   { key: "billed", label: "Billed", color: "var(--chart-billed)" },
   { key: "collected", label: "Collected", color: "var(--chart-collected)" },
+  { key: "due", label: "Due", color: "var(--chart-due)" },
 ] as const;
 
 const monthLabel = (m: string, long = false) => new Date(`${m}-01T00:00:00`).toLocaleDateString("en-IN", { month: long ? "long" : "short", ...(long ? { year: "numeric" } : {}) });
@@ -26,19 +27,19 @@ function ticks(max: number) {
   return Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
 }
 
-/** Grouped bars: billed vs collected per month. One y-axis, legend above, hover per month. */
+/** Grouped bars: billed, collected and still due per month. One y-axis, legend above, hover per month. */
 function RevenueChart({ months }: { months: Month[] }) {
   const [hover, setHover] = useState<number | null>(null);
   const [asTable, setAsTable] = useState(false);
   const W = 720;
   const H = 240;
   const pad = { l: 56, r: 8, t: 12, b: 28 };
-  const max = Math.max(...months.flatMap((m) => [m.billed, m.collected]), 0);
+  const max = Math.max(...months.flatMap((m) => [m.billed, m.collected, m.due]), 0);
   const t = ticks(max);
   const top = t[t.length - 1]!;
   const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - v / top);
   const band = (W - pad.l - pad.r) / months.length;
-  const barW = Math.min(18, (band - 10) / 2);
+  const barW = Math.min(14, (band - 12) / SERIES.length);
   const empty = max === 0;
 
   return (
@@ -62,6 +63,7 @@ function RevenueChart({ months }: { months: Month[] }) {
               <th className="py-2 font-medium">Month</th>
               <th className="py-2 text-right font-medium">Billed</th>
               <th className="py-2 text-right font-medium">Collected</th>
+              <th className="py-2 text-right font-medium">Due</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-secondary">
@@ -70,13 +72,14 @@ function RevenueChart({ months }: { months: Month[] }) {
                 <td className="py-1.5">{monthLabel(m.month, true)}</td>
                 <td className="py-1.5 text-right font-mono">{money(m.billed)}</td>
                 <td className="py-1.5 text-right font-mono">{money(m.collected)}</td>
+                <td className="py-1.5 text-right font-mono">{money(m.due)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
         <div className="relative">
-          <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Billed and collected by month, last 12 months" onMouseLeave={() => setHover(null)}>
+          <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Billed, collected and due by month, last 12 months" onMouseLeave={() => setHover(null)}>
             {t.map((v) => (
               <g key={v}>
                 <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="var(--color-border-secondary)" strokeWidth={1} />
@@ -93,7 +96,7 @@ function RevenueChart({ months }: { months: Month[] }) {
                   {SERIES.map((s, j) => {
                     const v = m[s.key];
                     const h = Math.max(v > 0 ? 2 : 0, y(0) - y(v));
-                    const x = cx - barW - 1 + j * (barW + 2);
+                    const x = cx - (SERIES.length * barW + (SERIES.length - 1) * 2) / 2 + j * (barW + 2);
                     // Rounded data end, square at the baseline.
                     const r = Math.min(4, h / 2, barW / 2);
                     const top = y(0) - h;
@@ -109,7 +112,7 @@ function RevenueChart({ months }: { months: Month[] }) {
                     {monthLabel(m.month)}
                   </text>
                   {/* Hit target: the whole month column. */}
-                  <rect x={pad.l + band * i} y={0} width={band} height={H} fill="transparent" onMouseEnter={() => setHover(i)} onFocus={() => setHover(i)} tabIndex={0} aria-label={`${monthLabel(m.month, true)}: billed ${money(m.billed)}, collected ${money(m.collected)}`} />
+                  <rect x={pad.l + band * i} y={0} width={band} height={H} fill="transparent" onMouseEnter={() => setHover(i)} onFocus={() => setHover(i)} tabIndex={0} aria-label={`${monthLabel(m.month, true)}: billed ${money(m.billed)}, collected ${money(m.collected)}, due ${money(m.due)}`} />
                 </g>
               );
             })}
@@ -138,18 +141,97 @@ function RevenueChart({ months }: { months: Month[] }) {
 }
 
 const AGING = [
-  ["current", "Not yet due"],
-  ["1-30", "1–30 days late"],
-  ["31-60", "31–60 days late"],
-  ["61-90", "61–90 days late"],
-  ["90+", "90+ days late"],
+  ["current", "Not yet due", "var(--chart-age-1)"],
+  ["1-30", "1–30 days late", "var(--chart-age-2)"],
+  ["31-60", "31–60 days late", "var(--chart-age-3)"],
+  ["61-90", "61–90 days late", "var(--chart-age-4)"],
+  ["90+", "90+ days late", "var(--chart-age-5)"],
 ] as const;
+
+const CLIENT_COLORS = ["var(--chart-c1)", "var(--chart-c2)", "var(--chart-c3)", "var(--chart-c4)", "var(--chart-c5)"];
+
+type Slice = { key: string; label: ReactNode; value: number; color: string };
+
+/** One arc of a ring, from angle a0 to a1 (radians, 0 = 12 o'clock). */
+function arc(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
+  const p = (r: number, a: number) => `${cx + r * Math.sin(a)},${cy - r * Math.cos(a)}`;
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${p(r1, a0)} A${r1},${r1} 0 ${large} 1 ${p(r1, a1)} L${p(r0, a1)} A${r0},${r0} 0 ${large} 0 ${p(r0, a0)} Z`;
+}
+
+/**
+ * A donut with its legend as the value table. Slices are separated by a 2px surface
+ * gap; hovering a slice (or its legend row) puts its amount in the centre.
+ */
+function Donut({ slices, total, caption, empty }: { slices: Slice[]; total: number; caption: string; empty: string }) {
+  const [hover, setHover] = useState<string | null>(null);
+  const shown = slices.filter((s) => s.value > 0);
+  const sum = shown.reduce((a, s) => a + s.value, 0);
+  const active = shown.find((s) => s.key === hover);
+  const S = 160;
+  const c = S / 2;
+  let angle = 0;
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative shrink-0" onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${S} ${S}`} className="size-40" role="img" aria-label={`${caption}: ${shown.map((s) => `${typeof s.label === "string" ? s.label : s.key} ${money(s.value)}`).join(", ") || empty}`}>
+          {sum === 0 ? <circle cx={c} cy={c} r={60} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth={22} /> : null}
+          {shown.map((s) => {
+            const a0 = angle;
+            const a1 = (angle += (s.value / sum) * Math.PI * 2);
+            const dim = hover !== null && hover !== s.key;
+            // A lone slice is a full ring: draw it as a circle so the arc doesn't collapse.
+            return shown.length === 1 ? (
+              <circle key={s.key} cx={c} cy={c} r={60} fill="none" stroke={s.color} strokeWidth={22} onMouseEnter={() => setHover(s.key)} />
+            ) : (
+              <path
+                key={s.key}
+                d={arc(c, c, hover === s.key ? 47 : 49, hover === s.key ? 74 : 71, a0, a1)}
+                fill={s.color}
+                stroke="var(--color-bg-primary)"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                opacity={dim ? 0.35 : 1}
+                className="transition-opacity"
+                onMouseEnter={() => setHover(s.key)}
+              />
+            );
+          })}
+        </svg>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span className="max-w-24 truncate text-[11px] text-tertiary">{active ? active.label : caption}</span>
+          <span className="font-mono text-md font-semibold text-primary">{compactMoney(active ? active.value : total)}</span>
+          {active && sum ? <span className="text-[11px] text-tertiary">{Math.round((active.value / sum) * 100)}%</span> : null}
+        </div>
+      </div>
+      {sum === 0 ? (
+        <p className="text-sm text-tertiary">{empty}</p>
+      ) : (
+        <ul className="w-full min-w-0 space-y-1 text-sm">
+          {shown.map((s) => (
+            <li
+              key={s.key}
+              className={cn("flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors", hover === s.key && "bg-secondary")}
+              onMouseEnter={() => setHover(s.key)}
+              onMouseLeave={() => setHover(null)}
+            >
+              <span className="size-2.5 shrink-0 rounded-sm" style={{ background: s.color }} />
+              <span className="min-w-0 flex-1 truncate text-secondary">{s.label}</span>
+              <span className="font-mono text-[12.5px] text-primary">{compactMoney(s.value)}</span>
+              <span className="w-9 text-right text-[11.5px] text-tertiary">{Math.round((s.value / sum) * 100)}%</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function FinanceOverviewPage({ me }: { me: Me }) {
   const navigate = useNavigate();
   const { data } = useFinanceSummary();
   const fy = data ? `FY ${data.financialYearStart.slice(2, 4)}-${String(Number(data.financialYearStart.slice(2, 4)) + 1).padStart(2, "0")}` : "this year";
-  const agingMax = Math.max(1, ...Object.values(data?.aging ?? { x: 0 }));
   const collectionRate = data && data.billedThisYear ? Math.round((data.collectedThisYear / data.billedThisYear) * 100) : null;
   const thisMonth = data?.months.at(-1);
   const lastMonth = data?.months.at(-2);
@@ -242,30 +324,63 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
         />
       </div>
 
-      <Panel title="Billed vs collected" icon={<BarChart3 />} tone="var(--finance)" meta="last 12 months" className="rise rise-2">
+      <Panel title="Billed, collected and due" icon={<BarChart3 />} tone="var(--finance)" meta="last 12 months" className="rise rise-2">
         {data ? <RevenueChart months={data.months} /> : <div className="h-60" />}
       </Panel>
 
       <div className="rise rise-3 grid gap-4 lg:grid-cols-3">
-        <Panel title="Receivables by age" icon={<Hourglass />} tone="var(--chart-billed)" meta={data ? compactMoney(data.outstanding) : undefined}>
-          <ul className="space-y-3.5">
-            {AGING.map(([k, label]) => {
-              const v = data?.aging[k] ?? 0;
-              return (
-                <li key={k} className="text-sm">
-                  <div className="flex justify-between">
-                    <span className={cn(k !== "current" && v ? "text-primary" : "text-tertiary")}>{label}</span>
-                    <span className="font-mono text-[13px]">{money(v)}</span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
-                    <div className="h-full rounded-full" style={{ width: `${(v / agingMax) * 100}%`, background: k === "current" ? "var(--chart-collected)" : "var(--chart-billed)" }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+        <Panel title="Money" icon={<PieChart />} tone="var(--chart-collected)" meta={fy}>
+          {data ? (
+            <Donut
+              caption="Total"
+              total={data.collectedThisYear + data.outstanding}
+              empty="Nothing billed or collected yet."
+              slices={[
+                { key: "collected", label: "Collected", value: data.collectedThisYear, color: "var(--chart-collected)" },
+                { key: "due", label: "Due, not late", value: data.aging.current, color: "var(--chart-due)" },
+                {
+                  key: "late",
+                  label: (
+                    <span className="inline-flex items-center gap-1">
+                      Overdue <AlertTriangle className="size-3.5 text-fg-error-secondary" />
+                    </span>
+                  ),
+                  value: data.overdue,
+                  color: "var(--chart-late)",
+                },
+              ]}
+            />
+          ) : (
+            <div className="h-40" />
+          )}
         </Panel>
 
+        <Panel title="Owed by client" icon={<Users />} tone="var(--finance)" meta={data ? compactMoney(data.outstanding) : undefined}>
+          {data ? (
+            <Donut
+              caption="Owed"
+              total={data.outstanding}
+              empty="Everyone's paid up."
+              slices={[
+                ...data.topClients.slice(0, 5).map((c, i) => ({ key: c.clientId, label: c.name, value: c.outstanding, color: CLIENT_COLORS[i]! })),
+                { key: "other", label: "Everyone else", value: Math.max(0, data.outstanding - data.topClients.slice(0, 5).reduce((a, c) => a + c.outstanding, 0)), color: "var(--chart-other)" },
+              ]}
+            />
+          ) : (
+            <div className="h-40" />
+          )}
+        </Panel>
+
+        <Panel title="Owed by age" icon={<Hourglass />} tone="var(--chart-billed)" meta={data ? compactMoney(data.outstanding) : undefined}>
+          {data ? (
+            <Donut caption="Owed" total={data.outstanding} empty="Nothing outstanding." slices={AGING.map(([k, label, color]) => ({ key: k, label, value: data.aging[k], color }))} />
+          ) : (
+            <div className="h-40" />
+          )}
+        </Panel>
+      </div>
+
+      <div className="rise rise-4 grid gap-4 lg:grid-cols-2">
         <Panel
           title="Who owes the most"
           icon={<Users />}
