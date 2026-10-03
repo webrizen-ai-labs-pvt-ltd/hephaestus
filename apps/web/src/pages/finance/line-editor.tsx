@@ -12,17 +12,21 @@ export function LineEditor({
   supplyType,
   currency,
   roundOff = true,
+  gstRegistered = true,
 }: {
   lines: Line[];
   onChange: (lines: Line[]) => void;
   supplyType: SupplyType;
   currency: string;
   roundOff?: boolean;
+  /** Without a GSTIN the seller can't charge GST: every line is 0%. */
+  gstRegistered?: boolean;
 }) {
   const { data: items } = useItems();
   const { data: rates } = useTaxRates();
   const defaultRate = rates?.taxRates.find((r) => r.isDefault)?.rate ?? 18;
-  const totals = computeTotals(lines, supplyType, { roundOff });
+  const effective = gstRegistered ? lines : lines.map((l) => ({ ...l, taxRate: 0 }));
+  const totals = computeTotals(effective, supplyType, { roundOff });
   const m = (p: number) => money(p, currency);
   const update = (i: number, patch: Partial<Line>) => onChange(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const rateOptions = [...new Set([...(rates?.taxRates.map((r) => Number(r.rate)) ?? [0, 5, 18, 40]), ...lines.map((l) => Number(l.taxRate))])].sort((a, b) => a - b);
@@ -91,7 +95,13 @@ export function LineEditor({
                   <Input type="number" min={0} max={100} step="any" value={l.discountPct || ""} onChange={(e) => update(i, { discountPct: Math.min(100, Number(e.target.value) || 0) })} placeholder="0" className="text-right font-mono" aria-label="Discount percent" />
                 </td>
                 <td className="py-1.5 pr-2">
-                  <Select value={String(Number(l.taxRate))} onChange={(e) => update(i, { taxRate: Number(e.target.value) })} disabled={supplyType === "export"} aria-label="GST rate">
+                  <Select
+                    value={String(gstRegistered ? Number(l.taxRate) : 0)}
+                    onChange={(e) => update(i, { taxRate: Number(e.target.value) })}
+                    disabled={supplyType === "export" || !gstRegistered}
+                    title={gstRegistered ? undefined : "Add your GSTIN in Finance settings to charge GST"}
+                    aria-label="GST rate"
+                  >
                     {rateOptions.map((r) => (
                       <option key={r} value={r}>
                         {r}%

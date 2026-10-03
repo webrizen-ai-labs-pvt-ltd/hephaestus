@@ -643,7 +643,7 @@ async function billMilestone(c: Context<AppEnv>, m: { id: string; projectId: str
       createdBy: c.get("viewer")!.userId,
     })
     .returning({ id: invoices.id });
-  await writeLines(db, org.id, inv!.id, [{ description: `${project.name}: ${m.name}`, quantity: 1, unitPrice: m.amount, taxRate: rate?.rate ?? 18 }], pos.supplyType, settings.roundOff);
+  await writeLines(db, org.id, inv!.id, [{ description: `${project.name}: ${m.name}`, quantity: 1, unitPrice: m.amount, taxRate: rate?.rate ?? 18 }], pos.supplyType, settings);
   await audit(c, "invoice.created", { type: "invoice", id: inv!.id }, { fromMilestone: m.name });
   return inv!.id;
 }

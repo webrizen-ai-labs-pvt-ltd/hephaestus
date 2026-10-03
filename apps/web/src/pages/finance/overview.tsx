@@ -324,7 +324,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
       </div>
       {data && !data.billedThisYear && !data.outstanding ? (
         <p className="flex items-center gap-2 text-sm text-tertiary">
-          <FileText className="size-4" /> Tip: set your GSTIN and bank details in Settings first, so every invoice is ready to send.
+          <FileText className="size-4" /> Tip: add your business details and bank account in Finance settings (and your GSTIN, if you're registered) so every invoice is ready to send.
         </p>
       ) : null}
     </FinanceBody>

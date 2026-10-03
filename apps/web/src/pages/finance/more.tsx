@@ -199,7 +199,13 @@ function RetainerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
           </Field>
         </div>
         <div className="mt-5">
-          <LineEditor lines={lines} onChange={setLines} supplyType={client ? supplyTypeFor(settings?.settings.stateCode, client.stateCode, client.country) : "intra"} currency={client?.currency ?? "INR"} />
+          <LineEditor
+            lines={lines}
+            onChange={setLines}
+            supplyType={client ? supplyTypeFor(settings?.settings.stateCode, client.stateCode, client.country) : "intra"}
+            currency={client?.currency ?? "INR"}
+            gstRegistered={!settings || Boolean(settings.settings.gstin)}
+          />
         </div>
         {error ? <p className="mt-3 text-sm text-error-primary">{error}</p> : null}
       </DialogContent>
@@ -388,7 +394,7 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
           <Field label="Legal name">
             <Input value={str("legalName")} onChange={(e) => set("legalName", e.target.value)} disabled={!canManage} placeholder="Webrizen AI Labs Pvt Ltd" />
           </Field>
-          <Field label="GSTIN" error={gstinValid ? null : "That GSTIN isn't valid"} hint={str("gstin") && gstinValid ? INDIAN_STATES[stateOfGstin(str("gstin"))] : undefined}>
+          <Field label="GSTIN (optional)" error={gstinValid ? null : "That GSTIN isn't valid"} hint={str("gstin") && gstinValid ? INDIAN_STATES[stateOfGstin(str("gstin"))] : "Leave blank if you aren't GST-registered. Invoices then go out without GST."}>
             <Input value={str("gstin")} onChange={(e) => set("gstin", e.target.value.toUpperCase().replace(/\s/g, "").slice(0, 15))} disabled={!canManage} className="font-mono" placeholder="27AAPFU0939F1ZV" />
           </Field>
           <Field label="PAN">

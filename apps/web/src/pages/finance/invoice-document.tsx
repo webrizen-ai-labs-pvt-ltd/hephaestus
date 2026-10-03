@@ -52,7 +52,7 @@ export function InvoiceDocument({ doc, lines, seller, client, className }: { doc
           {seller.email || seller.phone ? <div className="text-[#5f574e]">{[seller.email, seller.phone].filter(Boolean).join(" · ")}</div> : null}
         </div>
         <div className="text-right">
-          <div className="font-display text-2xl font-bold uppercase tracking-wide">{TITLE[doc.kind]}</div>
+          <div className="font-display text-2xl font-bold uppercase tracking-wide">{doc.kind === "invoice" && !seller.gstin ? "Invoice" : TITLE[doc.kind]}</div>
           <div className="mt-1 font-mono text-base">{doc.number ?? "Draft"}</div>
           <dl className="mt-2 grid grid-cols-[auto_auto] justify-end gap-x-4 text-[#5f574e]">
             <dt>Date</dt>

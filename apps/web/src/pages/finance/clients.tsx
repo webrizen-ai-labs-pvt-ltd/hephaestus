@@ -127,7 +127,7 @@ export function ClientDialog({
               </Select>
             </Field>
           ) : (
-            <Field label="GSTIN" error={errors.gstin} hint={f.gstin && isValidGstin(f.gstin) ? INDIAN_STATES[stateOfGstin(f.gstin)] : "Leave blank if they aren't registered"}>
+            <Field label="GSTIN (optional)" error={errors.gstin} hint={f.gstin && isValidGstin(f.gstin) ? INDIAN_STATES[stateOfGstin(f.gstin)] : "Leave blank if they aren't registered"}>
               <Input
                 value={f.gstin}
                 onChange={(e) => {

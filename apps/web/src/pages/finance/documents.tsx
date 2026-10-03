@@ -291,7 +291,7 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
       <Link to={kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-tertiary hover:text-primary">
         <ArrowLeft className="size-4" /> {KIND_LABEL[kind === "credit_note" ? "invoice" : kind].many}
       </Link>
-      <PageHeader title={initial ? `Draft ${KIND_LABEL[kind].one.toLowerCase()}` : `New ${KIND_LABEL[kind].one.toLowerCase()}`} description={settings && !settings.settings.gstin ? <span className="text-warning-primary">Add your GSTIN and legal name in Finance settings so invoices are valid tax invoices.</span> : undefined} />
+      <PageHeader title={initial ? `Draft ${KIND_LABEL[kind].one.toLowerCase()}` : `New ${KIND_LABEL[kind].one.toLowerCase()}`} description={settings && !settings.settings.gstin ? "You're not GST-registered, so this goes out as an invoice without GST. Add a GSTIN in Finance settings if you register." : undefined} />
 
       <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Client" className="lg:col-span-2" hint={client ? (supplyType === "intra" ? "Same state: CGST + SGST" : supplyType === "inter" ? "Different state: IGST" : `Export in ${client.currency}, zero-rated`) : undefined}>
@@ -332,7 +332,7 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
       </Card>
 
       <Card className="p-5">
-        <LineEditor lines={lines} onChange={setLines} supplyType={supplyType} currency={currency} roundOff={settings?.settings.roundOff ?? true} />
+        <LineEditor lines={lines} onChange={setLines} supplyType={supplyType} currency={currency} roundOff={settings?.settings.roundOff ?? true} gstRegistered={!settings || Boolean(settings.settings.gstin)} />
       </Card>
 
       <Card className="grid gap-4 p-5 sm:grid-cols-2">

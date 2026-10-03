@@ -229,3 +229,18 @@ describe("access", () => {
     expect(s.json.months).toHaveLength(12);
   });
 });
+
+describe("sellers without a GSTIN", () => {
+  it("issue invoices without GST, whatever rate the lines ask for", async () => {
+    const cl = (await t.call<{ client: { id: string } }>("gus", "/clients", { name: "Unregistered Buyer", stateCode: "27" })).json.client.id;
+    const doc = await t.call<{ document: { id: string } }>("gus", "/finance/documents", {
+      clientId: cl,
+      issueDate: "2026-04-10",
+      lines: [{ description: "Consulting", quantity: 1, unitPrice: 100_000, taxRate: 18 }],
+    });
+    const got = await t.call<{ document: { cgst: number; sgst: number; igst: number; total: number }; lines: { taxRate: string | number }[] }>("gus", `/finance/documents/${doc.json.document.id}`);
+    expect(got.json.document.cgst + got.json.document.sgst + got.json.document.igst).toBe(0);
+    expect(got.json.document.total).toBe(100_000);
+    expect(Number(got.json.lines[0]!.taxRate)).toBe(0);
+  });
+});

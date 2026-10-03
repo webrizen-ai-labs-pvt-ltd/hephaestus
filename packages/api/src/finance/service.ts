@@ -48,7 +48,20 @@ export function placeOfSupplyFor(settings: Settings, client: typeof clients.$inf
 }
 
 /** Replace a document's lines and recompute its totals (server is the source of truth). */
-export async function writeLines(db: Db, orgId: string, invoiceId: string, lines: LineIn[], supplyType: SupplyType, roundOff: boolean) {
+/**
+ * Store a document's lines and totals. A seller without a GSTIN isn't GST-registered and can't charge
+ * GST, so their lines are always saved at 0%.
+ */
+export async function writeLines(
+  db: Db,
+  orgId: string,
+  invoiceId: string,
+  input: LineIn[],
+  supplyType: SupplyType,
+  seller: { roundOff: boolean; gstin: string | null },
+) {
+  const roundOff = seller.roundOff;
+  const lines = seller.gstin ? input : input.map((l) => ({ ...l, taxRate: 0 }));
   const totals = computeTotals(
     lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPct: l.discountPct ?? 0, taxRate: l.taxRate })),
     supplyType,
@@ -244,7 +257,7 @@ async function issueRetainerPeriod(deps: ApiDeps, orgId: string, r: typeof recur
       createdBy: "system",
     })
     .returning();
-  await writeLines(db, orgId, inv!.id, r.lines, pos.supplyType, settings.roundOff);
+  await writeLines(db, orgId, inv!.id, r.lines, pos.supplyType, settings);
 
   if (r.autoSend) {
     const [fresh] = await db.select().from(invoices).where(eq(invoices.id, inv!.id));

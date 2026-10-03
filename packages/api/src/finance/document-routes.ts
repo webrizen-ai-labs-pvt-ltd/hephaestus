@@ -205,7 +205,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
         createdBy: c.get("viewer")!.userId,
       })
       .returning({ id: invoices.id });
-    await writeLines(db, org.id, inv!.id, input.lines, pos.supplyType, settings.roundOff);
+    await writeLines(db, org.id, inv!.id, input.lines, pos.supplyType, settings);
     await audit(c, `${input.kind}.created`, { type: input.kind, id: inv!.id }, { client: client.name });
     return c.json({ document: { id: inv!.id } }, 201);
   })
@@ -237,11 +237,11 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       .update(invoices)
       .set({ ...fields, ...pos, currency: input.currency ?? (input.clientId ? client.currency : inv.currency) })
       .where(eq(invoices.id, inv.id));
-    if (lines) await writeLines(db, org.id, inv.id, lines, pos.supplyType, settings.roundOff);
+    if (lines) await writeLines(db, org.id, inv.id, lines, pos.supplyType, settings);
     else {
       // The client (and so the tax type) may have changed: recompute from the stored lines.
       const existing = await db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, inv.id)).orderBy(asc(invoiceLines.position));
-      await writeLines(db, org.id, inv.id, existing, pos.supplyType, settings.roundOff);
+      await writeLines(db, org.id, inv.id, existing, pos.supplyType, settings);
     }
     return c.json({ ok: true });
   })
@@ -265,9 +265,9 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       const org = c.get("org");
       const inv = await loadDoc(c, c.req.param("id"));
       const settings = await loadSettings(deps.db, org.id);
-      if (!settings.legalName && !settings.gstin && inv.kind === "invoice") {
-        // Not blocking, but invoices without seller details aren't valid tax invoices.
-        c.header("x-warning", "Add your legal name and GSTIN in Finance settings");
+      if (!settings.legalName && inv.kind === "invoice") {
+        // Not blocking: GSTIN is optional (unregistered sellers), but every invoice needs the seller's name.
+        c.header("x-warning", "Add your business name in Finance settings");
       }
       const { number, token } = await issue(deps, inv, settings);
 
@@ -365,7 +365,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
         })
         .returning({ id: invoices.id });
       const lines = await db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, src.id)).orderBy(asc(invoiceLines.position));
-      await writeLines(db, org.id, doc!.id, lines, src.supplyType, settings.roundOff);
+      await writeLines(db, org.id, doc!.id, lines, src.supplyType, settings);
       if (as === "invoice") await db.update(invoices).set({ status: "accepted" }).where(eq(invoices.id, src.id));
       await audit(c, `${kind}.created`, { type: kind, id: doc!.id }, { from: src.number ?? src.id, as });
       return c.json({ document: { id: doc!.id } }, 201);
