@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, Field, Input, Select } from "@hephaestus/ui";
+import { Button, DateInput, Dialog, DialogContent, Field, Input, Select } from "@hephaestus/ui";
 import { useState } from "react";
 import { api } from "../../lib/api.ts";
 import {
@@ -173,7 +173,7 @@ export function EmployeeFormDialog({
             </Select>
           </Field>
           <Field label="Joining date">
-            <Input type="date" value={form.joinDate} onChange={(e) => set("joinDate", e.target.value)} />
+            <DateInput value={form.joinDate} onChange={(v) => set("joinDate", v)} />
           </Field>
           <Field label="Location">
             <Input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Mumbai" maxLength={120} />
@@ -182,7 +182,7 @@ export function EmployeeFormDialog({
             <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" maxLength={32} />
           </Field>
           <Field label="Birthday" hint="Visible to HR and the employee only">
-            <Input type="date" value={form.birthday} onChange={(e) => set("birthday", e.target.value)} />
+            <DateInput value={form.birthday} onChange={(v) => set("birthday", v)} />
           </Field>
         </form>
       </DialogContent>

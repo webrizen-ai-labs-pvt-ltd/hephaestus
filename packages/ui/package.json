@@ -5,17 +5,32 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./forge.css": "./src/forge.css"
+    "./theme.css": "./src/theme.css"
   },
-  "scripts": { "typecheck": "tsc -p ." },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
   "dependencies": {
+    "@internationalized/date": "^3.12.4",
+    "@react-aria/utils": "^3.34.1",
+    "@react-stately/utils": "^3.12.1",
+    "@untitledui/file-icons": "^0.0.9",
+    "@untitledui/icons": "^0.0.23",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "input-otp": "^1.5.0",
     "lucide-react": "^1.49.0",
+    "motion": "^13.5.0",
     "radix-ui": "^1.6.7",
+    "react-aria": "^3.52.1",
+    "react-aria-components": "^1.21.1",
+    "react-stately": "^3.50.0",
     "tailwind-merge": "^3.7.0"
   },
-  "peerDependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

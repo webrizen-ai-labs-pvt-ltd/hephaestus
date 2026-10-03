@@ -45,7 +45,7 @@ function RevenueChart({ months }: { months: Month[] }) {
     <div>
       <div className="mb-3 flex items-center gap-4 text-sm">
         {SERIES.map((s) => (
-          <span key={s.key} className="flex items-center gap-1.5 text-muted-foreground">
+          <span key={s.key} className="flex items-center gap-1.5 text-tertiary">
             <span className="size-2.5 rounded-sm" style={{ background: s.color }} />
             {s.label}
           </span>
@@ -58,13 +58,13 @@ function RevenueChart({ months }: { months: Month[] }) {
       {asTable ? (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-xs text-muted-foreground">
+            <tr className="border-b border-secondary text-left text-xs text-tertiary">
               <th className="py-2 font-medium">Month</th>
               <th className="py-2 text-right font-medium">Billed</th>
               <th className="py-2 text-right font-medium">Collected</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-border-secondary">
             {months.map((m) => (
               <tr key={m.month}>
                 <td className="py-1.5">{monthLabel(m.month, true)}</td>
@@ -79,8 +79,8 @@ function RevenueChart({ months }: { months: Month[] }) {
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Billed and collected by month, last 12 months" onMouseLeave={() => setHover(null)}>
             {t.map((v) => (
               <g key={v}>
-                <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="var(--border)" strokeWidth={1} />
-                <text x={pad.l - 8} y={y(v)} textAnchor="end" dominantBaseline="middle" className="fill-muted-foreground font-mono text-[10px]">
+                <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="var(--color-border-secondary)" strokeWidth={1} />
+                <text x={pad.l - 8} y={y(v)} textAnchor="end" dominantBaseline="middle" className="fill-fg-quaternary font-mono text-[10px]">
                   {compactMoney(v)}
                 </text>
               </g>
@@ -89,7 +89,7 @@ function RevenueChart({ months }: { months: Month[] }) {
               const cx = pad.l + band * i + band / 2;
               return (
                 <g key={m.month}>
-                  {hover === i ? <rect x={pad.l + band * i + 2} y={pad.t} width={band - 4} height={H - pad.t - pad.b} rx={6} fill="var(--surface-2)" /> : null}
+                  {hover === i ? <rect x={pad.l + band * i + 2} y={pad.t} width={band - 4} height={H - pad.t - pad.b} rx={6} fill="var(--color-bg-secondary)" /> : null}
                   {SERIES.map((s, j) => {
                     const v = m[s.key];
                     const h = Math.max(v > 0 ? 2 : 0, y(0) - y(v));
@@ -105,7 +105,7 @@ function RevenueChart({ months }: { months: Month[] }) {
                       />
                     ) : null;
                   })}
-                  <text x={cx} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[10px]">
+                  <text x={cx} y={H - 8} textAnchor="middle" className="fill-fg-quaternary text-[10px]">
                     {monthLabel(m.month)}
                   </text>
                   {/* Hit target: the whole month column. */}
@@ -113,24 +113,24 @@ function RevenueChart({ months }: { months: Month[] }) {
                 </g>
               );
             })}
-            <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="var(--input)" strokeWidth={1} />
+            <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="var(--color-border-primary)" strokeWidth={1} />
           </svg>
           {hover !== null && months[hover] ? (
             <div
-              className="pointer-events-none absolute top-2 z-10 min-w-44 rounded-lg border border-border bg-surface px-3 py-2 text-xs shadow-[0_12px_32px_-12px_rgb(0_0_0/0.45)]"
+              className="pointer-events-none absolute top-2 z-10 min-w-44 rounded-lg border border-secondary bg-primary px-3 py-2 text-xs shadow-[0_12px_32px_-12px_rgb(0_0_0/0.45)]"
               style={{ left: `clamp(0px, calc(${((pad.l + band * hover + band / 2) / W) * 100}% - 88px), calc(100% - 176px))` }}
             >
-              <div className="mb-1 font-medium text-foreground">{monthLabel(months[hover].month, true)}</div>
+              <div className="mb-1 font-medium text-primary">{monthLabel(months[hover].month, true)}</div>
               {SERIES.map((s) => (
                 <div key={s.key} className="flex items-center gap-2">
                   <span className="size-2 rounded-sm" style={{ background: s.color }} />
-                  <span className="text-muted-foreground">{s.label}</span>
-                  <span className="ml-auto font-mono text-foreground">{money(months[hover]![s.key])}</span>
+                  <span className="text-tertiary">{s.label}</span>
+                  <span className="ml-auto font-mono text-primary">{money(months[hover]![s.key])}</span>
                 </div>
               ))}
             </div>
           ) : null}
-          {empty ? <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">No invoices or payments in the last 12 months.</p> : null}
+          {empty ? <p className="absolute inset-0 flex items-center justify-center text-sm text-tertiary">No invoices or payments in the last 12 months.</p> : null}
         </div>
       )}
     </div>
@@ -168,7 +168,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
               Clients owe you <Em tone="var(--finance)">{money(data.outstanding)}</Em>
               {data.overdue ? (
                 <>
-                  , of which <Em tone="var(--danger)">{money(data.overdue)}</Em> is overdue
+                  , of which <Em tone="var(--color-fg-error-primary)">{money(data.overdue)}</Em> is overdue
                 </>
               ) : (
                 <>, and nothing is overdue</>
@@ -209,7 +209,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
             data ? (
               <div>
                 <Meter value={data.aging.current} max={Math.max(1, data.outstanding)} color="var(--chart-collected)" label="Share not yet due" />
-                <div className="mt-1.5 text-[11px] text-subtle-foreground">{data.outstanding ? Math.round((data.aging.current / data.outstanding) * 100) : 100}% not yet due</div>
+                <div className="mt-1.5 text-[11px] text-quaternary">{data.outstanding ? Math.round((data.aging.current / data.outstanding) * 100) : 100}% not yet due</div>
               </div>
             ) : null
           }
@@ -217,7 +217,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
         <KpiTile
           label="Overdue"
           icon={<AlertTriangle />}
-          tone="var(--danger)"
+          tone="var(--color-fg-error-primary)"
           value={data ? compactMoney(data.overdue) : "—"}
           hint={data?.overdue ? "Send a reminder or record a payment" : "Nothing late"}
           trend={data?.overdue ? { label: "Follow up", good: false } : undefined}
@@ -254,10 +254,10 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
               return (
                 <li key={k} className="text-sm">
                   <div className="flex justify-between">
-                    <span className={cn(k !== "current" && v ? "text-foreground" : "text-muted-foreground")}>{label}</span>
+                    <span className={cn(k !== "current" && v ? "text-primary" : "text-tertiary")}>{label}</span>
                     <span className="font-mono text-[13px]">{money(v)}</span>
                   </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
                     <div className="h-full rounded-full" style={{ width: `${(v / agingMax) * 100}%`, background: k === "current" ? "var(--chart-collected)" : "var(--chart-billed)" }} />
                   </div>
                 </li>
@@ -271,7 +271,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
           icon={<Users />}
           tone="var(--finance)"
           action={
-            <Link to="/finance/clients" className="inline-flex items-center gap-1 text-accent hover:underline">
+            <Link to="/finance/clients" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
               Clients <ArrowRight className="size-3.5" />
             </Link>
           }
@@ -280,11 +280,11 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
           <ul className="space-y-1">
             {data?.topClients.map((c) => (
               <li key={c.clientId}>
-                <Link to="/finance/clients/$id" params={{ id: c.clientId }} className="flex items-center gap-3 rounded-lg p-1.5 text-sm hover:bg-surface-2">
+                <Link to="/finance/clients/$id" params={{ id: c.clientId }} className="flex items-center gap-3 rounded-lg p-1.5 text-sm hover:bg-secondary">
                   <Avatar name={c.name} className="size-8 rounded-lg text-[11px]" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{c.name}</span>
-                    {c.overdue ? <span className="block font-mono text-[11px] text-danger">{money(c.overdue)} late</span> : <span className="block text-[11px] text-muted-foreground">On time</span>}
+                    {c.overdue ? <span className="block font-mono text-[11px] text-error-primary">{money(c.overdue)} late</span> : <span className="block text-[11px] text-tertiary">On time</span>}
                   </span>
                   <span className="font-mono text-[13px]">{compactMoney(c.outstanding)}</span>
                 </Link>
@@ -298,24 +298,24 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
           icon={<Receipt />}
           tone="var(--chart-collected)"
           action={
-            <Link to="/finance/payments" className="inline-flex items-center gap-1 text-accent hover:underline">
+            <Link to="/finance/payments" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
               All <ArrowRight className="size-3.5" />
             </Link>
           }
         >
           {data?.recentPayments.length === 0 ? <EmptyState icon={<Receipt />} title="No payments yet" description="Payments you record or receive online show up here." /> : null}
-          <ol className="space-y-3 border-l border-border pl-4">
+          <ol className="space-y-3 border-l border-secondary pl-4">
             {data?.recentPayments.map((p) => (
               <li key={p.id} className="relative">
-                <span className="absolute -left-[21px] top-1.5 size-2.5 rounded-full border-2 border-surface bg-[var(--chart-collected)]" />
+                <span className="absolute -left-[21px] top-1.5 size-2.5 rounded-full border-2 border-bg-primary bg-[var(--chart-collected)]" />
                 <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="flex items-center justify-between gap-3 text-sm hover:underline">
                   <span className="min-w-0">
                     <span className="block truncate">{p.clientName}</span>
-                    <span className="block text-[11.5px] text-muted-foreground">
+                    <span className="block text-[11.5px] text-tertiary">
                       {formatDate(p.paidOn, { day: "numeric", month: "short" })} · {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
                     </span>
                   </span>
-                  <span className="font-mono text-[13px] text-success">+{compactMoney(p.amount, p.currency)}</span>
+                  <span className="font-mono text-[13px] text-success-primary">+{compactMoney(p.amount, p.currency)}</span>
                 </Link>
               </li>
             ))}
@@ -323,7 +323,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
         </Panel>
       </div>
       {data && !data.billedThisYear && !data.outstanding ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 text-sm text-tertiary">
           <FileText className="size-4" /> Tip: set your GSTIN and bank details in Settings first, so every invoice is ready to send.
         </p>
       ) : null}

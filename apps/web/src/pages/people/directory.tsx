@@ -71,7 +71,7 @@ export function DirectoryPage({ me }: { me: Me }) {
       <div className="rise rise-1 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-full sm:w-80">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tertiary" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, title or ID" className="pl-9" />
           </div>
           <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full sm:w-40" aria-label="Status">
@@ -80,7 +80,7 @@ export function DirectoryPage({ me }: { me: Me }) {
             <option value="offboarded">Former</option>
             <option value="all">Everyone</option>
           </Select>
-          <div className="ml-auto inline-flex rounded-lg border border-border bg-surface p-0.5 shadow-card" role="group" aria-label="View">
+          <div className="ml-auto inline-flex rounded-lg border border-secondary bg-primary p-0.5 shadow-xs" role="group" aria-label="View">
             {(
               [
                 ["cards", LayoutGrid, "Cards"],
@@ -93,7 +93,7 @@ export function DirectoryPage({ me }: { me: Me }) {
                 aria-pressed={view === k}
                 aria-label={label}
                 onClick={() => setView(k)}
-                className={cn("flex size-8 items-center justify-center rounded-md", view === k ? "bg-surface-3 text-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn("flex size-8 items-center justify-center rounded-md", view === k ? "bg-tertiary text-primary" : "text-tertiary hover:text-primary")}
               >
                 <Icon className="size-4" />
               </button>
@@ -111,12 +111,12 @@ export function DirectoryPage({ me }: { me: Me }) {
                   onClick={() => setDepartmentId(d.id)}
                   className={cn(
                     "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors",
-                    active ? "border-border-strong bg-surface-3 text-foreground" : "border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                    active ? "border-primary bg-tertiary text-primary" : "border-secondary text-tertiary hover:bg-secondary hover:text-primary",
                   )}
                 >
                   <span className="size-2 rounded-full" style={{ background: d.color ?? "var(--people)" }} />
                   {d.name}
-                  {d.headcount !== null ? <span className="font-mono text-[11px] text-subtle-foreground">{d.headcount}</span> : null}
+                  {d.headcount !== null ? <span className="font-mono text-[11px] text-quaternary">{d.headcount}</span> : null}
                 </button>
               );
             })}
@@ -147,19 +147,19 @@ export function DirectoryPage({ me }: { me: Me }) {
             {employees.map((e) => (
               <li key={e.id}>
                 <Link to="/people/$id" params={{ id: e.id }} className="group block h-full">
-                  <Card className="relative flex h-full flex-col items-center overflow-hidden px-4 pb-4 pt-6 text-center transition-all group-hover:-translate-y-0.5 group-hover:border-border-strong">
+                  <Card className="relative flex h-full flex-col items-center overflow-hidden px-4 pb-4 pt-6 text-center transition-all group-hover:-translate-y-0.5 group-hover:border-primary">
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-16" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${e.departmentColor ?? "var(--people)"} 22%, transparent), transparent)` }} />
-                    <Avatar name={e.fullName} src={e.image} className="relative size-16 border-4 border-surface text-lg shadow-card" />
+                    <Avatar name={e.fullName} src={e.image} className="relative size-16 border-4 border-bg-primary text-lg shadow-xs" />
                     <div className="mt-3 flex max-w-full items-center gap-1.5">
                       <span className="truncate font-display text-[15px] font-bold">{e.fullName}</span>
                     </div>
-                    <div className="mt-0.5 max-w-full truncate text-[13px] text-muted-foreground">{e.jobTitle ?? "—"}</div>
+                    <div className="mt-0.5 max-w-full truncate text-[13px] text-tertiary">{e.jobTitle ?? "—"}</div>
                     <div className="mt-2">
                       <StatusBadge status={e.status} />
                     </div>
-                    <div className="mt-auto flex w-full items-center justify-between gap-2 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
+                    <div className="mt-auto flex w-full items-center justify-between gap-2 border-t border-secondary pt-3 text-[11.5px] text-tertiary">
                       <span className="inline-flex min-w-0 items-center gap-1.5">
-                        <span className="size-2 shrink-0 rounded-full" style={{ background: e.departmentColor ?? "var(--subtle-foreground)" }} />
+                        <span className="size-2 shrink-0 rounded-full" style={{ background: e.departmentColor ?? "var(--color-text-quaternary)" }} />
                         <span className="truncate">{e.departmentName ?? "No department"}</span>
                       </span>
                       <span className="shrink-0 font-mono">{e.employeeCode}</span>
@@ -173,7 +173,7 @@ export function DirectoryPage({ me }: { me: Me }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr className="border-b border-secondary text-left text-xs text-tertiary">
                   <th className="px-4 py-2.5 font-medium">Name</th>
                   <th className="px-4 py-2.5 font-medium">Department</th>
                   <th className="px-4 py-2.5 font-medium">Manager</th>
@@ -181,11 +181,11 @@ export function DirectoryPage({ me }: { me: Me }) {
                   <th className="px-4 py-2.5 font-medium">ID</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border-secondary">
                 {employees.map((e) => (
                   <tr
                     key={e.id}
-                    className="cursor-pointer hover:bg-surface-2/60"
+                    className="cursor-pointer hover:bg-secondary/60"
                     onClick={() => navigate({ to: "/people/$id", params: { id: e.id } })}
                   >
                     <td className="px-4 py-3">
@@ -196,7 +196,7 @@ export function DirectoryPage({ me }: { me: Me }) {
                             <span className="truncate">{e.fullName}</span>
                             <StatusBadge status={e.status} />
                           </div>
-                          <div className="truncate text-xs text-muted-foreground">{e.jobTitle ?? e.workEmail ?? "—"}</div>
+                          <div className="truncate text-xs text-tertiary">{e.jobTitle ?? e.workEmail ?? "—"}</div>
                         </div>
                       </Link>
                     </td>
@@ -207,12 +207,12 @@ export function DirectoryPage({ me }: { me: Me }) {
                           {e.departmentName}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-tertiary">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{e.managerName ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{EMPLOYMENT_LABEL[e.employmentType]}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{e.employeeCode}</td>
+                    <td className="px-4 py-3 text-tertiary">{e.managerName ?? "—"}</td>
+                    <td className="px-4 py-3 text-tertiary">{EMPLOYMENT_LABEL[e.employmentType]}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-tertiary">{e.employeeCode}</td>
                   </tr>
                 ))}
               </tbody>

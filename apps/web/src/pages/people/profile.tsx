@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, Field, Input, Skeleton } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Field, Input, Skeleton } from "@hephaestus/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Briefcase, Cake, FileText, Mail, MapPin, Paperclip, Pencil, Phone, Trash2, UserMinus } from "lucide-react";
@@ -21,9 +21,9 @@ import { PageBody } from "./layout.tsx";
 function Detail({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 text-muted-foreground [&_svg]:size-4">{icon}</span>
+      <span className="mt-0.5 text-tertiary [&_svg]:size-4">{icon}</span>
       <div className="min-w-0">
-        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-xs text-tertiary">{label}</div>
         <div className="truncate text-sm">{children}</div>
       </div>
     </div>
@@ -98,22 +98,22 @@ function Documents({ employeeId, canDelete }: { employeeId: string; canDelete: b
         </Button>
         <input ref={input} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">Only HR and this person can see these. Up to 25 MB each.</p>
-      <ul className="mt-4 divide-y divide-border">
-        {data?.attachments.length === 0 ? <li className="py-2 text-sm text-muted-foreground">No documents yet.</li> : null}
+      <p className="mt-1 text-xs text-tertiary">Only HR and this person can see these. Up to 25 MB each.</p>
+      <ul className="mt-4 divide-y divide-border-secondary">
+        {data?.attachments.length === 0 ? <li className="py-2 text-sm text-tertiary">No documents yet.</li> : null}
         {data?.attachments.map((a) => (
           <li key={a.id} className="flex items-center gap-3 py-2.5 text-sm">
-            <FileText className="size-4 text-muted-foreground" />
+            <FileText className="size-4 text-tertiary" />
             <a href={`/api/v1/files/${a.id}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate hover:underline">
               {a.name}
             </a>
-            <span className="font-mono text-xs text-muted-foreground">{formatBytes(a.size)}</span>
+            <span className="font-mono text-xs text-tertiary">{formatBytes(a.size)}</span>
             {canDelete ? (
               <button
                 type="button"
                 aria-label={`Remove ${a.name}`}
                 onClick={() => confirm(`Remove ${a.name}?`) && remove.mutate(a.id)}
-                className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-danger"
+                className="rounded p-1 text-tertiary hover:bg-secondary hover:text-error-primary"
               >
                 <Trash2 className="size-4" />
               </button>
@@ -149,7 +149,7 @@ function OffboardDialog({ open, onOpenChange, id, name }: { open: boolean; onOpe
         }
       >
         <Field label="Last working day">
-          <Input type="date" value={exitDate} onChange={(e) => setExitDate(e.target.value)} />
+          <DateInput value={exitDate} onChange={(v) => setExitDate(v)} />
         </Field>
       </DialogContent>
     </Dialog>
@@ -175,7 +175,7 @@ export function ProfilePage() {
   if (error || !data) {
     return (
       <PageBody>
-        <p className="text-sm text-muted-foreground">{error?.message ?? "Employee not found"}</p>
+        <p className="text-sm text-tertiary">{error?.message ?? "Employee not found"}</p>
       </PageBody>
     );
   }
@@ -185,7 +185,7 @@ export function ProfilePage() {
 
   return (
     <PageBody>
-      <Link to="/people/directory" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link to="/people/directory" className="inline-flex items-center gap-1 text-sm text-tertiary hover:text-primary">
         <ArrowLeft className="size-4" /> Directory
       </Link>
 
@@ -195,14 +195,14 @@ export function ProfilePage() {
           style={{ background: `linear-gradient(120deg, color-mix(in srgb, ${e.departmentColor ?? "var(--people)"} 40%, transparent), transparent 70%)` }}
         />
         <div className="flex flex-wrap items-end gap-4 px-6 pb-6">
-          <Avatar name={e.fullName} src={e.image} className="-mt-10 size-20 border-4 border-surface text-lg" />
+          <Avatar name={e.fullName} src={e.image} className="-mt-10 size-20 border-4 border-bg-primary text-lg" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold">{e.fullName}</h1>
               <StatusBadge status={e.status} />
               {access.isSelf ? <Badge tone="people">You</Badge> : null}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-tertiary">
               {[e.jobTitle, e.departmentName].filter(Boolean).join(" · ") || "No title yet"}
             </p>
           </div>
@@ -219,7 +219,7 @@ export function ProfilePage() {
             ) : null}
           </div>
         </div>
-        <dl className="grid grid-cols-2 border-t border-border sm:grid-cols-4">
+        <dl className="grid grid-cols-2 border-t border-secondary sm:grid-cols-4">
           {[
             { label: "With the company", value: tenure(e.joinDate) },
             { label: "Direct reports", value: String(reports.length) },
@@ -229,8 +229,8 @@ export function ProfilePage() {
               value: balances?.balances.length ? `${balances.balances.reduce((a, b) => a + (b.remaining ?? 0), 0)} days` : "—",
             },
           ].map((s, i) => (
-            <div key={s.label} className={cn("px-6 py-3.5", i > 0 && "sm:border-l sm:border-border", i % 2 === 1 && "border-l border-border")}>
-              <dt className="text-[11.5px] text-muted-foreground">{s.label}</dt>
+            <div key={s.label} className={cn("px-6 py-3.5", i > 0 && "sm:border-l sm:border-secondary", i % 2 === 1 && "border-l border-secondary")}>
+              <dt className="text-[11.5px] text-tertiary">{s.label}</dt>
               <dd className="mt-0.5 font-display text-lg font-bold">{s.value}</dd>
             </div>
           ))}
@@ -275,14 +275,14 @@ export function ProfilePage() {
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">{activeRun.name}</h2>
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="font-mono text-xs text-tertiary">
                   {activeRun.done}/{activeRun.total}
                 </span>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
                 <div className="h-full rounded-full bg-people" style={{ width: `${(activeRun.done / Math.max(1, activeRun.total)) * 100}%` }} />
               </div>
-              <Link to="/people/onboarding" className="mt-3 inline-block text-sm text-accent hover:underline">
+              <Link to="/people/onboarding" className="mt-3 inline-block text-sm text-brand-secondary hover:underline">
                 Open checklist
               </Link>
             </Card>
@@ -294,24 +294,24 @@ export function ProfilePage() {
         <div className="space-y-4">
           <Card className="p-6">
             <h2 className="text-lg font-bold">Reporting</h2>
-            <div className="mt-4 text-xs text-muted-foreground">Manager</div>
+            <div className="mt-4 text-xs text-tertiary">Manager</div>
             {e.managerId ? (
-              <Link to="/people/$id" params={{ id: e.managerId }} className="mt-2 flex items-center gap-3 rounded-lg hover:bg-surface-2">
+              <Link to="/people/$id" params={{ id: e.managerId }} className="mt-2 flex items-center gap-3 rounded-lg hover:bg-secondary">
                 <Avatar name={e.managerName ?? "?"} />
                 <span className="text-sm font-medium">{e.managerName}</span>
               </Link>
             ) : (
               <p className="mt-1 text-sm">—</p>
             )}
-            <div className="mt-5 text-xs text-muted-foreground">Direct reports ({reports.length})</div>
+            <div className="mt-5 text-xs text-tertiary">Direct reports ({reports.length})</div>
             <ul className="mt-2 space-y-2">
               {reports.map((r) => (
                 <li key={r.id}>
-                  <Link to="/people/$id" params={{ id: r.id }} className="flex items-center gap-3 rounded-lg hover:bg-surface-2">
+                  <Link to="/people/$id" params={{ id: r.id }} className="flex items-center gap-3 rounded-lg hover:bg-secondary">
                     <Avatar name={r.fullName} src={r.image} />
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{r.fullName}</div>
-                      <div className="truncate text-xs text-muted-foreground">{r.jobTitle ?? "—"}</div>
+                      <div className="truncate text-xs text-tertiary">{r.jobTitle ?? "—"}</div>
                     </div>
                   </Link>
                 </li>
@@ -320,7 +320,7 @@ export function ProfilePage() {
             </ul>
             {teams.length ? (
               <>
-                <div className="mt-5 text-xs text-muted-foreground">Teams</div>
+                <div className="mt-5 text-xs text-tertiary">Teams</div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {teams.map((t) => (
                     <Badge key={t.id} tone="collab">
@@ -341,12 +341,12 @@ export function ProfilePage() {
                     <div className="flex items-center gap-2">
                       <span className="size-2.5 rounded-full" style={{ background: b.color }} />
                       <span className="flex-1">{b.name}</span>
-                      <span className="font-mono text-xs text-muted-foreground">
+                      <span className="font-mono text-xs text-tertiary">
                         {b.quota === null ? `${b.approved} used` : `${b.remaining} left`}
                       </span>
                     </div>
                     {b.quota ? (
-                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
                         <div className="h-full rounded-full" style={{ width: `${Math.min(100, ((b.approved + b.pending) / b.quota) * 100)}%`, background: b.color }} />
                       </div>
                     ) : null}

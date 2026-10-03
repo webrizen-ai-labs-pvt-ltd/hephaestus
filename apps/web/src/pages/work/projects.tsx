@@ -1,5 +1,5 @@
 import { can, projectKeyFrom } from "@hephaestus/core";
-import { Badge, Button, Card, cn, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { FolderKanban, Plus } from "lucide-react";
@@ -140,10 +140,10 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
             </Field>
           ) : null}
           <Field label="Start">
-            <Input type="date" value={startDate} onChange={(e) => setStart(e.target.value)} />
+            <DateInput value={startDate} onChange={(v) => setStart(v)} />
           </Field>
           <Field label="Due">
-            <Input type="date" value={dueDate} min={startDate || undefined} onChange={(e) => setDue(e.target.value)} />
+            <DateInput value={dueDate} min={startDate || undefined} onChange={(v) => setDue(v)} />
           </Field>
           {!project ? (
             <Field label="Start from" hint="Copies stages, milestones and tasks. Dates shift to the new start." className="sm:col-span-2">
@@ -166,7 +166,7 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
                   aria-label={`Colour ${c}`}
                   aria-pressed={color === c}
                   onClick={() => setColor(c)}
-                  className="size-7 rounded-full ring-offset-2 ring-offset-surface aria-pressed:ring-2 aria-pressed:ring-foreground"
+                  className="size-7 rounded-full ring-offset-2 ring-offset-bg-primary aria-pressed:ring-2 aria-pressed:ring-fg-primary"
                   style={{ background: c }}
                 />
               ))}
@@ -184,39 +184,39 @@ function ProjectCard({ p, today }: { p: ProjectSummary; today: string }) {
   const daysLeft = p.dueDate ? Math.round((Date.parse(p.dueDate) - Date.parse(today)) / 86_400_000) : null;
   return (
     <Link to="/work/projects/$id" params={{ id: p.id }} className="group">
-      <Card className="relative flex h-full flex-col overflow-hidden p-5 transition-all group-hover:-translate-y-0.5 group-hover:border-border-strong">
+      <Card className="relative flex h-full flex-col overflow-hidden p-5 transition-all group-hover:-translate-y-0.5 group-hover:border-primary">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-70" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${p.color} 16%, transparent), transparent)` }} />
         <div className="relative flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl font-mono text-[11px] font-bold text-white shadow-card" style={{ background: p.color }}>
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl font-mono text-[11px] font-bold text-white shadow-xs" style={{ background: p.color }}>
             {p.key.slice(0, 4)}
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-[17px] font-bold leading-tight">{p.name}</h3>
-            <div className="mt-0.5 truncate text-xs text-muted-foreground">{p.leadName ? `Led by ${p.leadName}` : "No lead yet"}</div>
+            <div className="mt-0.5 truncate text-xs text-tertiary">{p.leadName ? `Led by ${p.leadName}` : "No lead yet"}</div>
           </div>
           {p.status === "paused" ? <Badge>Paused</Badge> : null}
           {p.status === "completed" ? <Badge tone="people">Completed</Badge> : null}
         </div>
-        <p className="relative mt-3 line-clamp-2 min-h-10 text-sm text-muted-foreground">{p.description ?? "No description"}</p>
+        <p className="relative mt-3 line-clamp-2 min-h-10 text-sm text-tertiary">{p.description ?? "No description"}</p>
         <div className="relative mt-auto flex items-center gap-4 pt-4">
           <ProgressRing value={pct} size={52} stroke={5} color={p.color}>
             <span className="text-[11px]">{pct}%</span>
           </ProgressRing>
           <dl className="grid flex-1 grid-cols-3 gap-2 text-center">
             <div>
-              <dt className="text-[10.5px] text-muted-foreground">Done</dt>
+              <dt className="text-[10.5px] text-tertiary">Done</dt>
               <dd className="font-display text-base font-bold tabular">
                 {p.done}
-                <span className="text-xs font-normal text-subtle-foreground">/{p.total}</span>
+                <span className="text-xs font-normal text-quaternary">/{p.total}</span>
               </dd>
             </div>
             <div>
-              <dt className="text-[10.5px] text-muted-foreground">Overdue</dt>
-              <dd className={cn("font-display text-base font-bold tabular", p.overdue ? "text-danger" : "text-subtle-foreground")}>{p.overdue}</dd>
+              <dt className="text-[10.5px] text-tertiary">Overdue</dt>
+              <dd className={cn("font-display text-base font-bold tabular", p.overdue ? "text-error-primary" : "text-quaternary")}>{p.overdue}</dd>
             </div>
             <div>
-              <dt className="text-[10.5px] text-muted-foreground">Due</dt>
-              <dd className={cn("pt-0.5 font-mono text-xs", late ? "text-danger" : "text-foreground")}>
+              <dt className="text-[10.5px] text-tertiary">Due</dt>
+              <dd className={cn("pt-0.5 font-mono text-xs", late ? "text-error-primary" : "text-primary")}>
                 {p.dueDate ? (daysLeft !== null && daysLeft >= 0 && daysLeft <= 14 ? `${daysLeft}d left` : formatDate(p.dueDate, { day: "numeric", month: "short" })) : "—"}
               </dd>
             </div>
@@ -251,7 +251,7 @@ export function ProjectsPage({ me }: { me: Me }) {
               <Em tone="var(--work)">{projects.length}</Em> {status} {projects.length === 1 ? me.settings.terms.project.one.toLowerCase() : many.toLowerCase()}, <Em>{total ? Math.round((done / total) * 100) : 0}%</Em> of their tasks done
               {overdue ? (
                 <>
-                  , <Em tone="var(--danger)">{overdue} overdue</Em>
+                  , <Em tone="var(--color-fg-error-primary)">{overdue} overdue</Em>
                 </>
               ) : null}
               .
@@ -268,7 +268,7 @@ export function ProjectsPage({ me }: { me: Me }) {
           ) : null
         }
       />
-      <div className="inline-flex gap-1 rounded-xl border border-border bg-surface p-1 text-sm shadow-card">
+      <div className="inline-flex gap-1 rounded-xl border border-secondary bg-primary p-1 text-sm shadow-xs">
         {[
           ["current", "Current"],
           ["completed", "Completed"],
@@ -278,7 +278,7 @@ export function ProjectsPage({ me }: { me: Me }) {
             key={k}
             type="button"
             onClick={() => setStatus(k!)}
-            className={cn("rounded-lg px-3 py-1.5", status === k ? "bg-surface-3 font-medium text-foreground" : "text-muted-foreground hover:text-foreground")}
+            className={cn("rounded-lg px-3 py-1.5", status === k ? "bg-tertiary font-medium text-primary" : "text-tertiary hover:text-primary")}
           >
             {label}
           </button>
@@ -308,7 +308,7 @@ export function ProjectsPage({ me }: { me: Me }) {
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-border text-sm text-muted-foreground transition-colors hover:border-border-strong hover:bg-surface/60 hover:text-foreground"
+              className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-secondary text-sm text-tertiary transition-colors hover:border-primary hover:bg-primary/60 hover:text-primary"
             >
               <Plus className="size-5" /> New {me.settings.terms.project.one.toLowerCase()}
             </button>

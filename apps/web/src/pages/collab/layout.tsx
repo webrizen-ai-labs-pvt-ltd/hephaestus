@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Avatar, Button, cn, Dialog, DialogContent, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, CheckboxBase, cn, Dialog, DialogContent, Field, Input, Select, Textarea } from "@hephaestus/ui";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { AtSign, Gavel, Hash, Lock, Plus, Search } from "lucide-react";
 import { useState } from "react";
@@ -58,16 +58,17 @@ function NewChannelDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
           {kind === "private" ? (
             <div>
               <div className="mb-1.5 text-sm font-medium">Members</div>
-              <ul className="max-h-48 overflow-y-auto rounded-lg border border-border">
+              <ul className="max-h-48 overflow-y-auto rounded-lg border border-secondary">
                 {data?.members.map((m) => (
                   <li key={m.id}>
-                    <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-surface-2">
+                    <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-secondary">
                       <input
                         type="checkbox"
                         checked={memberIds.includes(m.id)}
                         onChange={() => setMemberIds((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id]))}
-                        className="accent-[var(--primary)]"
+                        className="peer sr-only"
                       />
+                      <CheckboxBase isSelected={memberIds.includes(m.id)} className="peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus-ring" />
                       <Avatar name={m.name} src={m.image} className="size-6 text-[10px]" />
                       {m.name}
                     </label>
@@ -112,7 +113,7 @@ function NewDmDialog({ open, onOpenChange, meId }: { open: boolean; onOpenChange
         }
       >
         <div className="relative mb-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tertiary" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people" className="pl-9" autoFocus />
         </div>
         <ul className="max-h-72 overflow-y-auto">
@@ -123,19 +124,19 @@ function NewDmDialog({ open, onOpenChange, meId }: { open: boolean; onOpenChange
                 <button
                   type="button"
                   onClick={() => setPicked((l) => (on ? l.filter((x) => x !== m.id) : [...l, m.id].slice(0, 8)))}
-                  className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-2", on && "bg-surface-2")}
+                  className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary", on && "bg-secondary")}
                 >
                   <Avatar name={m.name} src={m.image} className="size-8" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{m.name}</div>
-                    <div className="truncate text-xs text-muted-foreground">{m.email}</div>
+                    <div className="truncate text-xs text-tertiary">{m.email}</div>
                   </div>
-                  <span className={cn("size-4 rounded-full border-2", on ? "border-primary bg-primary" : "border-input")} />
+                  <span className={cn("size-4 rounded-full border-2", on ? "border-brand bg-brand-solid" : "border-primary")} />
                 </button>
               </li>
             );
           })}
-          {data && people.length === 0 ? <li className="px-3 py-6 text-center text-sm text-muted-foreground">No one else has signed in yet.</li> : null}
+          {data && people.length === 0 ? <li className="px-3 py-6 text-center text-sm text-tertiary">No one else has signed in yet.</li> : null}
         </ul>
       </DialogContent>
     </Dialog>
@@ -157,13 +158,13 @@ function ChannelLink({ c, active }: { c: ChannelSummary; active: boolean }) {
       params={{ id: c.id }}
       className={cn(
         "flex h-8 items-center gap-2 rounded-md px-2 text-sm",
-        active ? "bg-surface-2 font-medium text-foreground" : c.unread ? "font-semibold text-foreground hover:bg-surface-2/60" : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
+        active ? "bg-secondary font-medium text-primary" : c.unread ? "font-semibold text-primary hover:bg-secondary/60" : "text-tertiary hover:bg-secondary/60 hover:text-primary",
       )}
     >
-      <span className="flex w-5 shrink-0 justify-center text-muted-foreground">{icon}</span>
+      <span className="flex w-5 shrink-0 justify-center text-tertiary">{icon}</span>
       <span className="truncate">{c.name}</span>
       {c.mentions ? (
-        <span className="ml-auto rounded-full bg-primary px-1.5 font-mono text-[10px] text-primary-foreground">{c.mentions}</span>
+        <span className="ml-auto rounded-full bg-brand-solid px-1.5 font-mono text-[10px] text-white">{c.mentions}</span>
       ) : c.unread ? (
         <span className="ml-auto size-2 rounded-full bg-collab" />
       ) : null}
@@ -184,28 +185,28 @@ export function CollabLayout({ me }: { me: Me }) {
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)]">
-      <aside className={cn("w-full shrink-0 flex-col overflow-y-auto border-r border-border bg-sidebar/40 p-3 md:flex md:w-64", inChannel ? "hidden" : "flex")}>
+      <aside className={cn("w-full shrink-0 flex-col overflow-y-auto border-r border-secondary bg-sidebar/40 p-3 md:flex md:w-64", inChannel ? "hidden" : "flex")}>
         <div className="flex items-center gap-2 px-2 pb-3 pt-1">
           <span className="size-2 rounded-full bg-collab" />
           <span className="font-display text-sm font-bold">Collaboration</span>
         </div>
         <Link
           to="/collab/mentions"
-          className={cn("flex h-8 items-center gap-2 rounded-md px-2 text-sm", pathname === "/collab/mentions" ? "bg-surface-2 font-medium" : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground")}
+          className={cn("flex h-8 items-center gap-2 rounded-md px-2 text-sm", pathname === "/collab/mentions" ? "bg-secondary font-medium" : "text-tertiary hover:bg-secondary/60 hover:text-primary")}
         >
           <AtSign className="size-4" /> Mentions
         </Link>
         <Link
           to="/collab/decisions"
-          className={cn("flex h-8 items-center gap-2 rounded-md px-2 text-sm", pathname === "/collab/decisions" ? "bg-surface-2 font-medium" : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground")}
+          className={cn("flex h-8 items-center gap-2 rounded-md px-2 text-sm", pathname === "/collab/decisions" ? "bg-secondary font-medium" : "text-tertiary hover:bg-secondary/60 hover:text-primary")}
         >
           <Gavel className="size-4" /> Decisions
         </Link>
 
         <div className="mt-5 flex items-center justify-between px-2 pb-1">
-          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Channels</span>
+          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-tertiary">Channels</span>
           {canCreate ? (
-            <button type="button" aria-label="New channel" onClick={() => setNewChannel(true)} className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+            <button type="button" aria-label="New channel" onClick={() => setNewChannel(true)} className="rounded p-0.5 text-tertiary hover:text-primary">
               <Plus className="size-4" />
             </button>
           ) : null}
@@ -222,7 +223,7 @@ export function CollabLayout({ me }: { me: Me }) {
               await api(`collab/channels/${id}/join`, { method: "POST" });
               navigate({ to: "/collab/c/$id", params: { id } });
             }}
-            className="mt-1 h-8 border-dashed text-xs text-muted-foreground"
+            size="xs" variant="dashed" className="mt-1 text-xs text-tertiary"
             aria-label="Join a channel"
           >
             <option value="">Join a channel ({data.browse.length})</option>
@@ -235,15 +236,15 @@ export function CollabLayout({ me }: { me: Me }) {
         ) : null}
 
         <div className="mt-5 flex items-center justify-between px-2 pb-1">
-          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Direct messages</span>
-          <button type="button" aria-label="New direct message" onClick={() => setNewDm(true)} className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-tertiary">Direct messages</span>
+          <button type="button" aria-label="New direct message" onClick={() => setNewDm(true)} className="rounded p-0.5 text-tertiary hover:text-primary">
             <Plus className="size-4" />
           </button>
         </div>
         {dms.map((c) => (
           <ChannelLink key={c.id} c={c} active={pathname === `/collab/c/${c.id}`} />
         ))}
-        {data && dms.length === 0 ? <p className="px-2 py-1 text-xs text-muted-foreground">No conversations yet.</p> : null}
+        {data && dms.length === 0 ? <p className="px-2 py-1 text-xs text-tertiary">No conversations yet.</p> : null}
       </aside>
 
       <section className={cn("min-w-0 flex-1 flex-col", inChannel ? "flex" : "hidden md:flex")}>

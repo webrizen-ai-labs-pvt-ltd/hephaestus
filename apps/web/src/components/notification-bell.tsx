@@ -7,7 +7,7 @@ import { api } from "../lib/api.ts";
 import { type Notification, useNotifications } from "../lib/collab.ts";
 
 function iconFor(type: string) {
-  if (type.includes("mention")) return <AtSign className="size-4 text-accent" />;
+  if (type.includes("mention")) return <AtSign className="size-4 text-brand-secondary" />;
   if (type.startsWith("message") || type.startsWith("comment")) return <MessageSquare className="size-4 text-collab" />;
   if (type.startsWith("leave")) return <CalendarCheck className="size-4 text-people" />;
   if (type.startsWith("task")) return <ListTodo className="size-4 text-work" />;
@@ -50,14 +50,14 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className="relative">
           <Bell />
           {unread ? (
-            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] leading-4 text-primary-foreground">
+            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-brand-solid px-1 font-mono text-[10px] leading-4 text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           ) : null}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(380px,calc(100vw-24px))] p-0">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between border-b border-secondary px-4 py-3">
           <span className="font-display font-bold">Notifications</span>
           {unread ? (
             <Button size="sm" variant="ghost" onClick={() => void readAll()}>
@@ -68,18 +68,18 @@ export function NotificationBell() {
         {list.length === 0 ? (
           <EmptyState icon={<Bell />} title="You're all caught up" description="Mentions, assignments and approvals show up here." />
         ) : (
-          <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
+          <ul className="max-h-[60vh] divide-y divide-border-secondary overflow-y-auto">
             {list.map((n) => (
               <li key={n.id}>
-                <button type="button" onClick={() => void openOne(n)} className={cn("flex w-full gap-3 px-4 py-3 text-left hover:bg-surface-2", !n.readAt && "bg-primary/5")}>
+                <button type="button" onClick={() => void openOne(n)} className={cn("flex w-full gap-3 px-4 py-3 text-left hover:bg-secondary", !n.readAt && "bg-brand-solid/5")}>
                   <span className="mt-0.5">{iconFor(n.type)}</span>
                   <span className="min-w-0 flex-1">
                     <span className={cn("block text-sm", !n.readAt && "font-medium")}>{n.title}</span>
-                    {n.body ? <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{n.body}</span> : null}
+                    {n.body ? <span className="mt-0.5 line-clamp-2 block text-xs text-tertiary">{n.body}</span> : null}
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1.5">
-                    <span className="font-mono text-[11px] text-muted-foreground">{ago(n.createdAt)}</span>
-                    {!n.readAt ? <span className="size-2 rounded-full bg-primary" /> : null}
+                    <span className="font-mono text-[11px] text-tertiary">{ago(n.createdAt)}</span>
+                    {!n.readAt ? <span className="size-2 rounded-full bg-brand-solid" /> : null}
                   </span>
                 </button>
               </li>

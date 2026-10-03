@@ -37,7 +37,7 @@ export function PeopleOverviewPage() {
               )}
               {s.pendingLeave ? (
                 <>
-                  , and <Em tone="var(--ember)">{plural(s.pendingLeave, "leave request")}</Em> waiting for approval
+                  , and <Em tone="var(--color-brand-600)">{plural(s.pendingLeave, "leave request")}</Em> waiting for approval
                 </>
               ) : null}
               .
@@ -105,7 +105,7 @@ export function PeopleOverviewPage() {
           tone="var(--people)"
           meta={depts.length ? plural(depts.length, "department") : undefined}
           action={
-            <Link to="/people/structure" className="inline-flex items-center gap-1 text-accent hover:underline">
+            <Link to="/people/structure" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
               Manage <ArrowRight className="size-3.5" />
             </Link>
           }
@@ -129,23 +129,23 @@ export function PeopleOverviewPage() {
                 {depts.map((d) => (
                   <span key={d.id} className="h-full first:rounded-l-full" style={{ flex: d.count, background: d.color ?? "var(--people)" }} title={`${d.name}: ${d.count}`} />
                 ))}
-                {unplaced ? <span className="h-full bg-surface-3" style={{ flex: unplaced }} title={`No department: ${unplaced}`} /> : null}
+                {unplaced ? <span className="h-full bg-tertiary" style={{ flex: unplaced }} title={`No department: ${unplaced}`} /> : null}
               </div>
               <ul className="mt-5 grid gap-x-6 gap-y-3 sm:grid-cols-2">
                 {depts.map((d) => {
                   const pct = s?.headcount ? Math.round((d.count / s.headcount) * 100) : 0;
                   return (
-                    <li key={d.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface-2/50 px-3 py-2.5">
+                    <li key={d.id} className="flex items-center gap-3 rounded-lg border border-secondary bg-secondary/50 px-3 py-2.5">
                       <span className="size-2.5 shrink-0 rounded-full" style={{ background: d.color ?? "var(--people)" }} />
                       <span className="min-w-0 flex-1 truncate text-sm">{d.name}</span>
                       <span className="font-display text-lg font-bold tabular">{d.count}</span>
-                      <span className="w-9 text-right font-mono text-[11px] text-subtle-foreground">{pct}%</span>
+                      <span className="w-9 text-right font-mono text-[11px] text-quaternary">{pct}%</span>
                     </li>
                   );
                 })}
                 {unplaced ? (
-                  <li className="flex items-center gap-3 rounded-lg border border-dashed border-border px-3 py-2.5 text-muted-foreground">
-                    <span className="size-2.5 shrink-0 rounded-full bg-surface-3" />
+                  <li className="flex items-center gap-3 rounded-lg border border-dashed border-secondary px-3 py-2.5 text-tertiary">
+                    <span className="size-2.5 shrink-0 rounded-full bg-tertiary" />
                     <span className="flex-1 text-sm">No department</span>
                     <span className="font-display text-lg font-bold tabular">{unplaced}</span>
                   </li>
@@ -161,24 +161,24 @@ export function PeopleOverviewPage() {
           tone="var(--collab)"
           meta={balances?.year}
           action={
-            <Link to="/people/leave" className="inline-flex items-center gap-1 text-accent hover:underline">
+            <Link to="/people/leave" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
               Request <ArrowRight className="size-3.5" />
             </Link>
           }
           className="lg:col-span-5"
         >
           {balances && balances.balances.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Your account isn't linked to an employee profile yet.</p>
+            <p className="text-sm text-tertiary">Your account isn't linked to an employee profile yet.</p>
           ) : (
             <ul className="grid grid-cols-2 gap-3">
               {balances?.balances.map((b) => (
-                <li key={b.leaveTypeId} className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/50 p-3">
+                <li key={b.leaveTypeId} className="flex items-center gap-3 rounded-xl border border-secondary bg-secondary/50 p-3">
                   <ProgressRing value={b.quota ? ((b.remaining ?? 0) / b.quota) * 100 : 100} size={44} color={b.color}>
                     <span className="text-[11px]">{b.remaining ?? "∞"}</span>
                   </ProgressRing>
                   <div className="min-w-0">
                     <div className="truncate text-[13px] font-medium">{b.name}</div>
-                    <div className="text-[11.5px] text-muted-foreground">
+                    <div className="text-[11.5px] text-tertiary">
                       {b.quota === null ? `${b.approved} used` : `of ${b.quota} left`}
                       {b.pending ? <span className="text-work"> · {b.pending} pending</span> : null}
                     </div>
@@ -193,15 +193,15 @@ export function PeopleOverviewPage() {
       <div className="rise rise-3 grid gap-4 lg:grid-cols-3">
         <Panel title="Who's out" icon={<CalendarOff />} tone="var(--collab)" meta="today">
           {out.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Everyone's in today.</p>
+            <p className="text-sm text-tertiary">Everyone's in today.</p>
           ) : (
             <ul className="space-y-2.5">
               {out.map((p) => (
                 <li key={p.id}>
-                  <Link to="/people/$id" params={{ id: p.id }} className="flex items-center gap-3 rounded-lg p-1 hover:bg-surface-2">
+                  <Link to="/people/$id" params={{ id: p.id }} className="flex items-center gap-3 rounded-lg p-1 hover:bg-secondary">
                     <Avatar name={p.fullName} src={p.image} />
                     <span className="min-w-0 flex-1 truncate text-sm">{p.fullName}</span>
-                    <span className="font-mono text-[11px] text-muted-foreground">until {short(p.endDate)}</span>
+                    <span className="font-mono text-[11px] text-tertiary">until {short(p.endDate)}</span>
                   </Link>
                 </li>
               ))}
@@ -210,17 +210,17 @@ export function PeopleOverviewPage() {
         </Panel>
 
         <Panel title="Joining this month" icon={<UserPlus />} tone="var(--people)" meta={s?.joinersThisMonth.length || undefined}>
-          {s?.joinersThisMonth.length === 0 ? <p className="text-sm text-muted-foreground">No new joiners this month.</p> : null}
+          {s?.joinersThisMonth.length === 0 ? <p className="text-sm text-tertiary">No new joiners this month.</p> : null}
           <ul className="space-y-2.5">
             {s?.joinersThisMonth.map((j) => (
               <li key={j.id}>
-                <Link to="/people/$id" params={{ id: j.id }} className="flex items-center gap-3 rounded-lg p-1 hover:bg-surface-2">
+                <Link to="/people/$id" params={{ id: j.id }} className="flex items-center gap-3 rounded-lg p-1 hover:bg-secondary">
                   <Avatar name={j.fullName} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{j.fullName}</div>
-                    <div className="truncate text-xs text-muted-foreground">{j.jobTitle ?? "—"}</div>
+                    <div className="truncate text-xs text-tertiary">{j.jobTitle ?? "—"}</div>
                   </div>
-                  <span className="font-mono text-[11px] text-muted-foreground">{short(j.joinDate)}</span>
+                  <span className="font-mono text-[11px] text-tertiary">{short(j.joinDate)}</span>
                 </Link>
               </li>
             ))}
@@ -234,21 +234,21 @@ export function PeopleOverviewPage() {
           meta={myItems?.items.length || undefined}
           action={
             myItems?.items.length ? (
-              <Link to="/people/onboarding" className="inline-flex items-center gap-1 text-accent hover:underline">
+              <Link to="/people/onboarding" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
                 All <ArrowRight className="size-3.5" />
               </Link>
             ) : undefined
           }
         >
-          {myItems?.items.length === 0 ? <p className="text-sm text-muted-foreground">Nothing assigned to you.</p> : null}
+          {myItems?.items.length === 0 ? <p className="text-sm text-tertiary">Nothing assigned to you.</p> : null}
           <ul className="space-y-2">
             {myItems?.items.slice(0, 6).map((i) => (
               <li key={i.id} className="flex items-center gap-3 text-sm">
-                <span className="size-4 shrink-0 rounded-md border-2 border-input" />
+                <span className="size-4 shrink-0 rounded-md border-2 border-primary" />
                 <span className="min-w-0 flex-1 truncate">
-                  {i.title} <span className="text-muted-foreground">· {i.employeeName}</span>
+                  {i.title} <span className="text-tertiary">· {i.employeeName}</span>
                 </span>
-                <span className="font-mono text-[11px] text-muted-foreground">{short(i.dueDate)}</span>
+                <span className="font-mono text-[11px] text-tertiary">{short(i.dueDate)}</span>
               </li>
             ))}
           </ul>

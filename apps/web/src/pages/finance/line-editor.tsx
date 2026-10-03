@@ -32,7 +32,7 @@ export function LineEditor({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-xs text-muted-foreground">
+            <tr className="border-b border-secondary text-left text-xs text-tertiary">
               <th className="w-6" />
               <th className="py-2 pr-2 font-medium">Item or description</th>
               <th className="w-24 py-2 pr-2 font-medium">HSN/SAC</th>
@@ -46,8 +46,8 @@ export function LineEditor({
           </thead>
           <tbody>
             {lines.map((l, i) => (
-              <tr key={i} className="border-b border-border align-top">
-                <td className="pt-3 text-muted-foreground">
+              <tr key={i} className="border-b border-secondary align-top">
+                <td className="pt-3 text-tertiary">
                   <GripVertical className="size-4" />
                 </td>
                 <td className="py-1.5 pr-2">
@@ -122,40 +122,40 @@ export function LineEditor({
       </Button>
 
       <dl className="ml-auto mt-4 grid max-w-xs grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm">
-        <dt className="text-muted-foreground">Subtotal</dt>
+        <dt className="text-tertiary">Subtotal</dt>
         <dd className="text-right font-mono">{m(totals.subtotal)}</dd>
         {totals.discountTotal ? (
           <>
-            <dt className="text-muted-foreground">Discount</dt>
+            <dt className="text-tertiary">Discount</dt>
             <dd className="text-right font-mono">−{m(totals.discountTotal)}</dd>
           </>
         ) : null}
         {supplyType === "intra" ? (
           <>
-            <dt className="text-muted-foreground">CGST</dt>
+            <dt className="text-tertiary">CGST</dt>
             <dd className="text-right font-mono">{m(totals.cgst)}</dd>
-            <dt className="text-muted-foreground">SGST</dt>
+            <dt className="text-tertiary">SGST</dt>
             <dd className="text-right font-mono">{m(totals.sgst)}</dd>
           </>
         ) : supplyType === "inter" ? (
           <>
-            <dt className="text-muted-foreground">IGST</dt>
+            <dt className="text-tertiary">IGST</dt>
             <dd className="text-right font-mono">{m(totals.igst)}</dd>
           </>
         ) : (
           <>
-            <dt className="text-muted-foreground">Tax</dt>
-            <dd className="text-right text-xs text-muted-foreground">Export, zero-rated</dd>
+            <dt className="text-tertiary">Tax</dt>
+            <dd className="text-right text-xs text-tertiary">Export, zero-rated</dd>
           </>
         )}
         {totals.roundOff ? (
           <>
-            <dt className="text-muted-foreground">Round off</dt>
+            <dt className="text-tertiary">Round off</dt>
             <dd className="text-right font-mono">{m(totals.roundOff)}</dd>
           </>
         ) : null}
-        <dt className="border-t border-border pt-2 font-display text-base font-bold">Total</dt>
-        <dd className="border-t border-border pt-2 text-right font-mono text-base font-bold">{m(totals.total)}</dd>
+        <dt className="border-t border-secondary pt-2 font-display text-base font-bold">Total</dt>
+        <dd className="border-t border-secondary pt-2 text-right font-mono text-base font-bold">{m(totals.total)}</dd>
       </dl>
     </div>
   );

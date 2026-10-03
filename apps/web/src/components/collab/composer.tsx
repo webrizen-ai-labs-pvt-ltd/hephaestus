@@ -117,23 +117,23 @@ export function Composer({
   return (
     <div className="relative">
       {suggestions.length ? (
-        <ul className="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-[0_12px_32px_-12px_rgb(0_0_0/0.45)]" role="listbox">
+        <ul className="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-lg border border-secondary bg-primary p-1 shadow-[0_12px_32px_-12px_rgb(0_0_0/0.45)]" role="listbox">
           {suggestions.map((p, i) => (
             <li key={p.id} role="option" aria-selected={i === highlight}>
               <button
                 type="button"
                 onMouseDown={(e) => (e.preventDefault(), choose(p))}
-                className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm", i === highlight && "bg-surface-2")}
+                className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm", i === highlight && "bg-secondary")}
               >
                 <Avatar name={p.name} src={p.image} className="size-6 text-[10px]" />
                 <span className="flex-1 truncate">{p.name}</span>
-                <span className="truncate text-xs text-muted-foreground">{p.email}</span>
+                <span className="truncate text-xs text-tertiary">{p.email}</span>
               </button>
             </li>
           ))}
         </ul>
       ) : null}
-      <div className={cn("rounded-xl border border-input bg-surface focus-within:border-ring", disabled && "opacity-60")}>
+      <div className={cn("rounded-xl border border-primary bg-primary focus-within:border-brand", disabled && "opacity-60")}>
         <textarea
           ref={ref}
           value={text}
@@ -160,12 +160,12 @@ export function Composer({
               void send();
             }
           }}
-          className={cn("field-sizing-content block max-h-60 w-full resize-none bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground", compact ? "min-h-9 py-2" : "min-h-11 py-3")}
+          className={cn("field-sizing-content block max-h-60 w-full resize-none bg-transparent px-3 text-sm outline-none placeholder:text-tertiary", compact ? "min-h-9 py-2" : "min-h-11 py-3")}
         />
         {files.length ? (
           <div className="flex flex-wrap gap-1.5 px-3 pb-2">
             {files.map((f, i) => (
-              <span key={i} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs">
+              <span key={i} className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
                 <Paperclip className="size-3" />
                 <span className="max-w-40 truncate">{f.name}</span>
                 <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((l) => l.filter((_, j) => j !== i))}>
@@ -193,7 +193,7 @@ export function Composer({
               />
             </>
           ) : null}
-          <span className="hidden text-[11px] text-muted-foreground sm:inline">
+          <span className="hidden text-[11px] text-tertiary sm:inline">
             <kbd className="font-mono">Enter</kbd> to send · <kbd className="font-mono">Shift + Enter</kbd> for a new line · <kbd className="font-mono">@</kbd> to mention
           </span>
           {onCancel ? (

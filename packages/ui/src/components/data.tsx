@@ -10,7 +10,7 @@ import { cn } from "../cn.ts";
 /** The top of a page: eyebrow, title, a sentence that says what matters, actions, and optional content below. */
 export function PageHero({
   eyebrow,
-  tone = "var(--ember)",
+  tone = "var(--color-brand-600)",
   title,
   summary,
   actions,
@@ -35,10 +35,10 @@ export function PageHero({
               {eyebrow}
             </div>
           ) : null}
-          <h1 className="text-[28px] font-bold leading-[1.1] sm:text-[34px]">{title}</h1>
-          {summary ? <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{summary}</p> : null}
+          <h1 className="text-display-xs font-semibold text-primary sm:text-display-sm">{title}</h1>
+          {summary ? <p className="mt-1.5 text-md text-tertiary">{summary}</p> : null}
         </div>
-        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
       </div>
       {children ? <div className="mt-6">{children}</div> : null}
     </section>
@@ -48,7 +48,7 @@ export function PageHero({
 /** A highlighted value inside summary sentences ("3 tasks due today"). */
 export function Em({ children, tone }: { children: ReactNode; tone?: string }) {
   return (
-    <span className="font-medium text-foreground" style={tone ? { color: tone } : undefined}>
+    <span className="font-medium text-primary" style={tone ? { color: tone } : undefined}>
       {children}
     </span>
   );
@@ -60,7 +60,7 @@ export function KpiTile({
   value,
   hint,
   icon,
-  tone = "var(--muted-foreground)",
+  tone = "var(--color-text-tertiary)",
   trend,
   footer,
   className,
@@ -82,45 +82,49 @@ export function KpiTile({
       type={onClick ? "button" : undefined}
       onClick={onClick}
       className={cn(
-        "group relative flex min-w-0 flex-col overflow-hidden rounded-card border border-border bg-surface p-4 text-left shadow-card transition-colors sm:p-5",
-        onClick && "hover:border-border-strong",
+        "group relative flex min-w-0 flex-col overflow-hidden rounded-xl bg-primary p-4 text-left shadow-xs ring-1 ring-secondary ring-inset transition sm:p-5",
+        onClick && "cursor-pointer hover:shadow-md hover:ring-primary",
         className,
       )}
     >
       <div
-        className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full opacity-60 blur-2xl"
-        style={{ background: `color-mix(in srgb, ${tone} 16%, transparent)` }}
+        className="pointer-events-none absolute -right-12 -top-12 size-32 rounded-full opacity-50 blur-2xl"
+        style={{ background: `color-mix(in srgb, ${tone} 12%, transparent)` }}
       />
       <div className="relative flex items-center gap-2">
         {icon ? (
           <span
-            className="flex size-7 items-center justify-center rounded-lg [&_svg]:size-4"
-            style={{ color: tone, background: `color-mix(in srgb, ${tone} 14%, transparent)` }}
+            className="flex size-9 items-center justify-center rounded-lg bg-primary shadow-xs-skeuomorphic ring-1 ring-primary ring-inset [&_svg]:size-[18px]"
+            style={{ color: tone }}
           >
             {icon}
           </span>
         ) : null}
-        <span className="min-w-0 truncate text-[13px] text-muted-foreground">{label}</span>
+        <span className="min-w-0 truncate text-sm font-medium text-tertiary">{label}</span>
         {trend ? (
           <span
             className={cn(
-              "ml-auto shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[11px]",
-              trend.good === null ? "bg-surface-2 text-muted-foreground" : trend.good ? "bg-success/12 text-success" : "bg-danger/12 text-danger",
+              "ml-auto shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+              trend.good === null
+                ? "bg-utility-neutral-50 text-utility-neutral-700 ring-utility-neutral-200"
+                : trend.good
+                  ? "bg-utility-green-50 text-utility-green-700 ring-utility-green-200"
+                  : "bg-utility-red-50 text-utility-red-700 ring-utility-red-200",
             )}
           >
             {trend.label}
           </span>
         ) : null}
       </div>
-      <div className="relative mt-3 font-display text-[30px] font-bold leading-none tracking-tight tabular">{value}</div>
-      {hint ? <div className="relative mt-1.5 text-xs text-muted-foreground">{hint}</div> : null}
+      <div className="relative mt-4 text-display-sm font-semibold leading-none tracking-tight text-primary tabular">{value}</div>
+      {hint ? <div className="relative mt-2 text-sm text-tertiary">{hint}</div> : null}
       {footer ? <div className="relative mt-auto pt-4">{footer}</div> : null}
     </Comp>
   );
 }
 
 /** A tiny trend line with a soft area fill. Values are plotted on their own scale. */
-export function Sparkline({ values, color = "var(--ember)", height = 36, className, bars = false }: { values: number[]; color?: string; height?: number; className?: string; bars?: boolean }) {
+export function Sparkline({ values, color = "var(--color-brand-600)", height = 36, className, bars = false }: { values: number[]; color?: string; height?: number; className?: string; bars?: boolean }) {
   const w = 120;
   const max = Math.max(1, ...values);
   if (!values.length) return null;
@@ -155,24 +159,24 @@ export function Sparkline({ values, color = "var(--ember)", height = 36, classNa
 }
 
 /** Horizontal progress bar. */
-export function Meter({ value, max = 100, color = "var(--ember)", className, label }: { value: number; max?: number; color?: string; className?: string; label?: string }) {
+export function Meter({ value, max = 100, color = "var(--color-brand-600)", className, label }: { value: number; max?: number; color?: string; className?: string; label?: string }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
-    <div className={cn("h-1.5 overflow-hidden rounded-full bg-surface-3", className)} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+    <div className={cn("h-1.5 overflow-hidden rounded-full bg-tertiary", className)} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
       <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
 }
 
 /** Circular progress with the percentage (or custom content) in the middle. */
-export function ProgressRing({ value, size = 44, stroke = 4, color = "var(--ember)", children }: { value: number; size?: number; stroke?: number; color?: string; children?: ReactNode }) {
+export function ProgressRing({ value, size = 44, stroke = 4, color = "var(--color-brand-600)", children }: { value: number; size?: number; stroke?: number; color?: string; children?: ReactNode }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-3)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} className="transition-[stroke-dashoffset] duration-700" />
       </svg>
       <span className="absolute font-mono text-[11px] font-medium">{children ?? `${Math.round(pct)}%`}</span>
@@ -201,18 +205,23 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn("flex min-w-0 flex-col rounded-card border border-border bg-surface shadow-card", className)}>
-      <header className="flex items-center gap-2.5 px-5 pb-1 pt-4">
+    <section className={cn("flex min-w-0 flex-col rounded-xl bg-primary shadow-xs ring-1 ring-secondary ring-inset", className)}>
+      <header className="flex items-center gap-3 border-b border-secondary px-5 py-3.5">
         {icon ? (
-          <span className="[&_svg]:size-4" style={{ color: tone ?? "var(--muted-foreground)" }}>
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-xs-skeuomorphic ring-1 ring-primary ring-inset [&_svg]:size-4"
+            style={{ color: tone ?? "var(--color-fg-quaternary)" }}
+          >
             {icon}
           </span>
         ) : null}
-        <h2 className="text-[15px] font-bold">{title}</h2>
-        {meta ? <span className="font-mono text-xs text-muted-foreground">{meta}</span> : null}
-        {action ? <div className="ml-auto text-sm">{action}</div> : null}
+        <h2 className="font-body text-md font-semibold tracking-normal text-primary">{title}</h2>
+        {meta ? (
+          <span className="rounded-full bg-utility-neutral-50 px-2 py-0.5 text-xs font-medium text-utility-neutral-700 ring-1 ring-utility-neutral-200 ring-inset">{meta}</span>
+        ) : null}
+        {action ? <div className="ml-auto text-sm font-semibold">{action}</div> : null}
       </header>
-      <div className={cn("flex-1 px-5 pb-5 pt-3", bodyClassName)}>{children}</div>
+      <div className={cn("flex-1 p-5", bodyClassName)}>{children}</div>
     </section>
   );
 }

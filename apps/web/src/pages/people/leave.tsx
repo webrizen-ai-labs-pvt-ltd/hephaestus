@@ -1,5 +1,5 @@
 import { can, countLeaveDays } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { CalendarCheck, CalendarPlus, ChevronLeft, ChevronRight, Palmtree, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -89,17 +89,16 @@ function RequestLeaveDialog({ open, onOpenChange, workWeek }: { open: boolean; o
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="From">
-              <Input
-                type="date"
+              <DateInput
                 value={startDate}
-                onChange={(e) => {
-                  setStart(e.target.value);
-                  if (e.target.value > endDate) setEnd(e.target.value);
+                onChange={(v) => {
+                  setStart(v);
+                  if (v > endDate) setEnd(v);
                 }}
               />
             </Field>
             <Field label="To">
-              <Input type="date" value={endDate} min={startDate} onChange={(e) => setEnd(e.target.value)} />
+              <DateInput value={endDate} min={startDate} onChange={(v) => setEnd(v)} />
             </Field>
           </div>
           {startDate === endDate ? (
@@ -114,14 +113,14 @@ function RequestLeaveDialog({ open, onOpenChange, workWeek }: { open: boolean; o
           <Field label="Reason" hint="Visible to you and your approvers only">
             <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} placeholder="Optional" />
           </Field>
-          <div className="rounded-lg bg-surface-2 px-4 py-3 text-sm">
+          <div className="rounded-lg bg-secondary px-4 py-3 text-sm">
             {days > 0 ? (
               <>
                 <span className="font-display text-lg font-bold">{days}</span> working {days === 1 ? "day" : "days"}
-                <span className="text-muted-foreground"> (weekends and holidays excluded)</span>
+                <span className="text-tertiary"> (weekends and holidays excluded)</span>
               </>
             ) : (
-              <span className="text-muted-foreground">These dates don't include any working days.</span>
+              <span className="text-tertiary">These dates don't include any working days.</span>
             )}
           </div>
         </div>
@@ -137,7 +136,7 @@ function RequestRow({ r, actions, showName }: { r: LeaveRequest; actions?: React
         className="flex w-12 shrink-0 flex-col items-center rounded-lg border py-1"
         style={{ borderColor: `color-mix(in srgb, ${r.leaveTypeColor} 40%, transparent)`, background: `color-mix(in srgb, ${r.leaveTypeColor} 10%, transparent)` }}
       >
-        <span className="text-[10px] uppercase text-muted-foreground">{new Date(`${r.startDate}T00:00:00`).toLocaleDateString("en-IN", { month: "short" })}</span>
+        <span className="text-[10px] uppercase text-tertiary">{new Date(`${r.startDate}T00:00:00`).toLocaleDateString("en-IN", { month: "short" })}</span>
         <span className="font-display text-lg font-bold leading-tight">{Number(r.startDate.slice(8))}</span>
       </div>
       {showName ? <Avatar name={r.employeeName} src={r.image} /> : null}
@@ -146,12 +145,12 @@ function RequestRow({ r, actions, showName }: { r: LeaveRequest; actions?: React
           {showName ? `${r.employeeName} · ` : <span className="size-2 shrink-0 rounded-full" style={{ background: r.leaveTypeColor }} />}
           {r.leaveTypeName}
         </div>
-        <div className="truncate text-xs text-muted-foreground">
+        <div className="truncate text-xs text-tertiary">
           {formatRange(r.startDate, r.endDate)} · {plural(Number(r.days), "day")}
           {r.halfDay !== "none" ? ` (${r.halfDay === "first_half" ? "first" : "second"} half)` : ""}
           {r.reason ? ` · ${r.reason}` : ""}
         </div>
-        {r.decisionNote ? <div className="mt-0.5 text-xs italic text-muted-foreground">"{r.decisionNote}"</div> : null}
+        {r.decisionNote ? <div className="mt-0.5 text-xs italic text-tertiary">"{r.decisionNote}"</div> : null}
       </div>
       <Badge tone={STATUS_TONE[r.status]} className="capitalize">
         {r.status}
@@ -197,17 +196,17 @@ function MyLeave() {
                 </ProgressRing>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{b.name}</div>
-                  <div className="text-xs text-muted-foreground">{b.remaining === null ? `${b.approved} days used, no limit` : `of ${quota} days left`}</div>
+                  <div className="text-xs text-tertiary">{b.remaining === null ? `${b.approved} days used, no limit` : `of ${quota} days left`}</div>
                 </div>
               </div>
               {quota ? (
                 <div className="relative mt-4">
-                  <div className="flex h-1.5 gap-[2px] overflow-hidden rounded-full bg-surface-2">
+                  <div className="flex h-1.5 gap-[2px] overflow-hidden rounded-full bg-secondary">
                     <span style={{ flex: b.approved, background: b.color }} />
                     <span style={{ flex: b.pending, background: `color-mix(in srgb, ${b.color} 45%, transparent)` }} />
                     <span style={{ flex: Math.max(0, quota - b.approved - b.pending) }} />
                   </div>
-                  <div className="mt-1.5 flex justify-between text-[11px] text-subtle-foreground">
+                  <div className="mt-1.5 flex justify-between text-[11px] text-quaternary">
                     <span>{b.approved} used</span>
                     {b.pending ? <span className="text-work">{b.pending} pending</span> : null}
                   </div>
@@ -218,11 +217,11 @@ function MyLeave() {
         })}
       </div>
       <Card>
-        <h2 className="border-b border-border px-4 py-3 font-bold">My requests</h2>
+        <h2 className="border-b border-secondary px-4 py-3 font-bold">My requests</h2>
         {mine?.requests.length === 0 ? (
           <EmptyState icon={<Palmtree />} title="No leave requested yet" description="Take a break. You've earned it." />
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border-secondary">
             {mine?.requests.map((r) => (
               <RequestRow
                 key={r.id}
@@ -260,11 +259,11 @@ function Approvals() {
 
   return (
     <Card>
-      <h2 className="border-b border-border px-4 py-3 font-bold">Waiting for you</h2>
+      <h2 className="border-b border-secondary px-4 py-3 font-bold">Waiting for you</h2>
       {data?.requests.length === 0 ? (
         <EmptyState icon={<CalendarCheck />} title="All caught up" description="New requests from your team will show up here." />
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border-secondary">
           {data?.requests.map((r) => (
             <RequestRow
               key={r.id}
@@ -348,9 +347,9 @@ function LeaveCalendar({ workWeek }: { workWeek: number[] }) {
           <ChevronRight />
         </Button>
       </div>
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border text-xs">
+      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-secondary bg-border-secondary text-xs">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="bg-surface-2 px-2 py-1.5 font-medium text-muted-foreground">
+          <div key={d} className="bg-secondary px-2 py-1.5 font-medium text-tertiary">
             {d}
           </div>
         ))}
@@ -360,13 +359,13 @@ function LeaveCalendar({ workWeek }: { workWeek: number[] }) {
           const holiday = date ? data?.holidays.find((h) => h.date === date) : undefined;
           const away = date ? (data?.requests ?? []).filter((r) => r.startDate <= date && r.endDate >= date) : [];
           return (
-            <div key={i} className={cn("min-h-24 bg-surface p-1.5", (off || !date) && "bg-surface-2/50")}>
+            <div key={i} className={cn("min-h-24 bg-primary p-1.5", (off || !date) && "bg-secondary/50")}>
               {date ? (
                 <>
-                  <div className={cn("mb-1 flex size-6 items-center justify-center rounded-full font-mono", date === today && "bg-primary text-primary-foreground")}>
+                  <div className={cn("mb-1 flex size-6 items-center justify-center rounded-full font-mono", date === today && "bg-brand-solid text-white")}>
                     {Number(date.slice(8))}
                   </div>
-                  {holiday ? <div className="mb-1 truncate rounded bg-brass/20 px-1.5 py-0.5 text-[11px] text-finance">{holiday.name}</div> : null}
+                  {holiday ? <div className="mb-1 truncate rounded bg-finance/20 px-1.5 py-0.5 text-[11px] text-finance">{holiday.name}</div> : null}
                   {!off
                     ? away.slice(0, 3).map((r) => (
                         <div
@@ -379,14 +378,14 @@ function LeaveCalendar({ workWeek }: { workWeek: number[] }) {
                         </div>
                       ))
                     : null}
-                  {!off && away.length > 3 ? <div className="text-[11px] text-muted-foreground">+{away.length - 3} more</div> : null}
+                  {!off && away.length > 3 ? <div className="text-[11px] text-tertiary">+{away.length - 3} more</div> : null}
                 </>
               ) : null}
             </div>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-tertiary">
         {types?.types.map((t) => (
           <span key={t.id} className="inline-flex items-center gap-1.5">
             <span className="size-2.5 rounded-sm" style={{ background: t.color }} />
@@ -394,7 +393,7 @@ function LeaveCalendar({ workWeek }: { workWeek: number[] }) {
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-brass/40" />
+          <span className="size-2.5 rounded-sm bg-finance/40" />
           Holiday
         </span>
         <span className="ml-auto">
@@ -436,15 +435,15 @@ function LeaveSettings() {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card className="p-5">
         <h2 className="font-bold">Leave types</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Leave blank for no yearly limit.</p>
-        <ul className="mt-4 divide-y divide-border">
+        <p className="mt-1 text-sm text-tertiary">Leave blank for no yearly limit.</p>
+        <ul className="mt-4 divide-y divide-border-secondary">
           {types?.types.map((t) => (
             <li key={t.id} className="flex items-center gap-3 py-2.5 text-sm">
               <span className="size-2.5 rounded-full" style={{ background: t.color }} />
               <span className="flex-1">{t.name}</span>
-              <span className="font-mono text-xs text-muted-foreground">{t.annualQuota === null ? "Unlimited" : `${t.annualQuota} days/yr`}</span>
+              <span className="font-mono text-xs text-tertiary">{t.annualQuota === null ? "Unlimited" : `${t.annualQuota} days/yr`}</span>
               {!t.paid ? <Badge>Unpaid</Badge> : null}
-              <button type="button" aria-label={`Remove ${t.name}`} onClick={() => confirm(`Remove ${t.name}? Past requests are kept.`) && archiveType.mutate(t.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+              <button type="button" aria-label={`Remove ${t.name}`} onClick={() => confirm(`Remove ${t.name}? Past requests are kept.`) && archiveType.mutate(t.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                 <Trash2 className="size-3.5" />
               </button>
             </li>
@@ -467,13 +466,13 @@ function LeaveSettings() {
 
       <Card className="p-5">
         <h2 className="font-bold">Holidays in {year}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Holidays don't count against anyone's leave.</p>
-        <ul className="mt-4 divide-y divide-border">
+        <p className="mt-1 text-sm text-tertiary">Holidays don't count against anyone's leave.</p>
+        <ul className="mt-4 divide-y divide-border-secondary">
           {hols?.holidays.map((h) => (
             <li key={h.id} className="flex items-center gap-3 py-2.5 text-sm">
-              <span className="w-28 font-mono text-xs text-muted-foreground">{formatDate(h.date, { weekday: "short", day: "numeric", month: "short" })}</span>
+              <span className="w-28 font-mono text-xs text-tertiary">{formatDate(h.date, { weekday: "short", day: "numeric", month: "short" })}</span>
               <span className="flex-1">{h.name}</span>
-              <button type="button" aria-label={`Remove ${h.name}`} onClick={() => removeHoliday.mutate(h.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+              <button type="button" aria-label={`Remove ${h.name}`} onClick={() => removeHoliday.mutate(h.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                 <Trash2 className="size-3.5" />
               </button>
             </li>
@@ -487,7 +486,7 @@ function LeaveSettings() {
           }}
         >
           <Input value={holName} onChange={(e) => setHolName(e.target.value)} placeholder="Diwali" maxLength={80} />
-          <Input value={holDate} onChange={(e) => setHolDate(e.target.value)} type="date" className="w-40" aria-label="Date" />
+          <DateInput value={holDate} onChange={(v) => setHolDate(v)} className="w-40" aria-label="Date" />
           <Button type="submit" aria-label="Add holiday">
             <Plus />
           </Button>
@@ -531,7 +530,7 @@ export function LeavePage({ me }: { me: Me }) {
             )}
             {isApprover && pending ? (
               <>
-                , and <Em tone="var(--ember)">{pending === 1 ? "1 request" : `${pending} requests`}</Em> need your decision
+                , and <Em tone="var(--color-brand-600)">{pending === 1 ? "1 request" : `${pending} requests`}</Em> need your decision
               </>
             ) : null}
             .
@@ -543,7 +542,7 @@ export function LeavePage({ me }: { me: Me }) {
           </Button>
         }
       />
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1 text-sm shadow-card sm:w-fit">
+      <div className="flex gap-1 overflow-x-auto rounded-xl border border-secondary bg-primary p-1 text-sm shadow-xs sm:w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -551,11 +550,11 @@ export function LeavePage({ me }: { me: Me }) {
             onClick={() => navigate({ to: "/people/leave", search: { tab: t.key }, replace: true })}
             className={cn(
               "flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 transition-colors",
-              tab === t.key ? "bg-surface-3 font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+              tab === t.key ? "bg-tertiary font-medium text-primary" : "text-tertiary hover:text-primary",
             )}
           >
             {t.label}
-            {"count" in t && t.count ? <span className="rounded-full bg-primary px-1.5 font-mono text-[10px] text-primary-foreground">{t.count}</span> : null}
+            {"count" in t && t.count ? <span className="rounded-full bg-brand-solid px-1.5 font-mono text-[10px] text-white">{t.count}</span> : null}
           </button>
         ))}
       </div>

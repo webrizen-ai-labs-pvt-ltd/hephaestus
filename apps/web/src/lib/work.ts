@@ -6,18 +6,18 @@ export type Priority = "none" | "low" | "medium" | "high" | "urgent";
 export type Recurrence = { freq: "daily" | "weekly" | "monthly"; interval: number };
 
 export const PRIORITY_META: Record<Priority, { label: string; color: string; rank: number }> = {
-  urgent: { label: "Urgent", color: "var(--danger)", rank: 0 },
+  urgent: { label: "Urgent", color: "var(--color-fg-error-primary)", rank: 0 },
   high: { label: "High", color: "var(--work)", rank: 1 },
   medium: { label: "Medium", color: "var(--finance)", rank: 2 },
   low: { label: "Low", color: "var(--info)", rank: 3 },
-  none: { label: "No priority", color: "var(--muted-foreground)", rank: 4 },
+  none: { label: "No priority", color: "var(--color-text-tertiary)", rank: 4 },
 };
 
 export const STATUS_META: Record<StageCategory, { label: string; color: string }> = {
   todo: { label: "To do", color: "var(--info)" },
   in_progress: { label: "In progress", color: "var(--work)" },
   review: { label: "In review", color: "var(--finance)" },
-  done: { label: "Done", color: "var(--success)" },
+  done: { label: "Done", color: "var(--color-fg-success-primary)" },
 };
 
 export interface Person {

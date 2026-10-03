@@ -209,7 +209,7 @@ export function ClientsPage({ me }: { me: Me }) {
         }
       />
       <div className="relative sm:w-80">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tertiary" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, GSTIN or email" className="pl-9" />
       </div>
       {isLoading ? <Skeleton className="h-40" /> : null}
@@ -229,36 +229,36 @@ export function ClientsPage({ me }: { me: Me }) {
             return (
               <li key={cl.id}>
                 <Link to="/finance/clients/$id" params={{ id: cl.id }} className="group block h-full">
-                  <Card className="flex h-full flex-col p-5 transition-all group-hover:-translate-y-0.5 group-hover:border-border-strong">
+                  <Card className="flex h-full flex-col p-5 transition-all group-hover:-translate-y-0.5 group-hover:border-primary">
                     <div className="flex items-start gap-3">
                       <Avatar name={cl.name} className="size-11 rounded-xl text-sm" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-display text-[16px] font-bold">{cl.name}</div>
-                        <div className="truncate text-xs text-muted-foreground">{cl.email ?? "No billing email"}</div>
+                        <div className="truncate text-xs text-tertiary">{cl.email ?? "No billing email"}</div>
                       </div>
-                      {cl.overdue ? <span className="rounded-full bg-danger/12 px-2 py-0.5 text-[11px] text-danger">Overdue</span> : null}
+                      {cl.overdue ? <span className="rounded-full bg-error-solid/12 px-2 py-0.5 text-[11px] text-error-primary">Overdue</span> : null}
                     </div>
-                    <div className="mt-3 truncate text-xs text-muted-foreground">
-                      {cl.gstin ? <span className="font-mono text-foreground">{cl.gstin}</span> : cl.country !== "IN" ? `${cl.country} · ${cl.currency}` : cl.stateCode ? INDIAN_STATES[cl.stateCode] : "Unregistered"}
+                    <div className="mt-3 truncate text-xs text-tertiary">
+                      {cl.gstin ? <span className="font-mono text-primary">{cl.gstin}</span> : cl.country !== "IN" ? `${cl.country} · ${cl.currency}` : cl.stateCode ? INDIAN_STATES[cl.stateCode] : "Unregistered"}
                     </div>
                     <dl className="mt-auto grid grid-cols-2 gap-3 pt-4">
                       <div>
-                        <dt className="text-[11px] text-muted-foreground">Billed</dt>
+                        <dt className="text-[11px] text-tertiary">Billed</dt>
                         <dd className="font-mono text-sm">{compactMoney(cl.billed, cl.currency)}</dd>
                       </div>
                       <div className="text-right">
-                        <dt className="text-[11px] text-muted-foreground">Outstanding</dt>
-                        <dd className={cn("font-mono text-sm", cl.overdue ? "text-danger" : !cl.outstanding && "text-subtle-foreground")}>
+                        <dt className="text-[11px] text-tertiary">Outstanding</dt>
+                        <dd className={cn("font-mono text-sm", cl.overdue ? "text-error-primary" : !cl.outstanding && "text-quaternary")}>
                           {cl.outstanding ? compactMoney(cl.outstanding, cl.currency) : "—"}
                         </dd>
                       </div>
                     </dl>
                     {cl.billed ? (
                       <div className="mt-3">
-                        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
                           <div className="h-full rounded-full bg-[var(--chart-collected)]" style={{ width: `${collected}%` }} />
                         </div>
-                        <div className="mt-1 text-[11px] text-subtle-foreground">{collected}% collected</div>
+                        <div className="mt-1 text-[11px] text-quaternary">{collected}% collected</div>
                       </div>
                     ) : null}
                   </Card>
@@ -300,13 +300,13 @@ export function ClientPage({ me }: { me: Me }) {
 
   return (
     <FinanceBody>
-      <Link to="/finance/clients" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link to="/finance/clients" className="inline-flex items-center gap-1 text-sm text-tertiary hover:text-primary">
         <ArrowLeft className="size-4" /> {me.settings.terms.client.many}
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">{cl.name}</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-tertiary">
             {[cl.legalName, cl.gstin ? `GSTIN ${cl.gstin}` : null, cl.country !== "IN" ? `${cl.country} · ${cl.currency}` : cl.stateCode ? INDIAN_STATES[cl.stateCode] : null].filter(Boolean).join(" · ")}
           </p>
         </div>
@@ -329,21 +329,21 @@ export function ClientPage({ me }: { me: Me }) {
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-4">
           <Card>
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between border-b border-secondary px-4 py-3">
               <h2 className="font-bold">Documents</h2>
               <span className="text-sm">
                 Outstanding <b className="font-mono">{money(outstanding, cl.currency)}</b>
               </span>
             </div>
             {rows.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">No invoices yet.</p>
+              <p className="p-4 text-sm text-tertiary">No invoices yet.</p>
             ) : (
-              <ul className="divide-y divide-border">
+              <ul className="divide-y divide-border-secondary">
                 {rows.map((d) => (
                   <li key={d.id}>
-                    <Link to="/finance/invoices/$id" params={{ id: d.id }} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-surface-2/60">
+                    <Link to="/finance/invoices/$id" params={{ id: d.id }} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-secondary/60">
                       <span className="w-36 font-mono text-xs">{d.number ?? "Draft"}</span>
-                      <span className="flex-1 text-muted-foreground">{formatDate(d.issueDate)}</span>
+                      <span className="flex-1 text-tertiary">{formatDate(d.issueDate)}</span>
                       <StatusPill status={displayStatus(d, today)} />
                       <span className="w-32 text-right font-mono">{money(d.total, d.currency)}</span>
                     </Link>
@@ -362,27 +362,27 @@ export function ClientPage({ me }: { me: Me }) {
             <h2 className="font-bold">Billing details</h2>
             {cl.email ? (
               <p className="flex items-center gap-2">
-                <Mail className="size-4 text-muted-foreground" /> {cl.email}
+                <Mail className="size-4 text-tertiary" /> {cl.email}
               </p>
             ) : null}
             {cl.phone ? (
               <p className="flex items-center gap-2">
-                <Phone className="size-4 text-muted-foreground" /> {cl.phone}
+                <Phone className="size-4 text-tertiary" /> {cl.phone}
               </p>
             ) : null}
-            {cl.billingAddress ? <p className="whitespace-pre-line text-muted-foreground">{cl.billingAddress}</p> : null}
-            <p className="text-muted-foreground">Payment terms: {cl.paymentTermsDays ?? "default"} days</p>
+            {cl.billingAddress ? <p className="whitespace-pre-line text-tertiary">{cl.billingAddress}</p> : null}
+            <p className="text-tertiary">Payment terms: {cl.paymentTermsDays ?? "default"} days</p>
           </Card>
           <Card className="p-5">
             <h2 className="mb-3 font-bold">Contacts</h2>
-            {contacts.length === 0 ? <p className="text-sm text-muted-foreground">No contacts yet.</p> : null}
+            {contacts.length === 0 ? <p className="text-sm text-tertiary">No contacts yet.</p> : null}
             <ul className="space-y-2 text-sm">
               {contacts.map((c) => (
                 <li key={c.id}>
                   <div className="font-medium">
-                    {c.name} {c.designation ? <span className="font-normal text-muted-foreground">· {c.designation}</span> : null}
+                    {c.name} {c.designation ? <span className="font-normal text-tertiary">· {c.designation}</span> : null}
                   </div>
-                  <div className="text-xs text-muted-foreground">{[c.email, c.phone].filter(Boolean).join(" · ")}</div>
+                  <div className="text-xs text-tertiary">{[c.email, c.phone].filter(Boolean).join(" · ")}</div>
                 </li>
               ))}
             </ul>

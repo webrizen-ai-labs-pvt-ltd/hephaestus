@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
 import { Check, ClipboardList, GripVertical, Pencil, Plus, Rocket, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -72,7 +72,7 @@ function StartDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
             </Select>
           </Field>
           <Field label="Start date">
-            <Input type="date" value={startDate} onChange={(e) => setStart(e.target.value)} />
+            <DateInput value={startDate} onChange={(v) => setStart(v)} />
           </Field>
         </div>
       </DialogContent>
@@ -124,8 +124,8 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
             <div className="mb-2 text-sm font-medium">Steps</div>
             <ul className="space-y-2">
               {items.map((it, i) => (
-                <li key={i} className="grid grid-cols-[16px_1fr] gap-2 rounded-lg border border-border p-2 sm:grid-cols-[16px_1fr_140px_110px_32px] sm:items-center">
-                  <GripVertical className="size-4 text-muted-foreground" />
+                <li key={i} className="grid grid-cols-[16px_1fr] gap-2 rounded-lg border border-secondary p-2 sm:grid-cols-[16px_1fr_140px_110px_32px] sm:items-center">
+                  <GripVertical className="size-4 text-tertiary" />
                   <Input value={it.title} onChange={(e) => update(i, { title: e.target.value })} placeholder="What needs doing" maxLength={200} aria-label="Step" />
                   <Select value={it.assignee} onChange={(e) => update(i, { assignee: e.target.value as "employee" | "manager" })} aria-label="Who">
                     <option value="employee">New joiner</option>
@@ -140,9 +140,9 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
                       onChange={(e) => update(i, { dueOffsetDays: Number(e.target.value) || 0 })}
                       aria-label="Due, days after start"
                     />
-                    <span className="text-xs text-muted-foreground">days</span>
+                    <span className="text-xs text-tertiary">days</span>
                   </div>
-                  <button type="button" aria-label="Remove step" onClick={() => setItems((l) => l.filter((_, j) => j !== i))} className="justify-self-end rounded p-1.5 text-muted-foreground hover:text-danger">
+                  <button type="button" aria-label="Remove step" onClick={() => setItems((l) => l.filter((_, j) => j !== i))} className="justify-self-end rounded p-1.5 text-tertiary hover:text-error-primary">
                     <Trash2 className="size-4" />
                   </button>
                 </li>
@@ -151,7 +151,7 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
             <Button size="sm" variant="ghost" className="mt-2" onClick={() => setItems((l) => [...l, { title: "", assignee: "employee", dueOffsetDays: 0 }])}>
               <Plus /> Add step
             </Button>
-            <p className="mt-1 text-xs text-muted-foreground">Due dates count from the start date; use a negative number for steps before day one.</p>
+            <p className="mt-1 text-xs text-tertiary">Due dates count from the start date; use a negative number for steps before day one.</p>
           </div>
         </div>
       </DialogContent>
@@ -171,21 +171,21 @@ function RunCard({ run, myEmployeeId, canManage }: { run: OnboardingRun; myEmplo
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-center gap-4 border-b border-border bg-gradient-to-r from-people/10 to-transparent p-5">
+      <div className="flex flex-wrap items-center gap-4 border-b border-secondary bg-gradient-to-r from-people/10 to-transparent p-5">
         <Avatar name={run.employeeName} className="size-12 text-sm" />
         <div className="min-w-0 flex-1">
           <Link to="/people/$id" params={{ id: run.employeeId }} className="font-display text-lg font-bold hover:underline">
             {run.employeeName}
           </Link>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-tertiary">
             {run.name} · started {formatDate(run.startDate, { day: "numeric", month: "short" })}
             {!run.completedAt ? ` · day ${day}` : ""}
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-muted-foreground">
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-tertiary">
               {run.done} of {run.total} steps
             </span>
-            {overdueCount ? <span className="rounded-full bg-danger/12 px-2 py-0.5 text-danger">{overdueCount} overdue</span> : null}
+            {overdueCount ? <span className="rounded-full bg-error-solid/12 px-2 py-0.5 text-error-primary">{overdueCount} overdue</span> : null}
           </div>
         </div>
         {run.completedAt ? (
@@ -211,15 +211,15 @@ function RunCard({ run, myEmployeeId, canManage }: { run: OnboardingRun; myEmplo
                 aria-label={it.doneAt ? `Mark "${it.title}" not done` : `Mark "${it.title}" done`}
                 className={cn(
                   "flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
-                  it.doneAt ? "border-people bg-people text-white" : "border-input",
+                  it.doneAt ? "border-people bg-people text-white" : "border-primary",
                   allowed ? "hover:border-people" : "cursor-not-allowed opacity-50",
                 )}
               >
                 {it.doneAt ? <Check className="size-3.5" /> : null}
               </button>
-              <span className={cn("flex-1", it.doneAt && "text-muted-foreground line-through")}>{it.title}</span>
-              <span className={cn("hidden text-xs sm:inline", mine ? "text-accent" : "text-muted-foreground")}>{mine ? "You" : (it.assigneeName ?? "Unassigned")}</span>
-              <span className={cn("w-14 text-right font-mono text-xs", overdue ? "text-danger" : "text-muted-foreground")}>
+              <span className={cn("flex-1", it.doneAt && "text-tertiary line-through")}>{it.title}</span>
+              <span className={cn("hidden text-xs sm:inline", mine ? "text-brand-secondary" : "text-tertiary")}>{mine ? "You" : (it.assigneeName ?? "Unassigned")}</span>
+              <span className={cn("w-14 text-right font-mono text-xs", overdue ? "text-error-primary" : "text-tertiary")}>
                 {formatDate(it.dueDate, { day: "numeric", month: "short" })}
               </span>
             </li>
@@ -261,10 +261,10 @@ export function OnboardingPage({ me }: { me: Me }) {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm">
-            <button type="button" onClick={() => setShowDone(false)} className={cn("rounded-md px-2.5 py-1", !showDone ? "bg-surface-2 font-medium" : "text-muted-foreground")}>
+            <button type="button" onClick={() => setShowDone(false)} className={cn("rounded-md px-2.5 py-1", !showDone ? "bg-secondary font-medium" : "text-tertiary")}>
               In progress
             </button>
-            <button type="button" onClick={() => setShowDone(true)} className={cn("rounded-md px-2.5 py-1", showDone ? "bg-surface-2 font-medium" : "text-muted-foreground")}>
+            <button type="button" onClick={() => setShowDone(true)} className={cn("rounded-md px-2.5 py-1", showDone ? "bg-secondary font-medium" : "text-tertiary")}>
               Completed
             </button>
           </div>
@@ -292,18 +292,18 @@ export function OnboardingPage({ me }: { me: Me }) {
           </div>
           <ul className="mt-3 space-y-2">
             {templates?.templates.map((t) => (
-              <li key={t.id} className="group flex items-center gap-2 rounded-lg border border-border px-3 py-2.5">
+              <li key={t.id} className="group flex items-center gap-2 rounded-lg border border-secondary px-3 py-2.5">
                 <ClipboardList className="size-4 text-people" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.items.length} steps</div>
+                  <div className="text-xs text-tertiary">{t.items.length} steps</div>
                 </div>
                 {canManage ? (
                   <>
-                    <button type="button" aria-label={`Edit ${t.name}`} onClick={() => setEditing({ open: true, template: t })} className="rounded p-1 text-muted-foreground hover:text-foreground">
+                    <button type="button" aria-label={`Edit ${t.name}`} onClick={() => setEditing({ open: true, template: t })} className="rounded p-1 text-tertiary hover:text-primary">
                       <Pencil className="size-3.5" />
                     </button>
-                    <button type="button" aria-label={`Delete ${t.name}`} onClick={() => confirm(`Delete ${t.name}?`) && removeTemplate.mutate(t.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                    <button type="button" aria-label={`Delete ${t.name}`} onClick={() => confirm(`Delete ${t.name}?`) && removeTemplate.mutate(t.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                       <Trash2 className="size-3.5" />
                     </button>
                   </>

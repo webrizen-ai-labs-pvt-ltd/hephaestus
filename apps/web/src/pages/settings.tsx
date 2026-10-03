@@ -1,5 +1,5 @@
 import { can, PILLARS, type Pillar, type TermKey } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, Input, Label } from "@hephaestus/ui";
+import { Avatar, Badge, Button, ButtonGroup, ButtonGroupItem, Card, cn, Input, Label, ToggleBase } from "@hephaestus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, SunMoon } from "lucide-react";
 import { useState } from "react";
@@ -37,12 +37,12 @@ export function OrgSettingsPage({ me }: { me: Me }) {
 
       <Card className="p-6">
         <div className="flex items-center gap-4">
-          <div className="flex size-14 items-center justify-center rounded-xl bg-primary font-display text-2xl font-bold text-primary-foreground">
+          <div className="flex size-14 items-center justify-center rounded-xl bg-brand-solid font-display text-2xl font-bold text-white">
             {me.org.name.slice(0, 1).toUpperCase()}
           </div>
           <div>
             <div className="font-display text-xl font-bold">{me.org.name}</div>
-            <div className="font-mono text-xs text-muted-foreground">{me.org.slug}</div>
+            <div className="font-mono text-xs text-tertiary">{me.org.slug}</div>
           </div>
           <Badge className="ml-auto">{me.settings.currency}</Badge>
         </div>
@@ -50,7 +50,7 @@ export function OrgSettingsPage({ me }: { me: Me }) {
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Pillars</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Turn off the parts of Hephaestus your team doesn't use.</p>
+        <p className="mt-1 text-sm text-tertiary">Turn off the parts of Hephaestus your team doesn't use.</p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {PILLARS.map((p) => {
             const nav = MAIN_NAV.find((n) => n.pillar === p)!;
@@ -63,15 +63,13 @@ export function OrgSettingsPage({ me }: { me: Me }) {
                 onClick={() => togglePillar(p)}
                 aria-pressed={on}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors",
-                  on ? "border-input bg-surface-2" : "border-border opacity-60",
+                  "flex items-center gap-3 rounded-xl bg-primary px-4 py-3 text-left text-sm shadow-xs ring-1 ring-inset transition",
+                  on ? "ring-primary" : "ring-secondary opacity-70 hover:opacity-100",
                 )}
               >
                 <nav.icon className={cn("size-4", nav.tone)} />
                 <span className="flex-1 font-medium">{nav.label}</span>
-                <span className={cn("h-5 w-9 rounded-full p-0.5 transition-colors", on ? "bg-primary" : "bg-input")}>
-                  <span className={cn("block size-4 rounded-full bg-white transition-transform", on && "translate-x-4")} />
-                </span>
+                <ToggleBase isSelected={on} isDisabled={!canManage} />
               </button>
             );
           })}
@@ -80,39 +78,33 @@ export function OrgSettingsPage({ me }: { me: Me }) {
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Working days</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Leave only counts these days. Holidays are set in People → Leave.</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label, i) => {
-            const day = i + 1;
-            const on = workWeek.includes(day);
-            return (
-              <button
-                key={label}
-                type="button"
-                disabled={!canManage}
-                aria-pressed={on}
-                onClick={() => setWorkWeek((w) => (on ? (w.length > 1 ? w.filter((d) => d !== day) : w) : [...w, day].sort()))}
-                className={cn(
-                  "h-10 w-14 rounded-lg border text-sm font-medium transition-colors",
-                  on ? "border-people bg-[color-mix(in_srgb,var(--people)_14%,transparent)] text-people" : "border-border text-muted-foreground",
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        <p className="mt-1 text-sm text-tertiary">Leave only counts these days. Holidays are set in People → Leave.</p>
+        <ButtonGroup
+          className="mt-4"
+          selectionMode="multiple"
+          disallowEmptySelection
+          isDisabled={!canManage}
+          aria-label="Working days"
+          selectedKeys={new Set(workWeek.map(String))}
+          onSelectionChange={(keys) => setWorkWeek([...keys].map(Number).sort())}
+        >
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label, i) => (
+            <ButtonGroupItem key={label} id={String(i + 1)} className="selected:bg-brand-primary selected:text-brand-secondary">
+              {label}
+            </ButtonGroupItem>
+          ))}
+        </ButtonGroup>
       </Card>
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Your words</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-tertiary">
           Rename things to match your industry, for example "Project" to "Case" or "Job".
         </p>
         <div className="mt-4 space-y-3">
           {(Object.keys(terms) as TermKey[]).map((k) => (
             <div key={k} className="grid grid-cols-[100px_1fr_1fr] items-center gap-3">
-              <Label className="capitalize text-muted-foreground">{k}</Label>
+              <Label className="capitalize text-tertiary">{k}</Label>
               <Input
                 aria-label={`${k} singular`}
                 value={terms[k].one}
@@ -139,7 +131,7 @@ export function OrgSettingsPage({ me }: { me: Me }) {
           </Button>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">You need the settings permission to change these.</p>
+        <p className="text-sm text-tertiary">You need the settings permission to change these.</p>
       )}
     </div>
   );
@@ -191,7 +183,7 @@ export function AuditPage({ me }: { me: Me }) {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 sm:p-8">
+    <div className="mx-auto space-y-6 p-6 sm:p-8">
       <PageHeader title="Audit log" description="Who did what, and when. Only admins can see this." />
       {allowed ? (
         <div className="flex flex-wrap gap-1.5">
@@ -202,7 +194,7 @@ export function AuditPage({ me }: { me: Me }) {
               onClick={() => setArea(a.key)}
               className={cn(
                 "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors",
-                area === a.key ? "border-border-strong bg-surface-3 text-foreground" : "border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                area === a.key ? "border-primary bg-tertiary text-primary" : "border-secondary text-tertiary hover:bg-secondary hover:text-primary",
               )}
             >
               <span className="size-2 rounded-full" style={{ background: a.color }} />
@@ -213,33 +205,33 @@ export function AuditPage({ me }: { me: Me }) {
       ) : null}
       {!allowed ? (
         <Card>
-          <p className="p-6 text-sm text-muted-foreground">You don't have access to the audit log.</p>
+          <p className="p-6 text-sm text-tertiary">You don't have access to the audit log.</p>
         </Card>
       ) : null}
-      {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+      {isLoading ? <p className="text-sm text-tertiary">Loading…</p> : null}
       {data && events.length === 0 ? (
         <Card>
-          <p className="p-6 text-sm text-muted-foreground">Nothing here yet. Changes across Hephaestus show up as they happen.</p>
+          <p className="p-6 text-sm text-tertiary">Nothing here yet. Changes across Hephaestus show up as they happen.</p>
         </Card>
       ) : null}
       {[...days].map(([day, list]) => (
         <section key={day} className="rise">
           <h2 className="eyebrow mb-2">{dayLabel(day)}</h2>
           <Card>
-            <ol className="divide-y divide-border">
+            <ol className="divide-y divide-border-secondary">
               {list.map((e) => {
-                const color = AUDIT_AREAS.find((a) => a.key === areaOf(e))?.color ?? "var(--muted-foreground)";
+                const color = AUDIT_AREAS.find((a) => a.key === areaOf(e))?.color ?? "var(--color-text-tertiary)";
                 return (
                   <li key={e.id} className="flex items-center gap-3 px-4 py-3 text-sm">
                     <span className="relative">
                       <Avatar name={e.actorName ?? "Hephaestus"} src={e.actorImage} className="size-8 text-[10px]" />
-                      <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface" style={{ background: color }} />
+                      <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-bg-primary" style={{ background: color }} />
                     </span>
-                    <p className="min-w-0 flex-1 text-muted-foreground">
-                      <span className="font-medium text-foreground">{e.actorName ?? (e.actorId ? "Someone" : "Hephaestus")}</span> {sentence(e)}
+                    <p className="min-w-0 flex-1 text-tertiary">
+                      <span className="font-medium text-primary">{e.actorName ?? (e.actorId ? "Someone" : "Hephaestus")}</span> {sentence(e)}
                     </p>
-                    <code className="hidden rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10.5px] text-subtle-foreground md:inline">{e.action}</code>
-                    <span className="w-16 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+                    <code className="hidden rounded bg-secondary px-1.5 py-0.5 font-mono text-[10.5px] text-quaternary md:inline">{e.action}</code>
+                    <span className="w-16 shrink-0 text-right font-mono text-[11px] text-tertiary">
                       {new Date(e.createdAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}
                     </span>
                   </li>
@@ -261,12 +253,12 @@ export function AuditPage({ me }: { me: Me }) {
 }
 
 const AUDIT_AREAS = [
-  { key: "", label: "Everything", color: "var(--ember)" },
+  { key: "", label: "Everything", color: "var(--color-brand-600)" },
   { key: "people", label: "People", color: "var(--people)" },
   { key: "work", label: "Work", color: "var(--work)" },
   { key: "collab", label: "Collaboration", color: "var(--collab)" },
   { key: "finance", label: "Finance", color: "var(--finance)" },
-  { key: "settings", label: "Settings", color: "var(--muted-foreground)" },
+  { key: "settings", label: "Settings", color: "var(--color-text-tertiary)" },
 ];
 
 const AREA_BY_ENTITY: Record<string, string> = {
@@ -296,7 +288,7 @@ function sentence(e: AuditEvent) {
   const v = VERBS[verb] ?? verb.replace(/_/g, " ");
   return (
     <>
-      {v} {label ? <>{thing} <span className="text-foreground">{String(label)}</span></> : `${/^[aeiou]/.test(thing) ? "an" : "a"} ${thing}`}
+      {v} {label ? <>{thing} <span className="text-primary">{String(label)}</span></> : `${/^[aeiou]/.test(thing) ? "an" : "a"} ${thing}`}
     </>
   );
 }
@@ -313,8 +305,8 @@ function dayLabel(day: string) {
 export function PreferencesPage() {
   const [pref, setPref] = useTheme();
   const options = [
-    { key: "dark", label: "Dark", icon: Moon, preview: "bg-obsidian" },
-    { key: "light", label: "Light", icon: Sun, preview: "bg-ash" },
+    { key: "dark", label: "Dark", icon: Moon, preview: "bg-overlay" },
+    { key: "light", label: "Light", icon: Sun, preview: "bg-white" },
     { key: "system", label: "Match system", icon: SunMoon, preview: "bg-[linear-gradient(135deg,var(--ash)_50%,var(--obsidian)_50%)]" },
   ] as const;
 
@@ -332,12 +324,12 @@ export function PreferencesPage() {
               aria-pressed={pref === o.key}
               className={cn(
                 "overflow-hidden rounded-lg border text-left transition-colors",
-                pref === o.key ? "border-primary" : "border-border hover:border-input",
+                pref === o.key ? "border-brand" : "border-secondary hover:border-primary",
               )}
             >
-              <div className={cn("h-20 border-b border-border", o.preview)} />
+              <div className={cn("h-20 border-b border-secondary", o.preview)} />
               <div className="flex items-center gap-2 px-3 py-2 text-sm">
-                <o.icon className="size-4 text-muted-foreground" />
+                <o.icon className="size-4 text-tertiary" />
                 {o.label}
               </div>
             </button>

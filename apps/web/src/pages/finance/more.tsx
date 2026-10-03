@@ -1,5 +1,5 @@
 import { can, INDIAN_STATES, isValidGstin, stateOfGstin, supplyTypeFor } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, Dialog, DialogContent, Em, EmptyState, Field, Input, KpiTile, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, KpiTile, Select, Textarea, Toggle } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
 import { Check, Copy, CreditCard, Plus, Repeat, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -46,7 +46,7 @@ export function PaymentsPage() {
               <KpiTile label="Received this month" icon={<CreditCard />} tone="var(--chart-collected)" value={compactMoney(thisMonth)} hint={new Date().toLocaleDateString("en-IN", { month: "long" })} />
               <KpiTile label="Average payment" icon={<CreditCard />} tone="var(--finance)" value={compactMoney(Math.round(total / real.length))} hint={`Across ${real.length} payments`} />
               <Card className="p-5">
-                <div className="text-[13px] text-muted-foreground">How clients pay</div>
+                <div className="text-[13px] text-tertiary">How clients pay</div>
                 <div className="mt-3 flex h-3 gap-[2px] overflow-hidden rounded-full">
                   {byMethod.map(([m, v], i) => (
                     <span key={m} style={{ flex: v, background: METHOD_COLORS[i % METHOD_COLORS.length] }} title={`${PAYMENT_METHOD_LABEL[m] ?? m}: ${money(v)}`} />
@@ -56,7 +56,7 @@ export function PaymentsPage() {
                   {byMethod.map(([m, v], i) => (
                     <li key={m} className="flex items-center gap-1.5">
                       <span className="size-2.5 rounded-sm" style={{ background: METHOD_COLORS[i % METHOD_COLORS.length] }} />
-                      <span className="text-muted-foreground">{PAYMENT_METHOD_LABEL[m] ?? m}</span>
+                      <span className="text-tertiary">{PAYMENT_METHOD_LABEL[m] ?? m}</span>
                       <span className="font-mono">{Math.round((v / total) * 100)}%</span>
                     </li>
                   ))}
@@ -73,7 +73,7 @@ export function PaymentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr className="border-b border-secondary text-left text-xs text-tertiary">
                   <th className="px-4 py-2.5 font-medium">Date</th>
                   <th className="px-4 py-2.5 font-medium">Client</th>
                   <th className="px-4 py-2.5 font-medium">Invoice</th>
@@ -81,9 +81,9 @@ export function PaymentsPage() {
                   <th className="px-4 py-2.5 text-right font-medium">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border-secondary">
                 {list.map((p) => (
-                  <tr key={p.id} className={cn(p.voidedAt && "text-muted-foreground line-through")}>
+                  <tr key={p.id} className={cn(p.voidedAt && "text-tertiary line-through")}>
                     <td className="px-4 py-3">{formatDate(p.paidOn)}</td>
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-2.5">
@@ -92,15 +92,15 @@ export function PaymentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="font-mono text-xs text-accent hover:underline">
+                      <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="font-mono text-xs text-brand-secondary hover:underline">
                         {p.invoiceNumber}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td className="px-4 py-3 text-tertiary">
                       {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
                       {p.reference ? <span className="ml-1 font-mono text-xs">· {p.reference}</span> : null}
                     </td>
-                    <td className={cn("px-4 py-3 text-right font-mono", !p.voidedAt && "text-success")}>{p.voidedAt ? "" : "+"}{money(p.amount, p.currency)}</td>
+                    <td className={cn("px-4 py-3 text-right font-mono", !p.voidedAt && "text-success-primary")}>{p.voidedAt ? "" : "+"}{money(p.amount, p.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -185,7 +185,7 @@ function RetainerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
             </Select>
           </Field>
           <Field label="First invoice on">
-            <Input type="date" value={nextIssueDate} onChange={(e) => setNext(e.target.value)} />
+            <DateInput value={nextIssueDate} onChange={(v) => setNext(v)} />
           </Field>
           <Field label="Due after (days)">
             <Input type="number" min={0} max={365} value={dueDays} onChange={(e) => setDueDays(e.target.value)} />
@@ -200,7 +200,7 @@ function RetainerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
         <div className="mt-5">
           <LineEditor lines={lines} onChange={setLines} supplyType={client ? supplyTypeFor(settings?.settings.stateCode, client.stateCode, client.country) : "intra"} currency={client?.currency ?? "INR"} />
         </div>
-        {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm text-error-primary">{error}</p> : null}
       </DialogContent>
     </Dialog>
   );
@@ -256,18 +256,18 @@ export function RetainersPage({ me }: { me: Me }) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-display text-[16px] font-bold">{r.name}</h3>
-                    <p className="truncate text-sm text-muted-foreground">{r.clientName}</p>
+                    <p className="truncate text-sm text-tertiary">{r.clientName}</p>
                   </div>
                   <Badge tone={r.active ? "finance" : "neutral"}>{r.active ? (r.autoSend ? "Auto-send" : "Drafts") : "Paused"}</Badge>
                 </div>
                 <div className="relative mt-4 flex items-baseline gap-2">
                   <span className="font-display text-3xl font-bold tabular">{money(amount)}</span>
-                  <span className="text-sm text-muted-foreground">+ GST, {r.frequency}</span>
+                  <span className="text-sm text-tertiary">+ GST, {r.frequency}</span>
                 </div>
                 <div className="relative mt-auto flex items-center justify-between gap-3 pt-4">
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-tertiary">
                     {r.active ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5">
                         <span className="size-1.5 rounded-full bg-finance" />
                         Next {formatDate(r.nextIssueDate, { day: "numeric", month: "short" })}
                         {days >= 0 ? ` · in ${days} day${days === 1 ? "" : "s"}` : ""}
@@ -417,7 +417,7 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Numbering and defaults</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Numbers restart every financial year, e.g. {str("invoicePrefix") || "INV"}/26-27/0001.</p>
+        <p className="mt-1 text-sm text-tertiary">Numbers restart every financial year, e.g. {str("invoicePrefix") || "INV"}/26-27/0001.</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-4">
           <Field label="Invoice prefix">
             <Input value={str("invoicePrefix")} onChange={(e) => set("invoicePrefix", e.target.value.toUpperCase().slice(0, 6))} disabled={!canManage} className="font-mono" />
@@ -437,16 +437,20 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
           <Field label="Default terms" className="sm:col-span-2">
             <Textarea value={str("terms")} onChange={(e) => set("terms", e.target.value)} disabled={!canManage} placeholder="Payment due within 15 days. Interest at 18% p.a. on late payments." />
           </Field>
-          <label className="flex items-center gap-2 text-sm sm:col-span-4">
-            <input type="checkbox" checked={Boolean(f.roundOff)} onChange={(e) => set("roundOff", e.target.checked)} disabled={!canManage} className="accent-[var(--primary)]" />
-            Round totals to the nearest rupee
-          </label>
+          <Toggle
+            className="sm:col-span-4"
+            isSelected={Boolean(f.roundOff)}
+            onChange={(v) => set("roundOff", v)}
+            isDisabled={!canManage}
+            label="Round totals to the nearest rupee"
+            hint="Adds a round-off line so the total is a whole rupee."
+          />
         </div>
       </Card>
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Bank details</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Printed on invoices so clients can pay by transfer or UPI.</p>
+        <p className="mt-1 text-sm text-tertiary">Printed on invoices so clients can pay by transfer or UPI.</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {(
             [
@@ -473,7 +477,7 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
             </Badge>
           ) : null}
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">Let clients pay invoices online by UPI, card or netbanking. Find your keys in the Razorpay Dashboard under Account and settings, then API keys.</p>
+        <p className="mt-1 text-sm text-tertiary">Let clients pay invoices online by UPI, card or netbanking. Find your keys in the Razorpay Dashboard under Account and settings, then API keys.</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Key ID">
             <Input value={str("razorpayKeyId")} onChange={(e) => set("razorpayKeyId", e.target.value.trim())} disabled={!canManage} className="font-mono" placeholder="rzp_live_…" />
@@ -513,14 +517,14 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="p-6">
           <h2 className="text-lg font-bold">GST rates</h2>
-          <ul className="mt-3 divide-y divide-border">
+          <ul className="mt-3 divide-y divide-border-secondary">
             {rates?.taxRates.map((r) => (
               <li key={r.id} className="flex items-center gap-3 py-2 text-sm">
                 <span className="flex-1">{r.name}</span>
                 <span className="font-mono">{Number(r.rate)}%</span>
                 {r.isDefault ? <Badge>Default</Badge> : null}
                 {canManage ? (
-                  <button type="button" aria-label={`Remove ${r.name}`} onClick={() => removeRate.mutate(r.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                  <button type="button" aria-label={`Remove ${r.name}`} onClick={() => removeRate.mutate(r.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                     <Trash2 className="size-3.5" />
                   </button>
                 ) : null}
@@ -540,17 +544,17 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
 
         <Card className="p-6">
           <h2 className="text-lg font-bold">Saved items</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Services and products you bill often. Pick them when adding a line.</p>
-          <ul className="mt-3 divide-y divide-border">
+          <p className="mt-1 text-sm text-tertiary">Services and products you bill often. Pick them when adding a line.</p>
+          <ul className="mt-3 divide-y divide-border-secondary">
             {items?.items.map((it) => (
               <li key={it.id} className="flex items-center gap-3 py-2 text-sm">
                 <span className="min-w-0 flex-1 truncate">
                   {it.name}
-                  {it.hsnSac ? <span className="ml-2 font-mono text-xs text-muted-foreground">{it.hsnSac}</span> : null}
+                  {it.hsnSac ? <span className="ml-2 font-mono text-xs text-tertiary">{it.hsnSac}</span> : null}
                 </span>
                 <span className="font-mono">{money(it.unitPrice)}</span>
-                <span className="font-mono text-xs text-muted-foreground">{Number(it.taxRate)}%</span>
-                <button type="button" aria-label={`Remove ${it.name}`} onClick={() => removeItem.mutate(it.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                <span className="font-mono text-xs text-tertiary">{Number(it.taxRate)}%</span>
+                <button type="button" aria-label={`Remove ${it.name}`} onClick={() => removeItem.mutate(it.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                   <Trash2 className="size-3.5" />
                 </button>
               </li>
@@ -571,7 +575,7 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
               <Plus />
             </Button>
           </form>
-          <p className="mt-2 text-xs text-muted-foreground">Rates are in rupees; e.g. 15000 for ₹15,000.</p>
+          <p className="mt-2 text-xs text-tertiary">Rates are in rupees; e.g. 15000 for ₹15,000.</p>
         </Card>
       </div>
     </FinanceBody>

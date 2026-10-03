@@ -24,7 +24,7 @@ export interface NavItem {
 }
 
 export const MAIN_NAV: NavItem[] = [
-  { to: "/", label: "Home", icon: LayoutDashboard, color: "var(--ember)" },
+  { to: "/", label: "Home", icon: LayoutDashboard, color: "var(--color-brand-600)" },
   { to: "/people", label: "People", icon: Users, pillar: "people", tone: "text-people", color: "var(--people)", hint: "Directory, departments, leave" },
   { to: "/work", label: "Work", icon: FolderKanban, pillar: "work", tone: "text-work", color: "var(--work)", hint: "Projects, tasks, milestones" },
   { to: "/collab", label: "Collaboration", icon: MessagesSquare, pillar: "collab", tone: "text-collab", color: "var(--collab)", hint: "Threads, channels, decisions" },
@@ -32,7 +32,7 @@ export const MAIN_NAV: NavItem[] = [
 ];
 
 export const ADMIN_NAV: NavItem[] = [
-  { to: "/settings", label: "Organization", icon: Building2, color: "var(--muted-foreground)" },
-  { to: "/settings/audit", label: "Audit log", icon: ScrollText, color: "var(--muted-foreground)" },
-  { to: "/settings/preferences", label: "Preferences", icon: Settings, color: "var(--muted-foreground)" },
+  { to: "/settings", label: "Organization", icon: Building2, color: "var(--color-text-tertiary)" },
+  { to: "/settings/audit", label: "Audit log", icon: ScrollText, color: "var(--color-text-tertiary)" },
+  { to: "/settings/preferences", label: "Preferences", icon: Settings, color: "var(--color-text-tertiary)" },
 ];

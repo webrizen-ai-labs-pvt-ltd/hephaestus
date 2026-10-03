@@ -1,16 +1,4 @@
-import {
-  Avatar,
-  Button,
-  cn,
-  Dialog,
-  Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Select,
-  SheetContent,
-  Skeleton,
-} from "@hephaestus/ui";
+import { Avatar, Button, cn, DateInput, Dialog, Input, Popover, PopoverContent, PopoverTrigger, Select, SheetContent, Skeleton } from "@hephaestus/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Check, Copy, Link2, Plus, Repeat, Tag, Trash2, Users, X } from "lucide-react";
@@ -53,13 +41,13 @@ type Patch = Partial<{
 function Prop({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[110px_1fr] items-center gap-3 py-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs text-tertiary">{label}</span>
       <div className="min-w-0">{children}</div>
     </div>
   );
 }
 
-const ghostControl = "h-8 w-full rounded-md border border-transparent bg-transparent px-2 text-sm hover:border-border focus:border-ring focus:outline-none";
+const ghostControl = "h-8 w-full rounded-md border border-transparent bg-transparent px-2 text-sm hover:border-secondary focus:border-brand focus:outline-none";
 
 function AssigneePicker({ value, onChange }: { value: string[]; onChange: (ids: string[]) => void }) {
   const { data } = useEmployees();
@@ -74,20 +62,20 @@ function AssigneePicker({ value, onChange }: { value: string[]; onChange: (ids: 
             <>
               <span className="flex -space-x-1.5">
                 {selected.slice(0, 4).map((p) => (
-                  <Avatar key={p.id} name={p.fullName} src={p.image} className="size-6 border-2 border-surface text-[10px]" />
+                  <Avatar key={p.id} name={p.fullName} src={p.image} className="size-6 border-2 border-bg-primary text-[10px]" />
                 ))}
               </span>
               <span className="truncate">{selected.map((p) => p.fullName.split(" ")[0]).join(", ")}</span>
             </>
           ) : (
-            <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="flex items-center gap-2 text-tertiary">
               <Users className="size-4" /> Unassigned
             </span>
           )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-72">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people" autoFocus className="mb-1 h-8 w-full rounded-md bg-surface-2 px-2 text-sm outline-none" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people" autoFocus className="mb-1 h-8 w-full rounded-md bg-secondary px-2 text-sm outline-none" />
         <ul className="max-h-64 overflow-y-auto">
           {people
             .filter((p) => p.fullName.toLowerCase().includes(q.toLowerCase()))
@@ -98,11 +86,11 @@ function AssigneePicker({ value, onChange }: { value: string[]; onChange: (ids: 
                   <button
                     type="button"
                     onClick={() => onChange(on ? value.filter((x) => x !== p.id) : [...value, p.id])}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-secondary"
                   >
                     <Avatar name={p.fullName} src={p.image} className="size-6 text-[10px]" />
                     <span className="flex-1 truncate">{p.fullName}</span>
-                    {on ? <Check className="size-4 text-primary" /> : null}
+                    {on ? <Check className="size-4 text-brand-secondary" /> : null}
                   </button>
                 </li>
               );
@@ -136,13 +124,13 @@ function LabelPicker({ value, onChange }: { value: string[]; onChange: (ids: str
         <button type="button" className={cn(ghostControl, "flex h-auto min-h-8 flex-wrap items-center gap-1.5 py-1 text-left")}>
           {selected.length ? (
             selected.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-1.5 py-0.5 text-xs">
+              <span key={l.id} className="inline-flex items-center gap-1 rounded-md bg-secondary px-1.5 py-0.5 text-xs">
                 <span className="size-2 rounded-full" style={{ background: l.color }} />
                 {l.name}
               </span>
             ))
           ) : (
-            <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="flex items-center gap-2 text-tertiary">
               <Tag className="size-4" /> No labels
             </span>
           )}
@@ -156,7 +144,7 @@ function LabelPicker({ value, onChange }: { value: string[]; onChange: (ids: str
           placeholder="Find or create a label"
           autoFocus
           maxLength={40}
-          className="mb-1 h-8 w-full rounded-md bg-surface-2 px-2 text-sm outline-none"
+          className="mb-1 h-8 w-full rounded-md bg-secondary px-2 text-sm outline-none"
         />
         <ul className="max-h-60 overflow-y-auto">
           {all
@@ -168,18 +156,18 @@ function LabelPicker({ value, onChange }: { value: string[]; onChange: (ids: str
                   <button
                     type="button"
                     onClick={() => onChange(on ? value.filter((x) => x !== l.id) : [...value, l.id])}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-secondary"
                   >
                     <span className="size-2.5 rounded-full" style={{ background: l.color }} />
                     <span className="flex-1 truncate">{l.name}</span>
-                    {on ? <Check className="size-4 text-primary" /> : null}
+                    {on ? <Check className="size-4 text-brand-secondary" /> : null}
                   </button>
                 </li>
               );
             })}
           {q.trim() && !exact ? (
             <li>
-              <button type="button" onClick={() => void create()} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-accent hover:bg-surface-2">
+              <button type="button" onClick={() => void create()} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-brand-secondary hover:bg-secondary">
                 <Plus className="size-4" /> Create "{q.trim()}"
               </button>
             </li>
@@ -250,7 +238,7 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
       </div>
     );
   }
-  if (error || !data) return <p className="p-6 text-sm text-muted-foreground">{error?.message ?? "Task not found"}</p>;
+  if (error || !data) return <p className="p-6 text-sm text-tertiary">{error?.message ?? "Task not found"}</p>;
 
   const t = data.task;
   const ref = taskRef(t);
@@ -259,20 +247,20 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
 
   return (
     <>
-      <div className="flex items-center gap-2 border-b border-border px-5 py-3">
+      <div className="flex items-center gap-2 border-b border-secondary px-5 py-3">
         {t.projectId ? (
           <Link
             to="/work/projects/$id"
             params={{ id: t.projectId }}
-            className="flex items-center gap-2 rounded-md px-1.5 py-0.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            className="flex items-center gap-2 rounded-md px-1.5 py-0.5 text-sm text-tertiary hover:bg-secondary hover:text-primary"
           >
             <span className="size-2 rounded-full" style={{ background: t.projectColor ?? undefined }} />
             {t.projectName}
           </Link>
         ) : (
-          <span className="text-sm text-muted-foreground">{t.source === "onboarding" ? "Onboarding" : "Personal task"}</span>
+          <span className="text-sm text-tertiary">{t.source === "onboarding" ? "Onboarding" : "Personal task"}</span>
         )}
-        {ref ? <span className="font-mono text-xs text-muted-foreground">{ref}</span> : null}
+        {ref ? <span className="font-mono text-xs text-tertiary">{ref}</span> : null}
         <div className="ml-auto flex items-center gap-1">
           <Button
             size="icon"
@@ -298,7 +286,7 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {data.parent ? (
-          <button type="button" onClick={() => onOpen(data.parent!.id)} className="mb-2 text-xs text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={() => onOpen(data.parent!.id)} className="mb-2 text-xs text-tertiary hover:text-primary">
             ↑ Subtask of {data.parent.title}
           </button>
         ) : null}
@@ -319,19 +307,19 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
             rows={1}
             maxLength={300}
             aria-label="Title"
-            className={cn("field-sizing-content w-full resize-none bg-transparent font-display text-2xl font-bold leading-tight outline-none", done && "text-muted-foreground line-through")}
+            className={cn("field-sizing-content w-full resize-none bg-transparent font-display text-2xl font-bold leading-tight outline-none", done && "text-tertiary line-through")}
           />
         </div>
         {t.blocked ? (
-          <p className="mt-3 flex items-center gap-2 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p className="mt-3 flex items-center gap-2 rounded-lg bg-error-solid/10 px-3 py-2 text-sm text-error-primary">
             <Link2 className="size-4" /> Blocked until the tasks below are done.
           </p>
         ) : null}
 
-        <div className="mt-5 rounded-lg border border-border px-3 py-2">
+        <div className="mt-5 rounded-lg border border-secondary px-3 py-2">
           <Prop label="Status">
             {project && t.projectId && !t.parentId ? (
-              <Select value={t.stageId ?? ""} onChange={(e) => update.mutate({ stageId: e.target.value })} className="h-8 border-transparent bg-transparent hover:border-border">
+              <Select value={t.stageId ?? ""} onChange={(e) => update.mutate({ stageId: e.target.value })} size="xs" variant="ghost">
                 {project.stages.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -339,7 +327,7 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
                 ))}
               </Select>
             ) : (
-              <Select value={t.status} onChange={(e) => update.mutate({ status: e.target.value as StageCategory })} className="h-8 border-transparent bg-transparent hover:border-border">
+              <Select value={t.status} onChange={(e) => update.mutate({ status: e.target.value as StageCategory })} size="xs" variant="ghost">
                 {Object.entries(STATUS_META).map(([k, m]) => (
                   <option key={k} value={k}>
                     {m.label}
@@ -354,7 +342,7 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
           <Prop label="Priority">
             <div className="flex items-center gap-2">
               <PriorityIcon priority={t.priority} />
-              <Select value={t.priority} onChange={(e) => update.mutate({ priority: e.target.value as Priority })} className="h-8 border-transparent bg-transparent hover:border-border">
+              <Select value={t.priority} onChange={(e) => update.mutate({ priority: e.target.value as Priority })} size="xs" variant="ghost">
                 {(Object.keys(PRIORITY_META) as Priority[]).map((p) => (
                   <option key={p} value={p}>
                     {PRIORITY_META[p].label}
@@ -365,21 +353,20 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
           </Prop>
           <Prop label="Dates">
             <div className="flex items-center gap-2">
-              <Input type="date" value={t.startDate ?? ""} max={t.dueDate ?? undefined} onChange={(e) => update.mutate({ startDate: e.target.value || null })} aria-label="Start date" className="h-8 border-transparent bg-transparent hover:border-border" />
-              <span className="text-muted-foreground">→</span>
-              <Input
-                type="date"
+              <DateInput value={t.startDate ?? ""} max={t.dueDate ?? undefined} onChange={(v) => update.mutate({ startDate: v || null })} aria-label="Start date" size="xs" variant="ghost" />
+              <span className="text-tertiary">→</span>
+              <DateInput
                 value={t.dueDate ?? ""}
                 min={t.startDate ?? undefined}
-                onChange={(e) => update.mutate({ dueDate: e.target.value || null })}
+                onChange={(v) => update.mutate({ dueDate: v || null })}
                 aria-label="Due date"
-                className={cn("h-8 border-transparent bg-transparent hover:border-border", !done && t.dueDate && t.dueDate < today && "text-danger")}
+                size="xs" variant="ghost" danger={Boolean(!done && t.dueDate && t.dueDate < today)}
               />
             </div>
           </Prop>
           {project && t.projectId ? (
             <Prop label="Milestone">
-              <Select value={t.milestoneId ?? ""} onChange={(e) => update.mutate({ milestoneId: e.target.value || null })} className="h-8 border-transparent bg-transparent hover:border-border">
+              <Select value={t.milestoneId ?? ""} onChange={(e) => update.mutate({ milestoneId: e.target.value || null })} size="xs" variant="ghost">
                 <option value="">None</option>
                 {project.milestones.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -406,14 +393,14 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
                   if (v !== t.estimateHours) update.mutate({ estimateHours: v });
                 }}
                 aria-label="Estimate in hours"
-                className="h-8 w-24 border-transparent bg-transparent hover:border-border"
+                className="h-8 w-24 border-transparent bg-transparent hover:border-secondary"
               />
-              <span className="text-xs text-muted-foreground">hours</span>
+              <span className="text-xs text-tertiary">hours</span>
             </div>
           </Prop>
           <Prop label="Repeat">
             <div className="flex items-center gap-2">
-              <Repeat className="size-4 text-muted-foreground" />
+              <Repeat className="size-4 text-tertiary" />
               <Select
                 value={t.recurrence ? `${t.recurrence.freq}:${t.recurrence.interval}` : ""}
                 onChange={(e) => {
@@ -422,7 +409,7 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
                 }}
                 disabled={!t.dueDate}
                 title={t.dueDate ? undefined : "Set a due date first"}
-                className="h-8 border-transparent bg-transparent hover:border-border"
+                size="xs" variant="ghost"
               >
                 <option value="">{t.dueDate ? "Doesn't repeat" : "Set a due date to repeat"}</option>
                 <option value="daily:1">Every day</option>
@@ -442,16 +429,16 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
           placeholder="Add details, links or acceptance criteria…"
           maxLength={20000}
           aria-label="Description"
-          className="field-sizing-content mt-5 min-h-24 w-full resize-none rounded-lg border border-transparent bg-transparent p-2 text-sm leading-relaxed outline-none hover:border-border focus:border-ring"
+          className="field-sizing-content mt-5 min-h-24 w-full resize-none rounded-lg border border-transparent bg-transparent p-2 text-sm leading-relaxed outline-none hover:border-secondary focus:border-brand"
         />
 
         {!t.parentId ? (
           <section className="mt-6">
             <h3 className="mb-2 text-sm font-bold">
-              Subtasks {data.subtasks.length ? <span className="font-mono text-xs font-normal text-muted-foreground">{data.subtasks.filter((s) => s.status === "done").length}/{data.subtasks.length}</span> : null}
+              Subtasks {data.subtasks.length ? <span className="font-mono text-xs font-normal text-tertiary">{data.subtasks.filter((s) => s.status === "done").length}/{data.subtasks.length}</span> : null}
             </h3>
             {data.subtasks.length ? (
-              <ul className="mb-2 divide-y divide-border rounded-lg border border-border">
+              <ul className="mb-2 divide-y divide-border-secondary rounded-lg border border-secondary">
                 {data.subtasks.map((s) => (
                   <TaskRow key={s.id} task={s} today={today} onOpen={onOpen} showProject={false} />
                 ))}
@@ -466,19 +453,19 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
             <h3 className="mb-2 text-sm font-bold">Blocked by</h3>
             <ul className="space-y-1">
               {data.blockedBy.map((b) => (
-                <li key={b.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-2">
+                <li key={b.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-secondary">
                   <StatusDot status={b.status} />
-                  <button type="button" onClick={() => onOpen(b.id)} className={cn("flex-1 truncate text-left", b.status === "done" && "text-muted-foreground line-through")}>
-                    {taskRef(b) ? <span className="mr-2 font-mono text-xs text-muted-foreground">{taskRef(b)}</span> : null}
+                  <button type="button" onClick={() => onOpen(b.id)} className={cn("flex-1 truncate text-left", b.status === "done" && "text-tertiary line-through")}>
+                    {taskRef(b) ? <span className="mr-2 font-mono text-xs text-tertiary">{taskRef(b)}</span> : null}
                     {b.title}
                   </button>
-                  <button type="button" aria-label="Remove blocker" onClick={() => removeBlocker.mutate(b.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                  <button type="button" aria-label="Remove blocker" onClick={() => removeBlocker.mutate(b.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                     <X className="size-3.5" />
                   </button>
                 </li>
               ))}
             </ul>
-            <Select value="" onChange={(e) => e.target.value && addBlocker.mutate(e.target.value)} className="mt-1 h-8 text-muted-foreground" aria-label="Add a blocking task">
+            <Select value="" onChange={(e) => e.target.value && addBlocker.mutate(e.target.value)} size="xs" className="mt-1 text-tertiary" aria-label="Add a blocking task">
               <option value="">Add a task that must finish first…</option>
               {blockerOptions.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -488,7 +475,7 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
               ))}
             </Select>
             {data.blocking.length ? (
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 text-xs text-tertiary">
                 Blocking: {data.blocking.map((b) => taskRef(b) ?? b.title).join(", ")}
               </p>
             ) : null}
@@ -502,11 +489,11 @@ function TaskBody({ id, onClose, onOpen }: { id: string; onClose: () => void; on
 
         <section className="mt-8">
           <h3 className="mb-3 text-sm font-bold">Activity</h3>
-          <ol className="space-y-3 border-l border-border pl-4">
+          <ol className="space-y-3 border-l border-secondary pl-4">
             {data.activity.map((a) => (
-              <li key={a.id} className="relative text-xs text-muted-foreground">
-                <span className="absolute -left-[21px] top-1 size-2 rounded-full bg-border" />
-                <span className="text-foreground">{describeActivity(a)}</span>
+              <li key={a.id} className="relative text-xs text-tertiary">
+                <span className="absolute -left-[21px] top-1 size-2 rounded-full bg-border-secondary" />
+                <span className="text-primary">{describeActivity(a)}</span>
                 <span className="ml-2 font-mono">{new Date(a.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
               </li>
             ))}

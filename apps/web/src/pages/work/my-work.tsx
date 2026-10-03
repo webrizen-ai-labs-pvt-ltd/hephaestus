@@ -17,12 +17,12 @@ function bucket(t: TaskCard, today: string) {
 }
 
 const SECTIONS = [
-  { key: "overdue", title: "Overdue", color: "var(--danger)" },
+  { key: "overdue", title: "Overdue", color: "var(--color-fg-error-primary)" },
   { key: "today", title: "Today", color: "var(--work)" },
   { key: "week", title: "Later this week", color: "var(--finance)" },
   { key: "upcoming", title: "Upcoming", color: "var(--collab)" },
-  { key: "later", title: "No due date", color: "var(--subtle-foreground)" },
-  { key: "done", title: "Recently done", color: "var(--success)" },
+  { key: "later", title: "No due date", color: "var(--color-text-quaternary)" },
+  { key: "done", title: "Recently done", color: "var(--color-fg-success-primary)" },
 ] as const;
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
@@ -42,7 +42,7 @@ export function MyWorkPage() {
   const byProject = new Map<string, { name: string; color: string; id: string | null; n: number }>();
   for (const t of open) {
     const key = t.projectId ?? "personal";
-    const cur = byProject.get(key) ?? { name: t.projectName ?? "Personal", color: t.projectColor ?? "var(--subtle-foreground)", id: t.projectId ?? null, n: 0 };
+    const cur = byProject.get(key) ?? { name: t.projectName ?? "Personal", color: t.projectColor ?? "var(--color-text-quaternary)", id: t.projectId ?? null, n: 0 };
     cur.n++;
     byProject.set(key, cur);
   }
@@ -64,7 +64,7 @@ export function MyWorkPage() {
               {counts.overdue ? (
                 <>
                   {" "}
-                  <Em tone="var(--danger)">{counts.overdue} overdue</Em>, start there.
+                  <Em tone="var(--color-fg-error-primary)">{counts.overdue} overdue</Em>, start there.
                 </>
               ) : counts.today ? (
                 <>
@@ -98,10 +98,10 @@ export function MyWorkPage() {
                 <h2 className="mb-2.5 flex items-center gap-2 text-sm font-bold">
                   {s.key === "done" ? <CheckCircle2 className="size-4" style={{ color: s.color }} /> : <span className="size-2 rounded-full" style={{ background: s.color, boxShadow: `0 0 0 3px color-mix(in srgb, ${s.color} 20%, transparent)` }} />}
                   <span style={s.key === "overdue" ? { color: s.color } : undefined}>{s.title}</span>
-                  <span className="rounded-full bg-surface-2 px-1.5 font-mono text-[10px] font-normal leading-4 text-muted-foreground">{list.length}</span>
+                  <span className="rounded-full bg-secondary px-1.5 font-mono text-[10px] font-normal leading-4 text-tertiary">{list.length}</span>
                 </h2>
                 <Card className="overflow-hidden">
-                  <ul className="divide-y divide-border">
+                  <ul className="divide-y divide-border-secondary">
                     {list.map((t) => (
                       <TaskRow key={t.id} task={t} today={today} onOpen={openTask} />
                     ))}
@@ -115,25 +115,25 @@ export function MyWorkPage() {
         <aside className="space-y-4 lg:sticky lg:top-20 lg:col-span-4">
           <Panel title="This week" icon={<TrendingUp />} tone="var(--work)">
             <div className="flex items-center gap-4">
-              <ProgressRing value={(doneWeek / Math.max(1, doneWeek + dueThisWeek)) * 100} size={72} stroke={6} color="var(--success)">
+              <ProgressRing value={(doneWeek / Math.max(1, doneWeek + dueThisWeek)) * 100} size={72} stroke={6} color="var(--color-fg-success-primary)">
                 <span className="text-base">{doneWeek}</span>
               </ProgressRing>
               <div className="text-sm">
                 <div>
                   <Em>{plural(doneWeek, "task")}</Em> done
                 </div>
-                <div className="text-muted-foreground">{dueThisWeek ? `${dueThisWeek} still due this week` : "Nothing else due this week"}</div>
+                <div className="text-tertiary">{dueThisWeek ? `${dueThisWeek} still due this week` : "Nothing else due this week"}</div>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
               {(["overdue", "today", "week"] as const).map((k) => {
                 const s = SECTIONS.find((x) => x.key === k)!;
                 return (
-                  <div key={k} className="rounded-lg border border-border bg-surface-2/60 px-2.5 py-2">
-                    <div className="font-display text-xl font-bold leading-none tabular" style={{ color: counts[k] ? s.color : "var(--subtle-foreground)" }}>
+                  <div key={k} className="rounded-lg border border-secondary bg-secondary/60 px-2.5 py-2">
+                    <div className="font-display text-xl font-bold leading-none tabular" style={{ color: counts[k] ? s.color : "var(--color-text-quaternary)" }}>
                       {counts[k]}
                     </div>
-                    <div className="mt-1 truncate text-[11px] text-muted-foreground">{s.title}</div>
+                    <div className="mt-1 truncate text-[11px] text-tertiary">{s.title}</div>
                   </div>
                 );
               })}
@@ -141,7 +141,7 @@ export function MyWorkPage() {
             {home ? (
               <div className="mt-4">
                 <Sparkline values={home.work.velocity.map((v) => v.done)} color="var(--work)" height={32} bars />
-                <div className="mt-1 text-[11px] text-subtle-foreground">Team tasks finished, last 14 days</div>
+                <div className="mt-1 text-[11px] text-quaternary">Team tasks finished, last 14 days</div>
               </div>
             ) : null}
           </Panel>
@@ -155,9 +155,9 @@ export function MyWorkPage() {
                       <div className="flex items-center gap-2 text-sm">
                         <span className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                        <span className="font-mono text-xs text-muted-foreground">{p.n}</span>
+                        <span className="font-mono text-xs text-tertiary">{p.n}</span>
                       </div>
-                      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2">
+                      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-secondary">
                         <div className="h-full rounded-full" style={{ width: `${(p.n / maxN) * 100}%`, background: p.color }} />
                       </div>
                     </>
@@ -185,11 +185,11 @@ export function MyWorkPage() {
                   .filter((u) => u.kind === "milestone")
                   .map((u, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm">
-                      <CalendarDays className="size-3.5 shrink-0 text-muted-foreground" />
+                      <CalendarDays className="size-3.5 shrink-0 text-tertiary" />
                       <span className="min-w-0 flex-1 truncate">
-                        {u.title} {u.detail ? <span className="text-muted-foreground">· {u.detail}</span> : null}
+                        {u.title} {u.detail ? <span className="text-tertiary">· {u.detail}</span> : null}
                       </span>
-                      <span className="font-mono text-[11px] text-muted-foreground">
+                      <span className="font-mono text-[11px] text-tertiary">
                         {new Date(`${u.date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </span>
                     </li>

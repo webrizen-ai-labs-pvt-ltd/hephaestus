@@ -18,10 +18,12 @@ const mq = window.matchMedia("(prefers-color-scheme: dark)");
 
 function apply() {
   const dark = current === "dark" || (current === "system" && mq.matches);
-  document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.classList.toggle("dark-mode", dark);
 }
 
 mq.addEventListener("change", () => current === "system" && apply());
+// Apply the saved choice on load (index.html starts dark to avoid a flash for the default).
+apply();
 
 export function setTheme(pref: ThemePref) {
   current = pref;

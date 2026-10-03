@@ -33,7 +33,7 @@ export { useViewer };
 function Splash() {
   return (
     <div className="flex min-h-dvh items-center justify-center">
-      <Logo className="size-10 animate-pulse text-primary" />
+      <Logo className="size-10 animate-pulse text-brand-secondary" />
     </div>
   );
 }
@@ -43,14 +43,14 @@ function NoOrganization({ reason }: { reason: string }) {
   return (
     <div className="flex min-h-dvh items-center justify-center p-6">
       <div className="max-w-sm text-center">
-        <Logo className="mx-auto size-10 text-foreground" />
+        <Logo className="mx-auto size-10 text-primary" />
         <h1 className="mt-6 text-2xl font-bold">{removed ? "You no longer have access" : "Join an organization"}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-tertiary">
           {removed
             ? "An admin removed you from this organization in Webrizen. Ask them to add you back, or sign in to another organization."
             : "Hephaestus works inside an organization. Create one in your Webrizen account, or ask your admin for an invite."}
         </p>
-        <p className="mt-3 font-mono text-xs text-subtle-foreground">{reason}</p>
+        <p className="mt-3 font-mono text-xs text-quaternary">{reason}</p>
         <div className="mt-6 flex flex-col gap-2">
           <Button variant="primary" onClick={() => signIn("/")}>
             Choose an organization
@@ -74,7 +74,7 @@ function Root() {
       <div className="flex min-h-dvh items-center justify-center p-6 text-center">
         <div>
           <h1 className="text-2xl font-bold">We can't reach Hephaestus</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Check your connection, then try again.</p>
+          <p className="mt-2 text-sm text-tertiary">Check your connection, then try again.</p>
           <Button className="mt-6" onClick={() => window.location.reload()}>
             Try again
           </Button>
@@ -94,7 +94,7 @@ const rootRoute = createRootRoute({
   notFoundComponent: () => (
     <div className="p-8">
       <h1 className="text-2xl font-bold">Page not found</h1>
-      <Link to="/" className="mt-2 inline-block text-sm text-accent hover:underline">
+      <Link to="/" className="mt-2 inline-block text-sm text-brand-secondary hover:underline">
         Go home
       </Link>
     </div>

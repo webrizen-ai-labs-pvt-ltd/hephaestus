@@ -54,7 +54,7 @@ function NavLink({ item, onNavigate, badge, badgeTone }: { item: NavItem; onNavi
       onClick={onNavigate}
       className={cn(
         "group relative flex h-10 items-center gap-3 rounded-xl px-2.5 text-[13.5px] transition-colors",
-        active ? "bg-surface-2 font-medium text-foreground shadow-card" : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground",
+        active ? "bg-secondary font-medium text-primary shadow-xs" : "text-tertiary hover:bg-secondary/60 hover:text-primary",
       )}
     >
       <span
@@ -87,7 +87,7 @@ function ThemeSwitch() {
     { key: "system", icon: SunMoon, label: "Match system" },
   ] as const;
   return (
-    <div className="flex rounded-lg border border-border bg-surface p-0.5" role="radiogroup" aria-label="Theme">
+    <div className="flex rounded-lg border border-secondary bg-primary p-0.5" role="radiogroup" aria-label="Theme">
       {options.map((o) => (
         <button
           key={o.key}
@@ -97,7 +97,7 @@ function ThemeSwitch() {
           aria-label={o.label}
           title={o.label}
           onClick={() => setPref(o.key)}
-          className={cn("flex size-7 items-center justify-center rounded-md transition-colors", pref === o.key ? "bg-surface-3 text-foreground" : "text-muted-foreground hover:text-foreground")}
+          className={cn("flex size-7 items-center justify-center rounded-md transition-colors", pref === o.key ? "bg-tertiary text-primary" : "text-tertiary hover:text-primary")}
         >
           <o.icon className="size-3.5" />
         </button>
@@ -112,7 +112,7 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
   const { data: chats } = useChannels();
   const unreadChats = (chats?.channels ?? []).reduce((n, c) => n + c.unread, 0);
   const badges: Record<string, { n?: number; tone?: string }> = {
-    "/": { n: home?.counts.attention, tone: "var(--ember)" },
+    "/": { n: home?.counts.attention, tone: "var(--color-brand-600)" },
     "/work": { n: home?.counts.myOpenTasks },
     "/collab": { n: unreadChats },
   };
@@ -120,23 +120,23 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-2.5 px-5">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-foreground text-background shadow-card">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-primary-solid text-primary_on-brand shadow-xs">
           <Logo className="size-6" />
         </span>
         <div className="leading-tight">
           <div className="font-display text-[16px] font-bold tracking-tight">Hephaestus</div>
-          <div className="text-[10.5px] text-muted-foreground">by Webrizen</div>
+          <div className="text-[10.5px] text-tertiary">by Webrizen</div>
         </div>
       </div>
 
       <div className="px-3">
-        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-2.5 py-2 shadow-card">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--ember),var(--molten))] font-display text-sm font-bold text-white">
+        <div className="flex items-center gap-2.5 rounded-xl border border-secondary bg-primary px-2.5 py-2 shadow-xs">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--color-brand-600),var(--molten))] font-display text-sm font-bold text-white">
             {me.org.name.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-medium">{me.org.name}</div>
-            <div className="truncate text-[11px] capitalize text-muted-foreground">{me.org.roles.join(", ") || "member"}</div>
+            <div className="truncate text-[11px] capitalize text-tertiary">{me.org.roles.join(", ") || "member"}</div>
           </div>
           {me.edition === "cloud" ? (
             <button
@@ -144,7 +144,7 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
               title="Switch organization"
               aria-label="Switch organization"
               onClick={() => signIn("/")}
-              className="rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+              className="rounded-md p-1 text-tertiary hover:bg-secondary hover:text-primary"
             >
               <ArrowLeftRight className="size-4" />
             </button>
@@ -163,12 +163,12 @@ function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <div className="border-t border-secondary p-3">
         <div className="flex items-center gap-2.5 rounded-xl px-1.5 py-1">
           <Avatar name={me.user.name} src={me.user.image} className="size-8" />
           <div className="min-w-0 flex-1 leading-tight">
             <div className="truncate text-[13px] font-medium">{me.user.name}</div>
-            <div className="truncate text-[11px] text-muted-foreground">{me.edition === "cloud" ? "Cloud" : "Offline edition"}</div>
+            <div className="truncate text-[11px] text-tertiary">{me.edition === "cloud" ? "Cloud" : "Offline edition"}</div>
           </div>
           <ThemeSwitch />
         </div>
@@ -202,7 +202,7 @@ function CreateMenu({ me }: { me: Me }) {
           <DropdownMenuItem key={i.label} onSelect={i.go}>
             <i.icon />
             <span className="flex-1">{i.label}</span>
-            <span className="text-xs text-muted-foreground">{i.hint}</span>
+            <span className="text-xs text-tertiary">{i.hint}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -219,21 +219,21 @@ export function AppShell({ me }: { me: Me }) {
 
   return (
     <div className="flex h-dvh overflow-hidden">
-      <aside className="hidden w-[248px] shrink-0 border-r border-border bg-sidebar/80 backdrop-blur lg:block">
+      <aside className="hidden w-[248px] shrink-0 border-r border-secondary bg-sidebar/80 backdrop-blur lg:block">
         <Sidebar me={me} />
       </aside>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-obsidian/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative h-full w-72 max-w-[85vw] border-r border-border bg-sidebar shadow-pop">
+          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-overlay/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="relative h-full w-72 max-w-[85vw] border-r border-secondary bg-sidebar shadow-lg">
             <Sidebar me={me} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur sm:px-6">
+        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-secondary bg-secondary/70 px-4 backdrop-blur sm:px-6">
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
             {mobileOpen ? <X /> : <Menu />}
           </Button>
@@ -241,7 +241,7 @@ export function AppShell({ me }: { me: Me }) {
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="flex h-9 w-full min-w-0 max-w-md items-center gap-2.5 rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground shadow-card transition-colors hover:border-border-strong"
+            className="flex h-9 w-full min-w-0 max-w-md items-center gap-2.5 rounded-lg border border-secondary bg-primary px-3 text-sm text-tertiary shadow-xs transition-colors hover:border-primary"
           >
             <Search className="size-4" />
             <span className="flex-1 truncate text-left">Search people, projects, invoices…</span>
@@ -256,13 +256,13 @@ export function AppShell({ me }: { me: Me }) {
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="ml-1 rounded-full ring-2 ring-transparent transition hover:ring-border-strong" aria-label="Account menu">
+                <button type="button" className="ml-1 rounded-full ring-2 ring-transparent transition hover:ring-primary" aria-label="Account menu">
                   <Avatar name={me.user.name} src={me.user.image} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel>
-                  <div className="truncate text-sm font-medium text-foreground">{me.user.name}</div>
+                  <div className="truncate text-sm font-medium text-primary">{me.user.name}</div>
                   <div className="truncate">{me.user.email}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -296,7 +296,7 @@ export function PageHeader({ title, description, actions, eyebrow, children }: {
   const section = [...MAIN_NAV.slice(1), ...ADMIN_NAV].find((n) => pathname === n.to || pathname.startsWith(`${n.to}/`));
   const isAdmin = section ? ADMIN_NAV.includes(section) : false;
   return (
-    <PageHero eyebrow={eyebrow ?? (isAdmin ? "Admin" : section?.label)} tone={isAdmin ? "var(--ember)" : section?.color} title={title} summary={description} actions={actions}>
+    <PageHero eyebrow={eyebrow ?? (isAdmin ? "Admin" : section?.label)} tone={isAdmin ? "var(--color-brand-600)" : section?.color} title={title} summary={description} actions={actions}>
       {children}
     </PageHero>
   );

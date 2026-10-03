@@ -13,17 +13,17 @@ export function SignInPage({ variant = "sign-in" }: { variant?: "sign-in" | "sig
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
-      <section className="relative hidden overflow-hidden bg-obsidian p-12 text-ash lg:flex lg:flex-col">
+      <section className="relative hidden overflow-hidden bg-overlay p-12 text-white lg:flex lg:flex-col">
         <div className="flex items-center gap-2.5">
-          <Logo className="size-8 text-ash" />
+          <Logo className="size-8 text-white" />
           <span className="font-display text-lg font-bold">Hephaestus</span>
         </div>
         <div className="my-auto max-w-lg">
-          <p className="font-mono text-xs uppercase tracking-[0.14em] text-ember">By Webrizen</p>
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-brand-500">By Webrizen</p>
           <h1 className="mt-4 font-display text-6xl font-bold leading-[0.98] tracking-tight">
             Run the whole company.
             <br />
-            <span className="text-ember">From one place.</span>
+            <span className="text-brand-500">From one place.</span>
           </h1>
           <p className="mt-6 max-w-md text-base leading-relaxed text-[#bdb5a8]">
             People, projects, payments and conversations, all connected.
@@ -45,23 +45,23 @@ export function SignInPage({ variant = "sign-in" }: { variant?: "sign-in" | "sig
         </div>
         <p className="text-xs text-[#7d756b]">© {new Date().getFullYear()} Webrizen AI Labs Pvt Ltd</p>
         {/* Molten glow */}
-        <div className="pointer-events-none absolute -bottom-40 -right-40 size-[520px] rounded-full bg-ember/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 -right-40 size-[520px] rounded-full bg-brand-solid/20 blur-3xl" />
       </section>
 
       <section className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <Logo className="size-8 text-foreground" />
+            <Logo className="size-8 text-primary" />
             <span className="font-display text-lg font-bold">Hephaestus</span>
           </div>
           <h2 className="text-3xl font-bold">{variant === "signed-out" ? "You're signed out" : "Welcome back"}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-tertiary">
             {variant === "signed-out"
               ? "Sign in again whenever you're ready."
               : "Use your Webrizen account. One account works across every Webrizen product."}
           </p>
 
-          {error ? <p className="mt-6 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p> : null}
+          {error ? <p className="mt-6 rounded-lg border border-error/40 bg-error-solid/10 px-3 py-2 text-sm text-error-primary">{error}</p> : null}
 
           <Button variant="primary" size="lg" className="mt-8 w-full" onClick={() => signIn("/")}>
             <Logo className="size-5" />
@@ -74,7 +74,7 @@ export function SignInPage({ variant = "sign-in" }: { variant?: "sign-in" | "sig
               New here? Create a Webrizen account
             </Button>
           ) : (
-            <p className="mt-4 text-center text-xs text-muted-foreground">
+            <p className="mt-4 text-center text-xs text-tertiary">
               Webrizen SSO isn't configured yet, so you'll use a local demo account.
             </p>
           )}

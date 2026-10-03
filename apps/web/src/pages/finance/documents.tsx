@@ -1,5 +1,5 @@
 import { can, supplyTypeFor } from "@hephaestus/core";
-import { Avatar, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Ban, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Trash2 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
@@ -59,16 +59,16 @@ const FILTERS = {
 } as const;
 
 const INVOICE_BUCKETS = [
-  { key: "draft", label: "Drafts", color: "var(--subtle-foreground)", match: (s: string) => s === "draft" },
+  { key: "draft", label: "Drafts", color: "var(--color-text-quaternary)", match: (s: string) => s === "draft" },
   { key: "open", label: "Unpaid", color: "var(--collab)", match: (s: string) => s === "sent" || s === "partially_paid" || s === "overdue" },
-  { key: "overdue", label: "Overdue", color: "var(--danger)", match: (s: string) => s === "overdue" },
-  { key: "paid", label: "Paid", color: "var(--success)", match: (s: string) => s === "paid" },
+  { key: "overdue", label: "Overdue", color: "var(--color-fg-error-primary)", match: (s: string) => s === "overdue" },
+  { key: "paid", label: "Paid", color: "var(--color-fg-success-primary)", match: (s: string) => s === "paid" },
 ];
 const QUOTE_BUCKETS = [
-  { key: "draft", label: "Drafts", color: "var(--subtle-foreground)", match: (s: string) => s === "draft" },
+  { key: "draft", label: "Drafts", color: "var(--color-text-quaternary)", match: (s: string) => s === "draft" },
   { key: "sent", label: "Sent", color: "var(--collab)", match: (s: string) => s === "sent" },
-  { key: "accepted", label: "Accepted", color: "var(--success)", match: (s: string) => s === "accepted" },
-  { key: "declined", label: "Declined", color: "var(--danger)", match: (s: string) => s === "declined" },
+  { key: "accepted", label: "Accepted", color: "var(--color-fg-success-primary)", match: (s: string) => s === "accepted" },
+  { key: "declined", label: "Declined", color: "var(--color-fg-error-primary)", match: (s: string) => s === "declined" },
 ];
 
 export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" }) {
@@ -106,12 +106,12 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
                   type="button"
                   onClick={() => (setShowCredit(false), setStatus(status === b.key ? "" : b.key))}
                   className={cn(
-                    "relative overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-card transition-colors",
-                    status === b.key && !showCredit ? "border-border-strong" : "border-border hover:border-border-strong",
+                    "relative overflow-hidden rounded-xl border bg-primary p-4 text-left shadow-xs transition-colors",
+                    status === b.key && !showCredit ? "border-primary" : "border-secondary hover:border-primary",
                   )}
                 >
                   <span className="absolute inset-x-0 top-0 h-0.5" style={{ background: b.color }} />
-                  <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+                  <div className="flex items-center justify-between text-[13px] text-tertiary">
                     {b.label}
                     <span className="rounded-full px-1.5 font-mono text-[10.5px]" style={{ color: b.color, background: `color-mix(in srgb, ${b.color} 14%, transparent)` }}>
                       {b.count}
@@ -134,14 +134,14 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
         }
       />
       <Card>
-        <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-secondary p-3">
           <div className="flex gap-1 overflow-x-auto text-sm">
             {FILTERS[effectiveKind].map(([k, l]) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => setStatus(k)}
-                className={cn("shrink-0 rounded-md px-2.5 py-1", status === k ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}
+                className={cn("shrink-0 rounded-md px-2.5 py-1", status === k ? "bg-secondary font-medium" : "text-tertiary hover:text-primary")}
               >
                 {l}
               </button>
@@ -150,14 +150,14 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
               <button
                 type="button"
                 onClick={() => (setShowCredit((s) => !s), setStatus(""))}
-                className={cn("shrink-0 rounded-md px-2.5 py-1", showCredit ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}
+                className={cn("shrink-0 rounded-md px-2.5 py-1", showCredit ? "bg-secondary font-medium" : "text-tertiary hover:text-primary")}
               >
                 Credit notes
               </button>
             ) : null}
           </div>
           <div className="relative ml-auto w-full sm:w-64">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tertiary" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Number or client" className="h-8 pl-9" />
           </div>
         </div>
@@ -172,7 +172,7 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr className="border-b border-secondary text-left text-xs text-tertiary">
                   <th className="px-4 py-2.5 font-medium">Number</th>
                   <th className="px-4 py-2.5 font-medium">Client</th>
                   <th className="px-4 py-2.5 font-medium">Date</th>
@@ -182,13 +182,13 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
                   {effectiveKind === "invoice" ? <th className="px-4 py-2.5 text-right font-medium">Balance</th> : null}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border-secondary">
                 {docs.map((d) => {
                   const st = displayStatus(d, today);
                   return (
-                    <tr key={d.id} className="cursor-pointer hover:bg-surface-2/60" onClick={() => navigate({ to: "/finance/invoices/$id", params: { id: d.id } })}>
+                    <tr key={d.id} className="cursor-pointer hover:bg-secondary/60" onClick={() => navigate({ to: "/finance/invoices/$id", params: { id: d.id } })}>
                       <td className="px-4 py-3 font-mono text-xs">
-                        {d.number ?? <span className="text-muted-foreground">Draft</span>}
+                        {d.number ?? <span className="text-tertiary">Draft</span>}
                         {d.recurringId ? <span className="ml-2 font-sans text-[11px] text-finance">Retainer</span> : null}
                       </td>
                       <td className="px-4 py-3">
@@ -197,8 +197,8 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
                           <span className="truncate">{d.clientName}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(d.issueDate, { day: "numeric", month: "short" })}</td>
-                      <td className={cn("px-4 py-3", st === "overdue" ? "text-danger" : "text-muted-foreground")}>{formatDate(d.dueDate, { day: "numeric", month: "short" })}</td>
+                      <td className="px-4 py-3 text-tertiary">{formatDate(d.issueDate, { day: "numeric", month: "short" })}</td>
+                      <td className={cn("px-4 py-3", st === "overdue" ? "text-error-primary" : "text-tertiary")}>{formatDate(d.dueDate, { day: "numeric", month: "short" })}</td>
                       <td className="px-4 py-3">
                         <StatusPill status={st} />
                       </td>
@@ -291,10 +291,10 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
 
   return (
     <FinanceBody className="max-w-6xl">
-      <Link to={kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link to={kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-tertiary hover:text-primary">
         <ArrowLeft className="size-4" /> {KIND_LABEL[kind === "credit_note" ? "invoice" : kind].many}
       </Link>
-      <PageHeader title={initial ? `Draft ${KIND_LABEL[kind].one.toLowerCase()}` : `New ${KIND_LABEL[kind].one.toLowerCase()}`} description={settings && !settings.settings.gstin ? <span className="text-warning">Add your GSTIN and legal name in Finance settings so invoices are valid tax invoices.</span> : undefined} />
+      <PageHeader title={initial ? `Draft ${KIND_LABEL[kind].one.toLowerCase()}` : `New ${KIND_LABEL[kind].one.toLowerCase()}`} description={settings && !settings.settings.gstin ? <span className="text-warning-primary">Add your GSTIN and legal name in Finance settings so invoices are valid tax invoices.</span> : undefined} />
 
       <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Client" className="lg:col-span-2" hint={client ? (supplyType === "intra" ? "Same state: CGST + SGST" : supplyType === "inter" ? "Different state: IGST" : `Export in ${client.currency}, zero-rated`) : undefined}>
@@ -315,11 +315,11 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
           </div>
         </Field>
         <Field label="Date">
-          <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+          <DateInput value={issueDate} onChange={(v) => setIssueDate(v)} />
         </Field>
         {kind !== "credit_note" ? (
           <Field label={kind === "quote" ? "Valid until" : "Due date"} hint={dueDate ? undefined : "Blank uses the client's terms"}>
-            <Input type="date" value={dueDate} min={issueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <DateInput value={dueDate} min={issueDate} onChange={(v) => setDueDate(v)} />
           </Field>
         ) : null}
         <Field label="Project" className="lg:col-span-2" hint="Optional: links revenue to the work">
@@ -347,7 +347,7 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
         </Field>
       </Card>
 
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      {error ? <p className="text-sm text-error-primary">{error}</p> : null}
       <div className="flex flex-wrap items-center justify-end gap-2">
         {initial ? (
           <Button variant="ghost" className="mr-auto" onClick={() => confirm("Delete this draft?") && remove.mutate(undefined)}>
@@ -407,7 +407,7 @@ function RecordPaymentDialog({ open, onOpenChange, detail }: { open: boolean; on
             <Input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" autoFocus />
           </Field>
           <Field label="Received on">
-            <Input type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+            <DateInput value={paidOn} onChange={(v) => setPaidOn(v)} />
           </Field>
           <Field label="Method">
             <Select value={method} onChange={(e) => setMethod(e.target.value)}>
@@ -456,12 +456,12 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
 
   return (
     <FinanceBody className="max-w-7xl">
-      <Link to={d.kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground print:hidden">
+      <Link to={d.kind === "quote" ? "/finance/quotes" : "/finance/invoices"} className="inline-flex items-center gap-1 text-sm text-tertiary hover:text-primary print:hidden">
         <ArrowLeft className="size-4" /> {KIND_LABEL[d.kind === "credit_note" ? "invoice" : d.kind].many}
       </Link>
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">
-          <div className="overflow-x-auto rounded-card border border-border shadow-[0_24px_64px_-32px_rgb(0_0_0/0.5)]">
+          <div className="overflow-x-auto rounded-xl border border-secondary shadow-[0_24px_64px_-32px_rgb(0_0_0/0.5)]">
             <InvoiceDocument doc={d} lines={detail.lines} seller={detail.seller} client={detail.client} className="min-w-[640px]" />
           </div>
           <Card className="p-4 sm:p-6 print:hidden">
@@ -477,10 +477,10 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
               <StatusPill status={status} />
             </div>
             <div className="mt-3 font-display text-3xl font-bold">{money(d.kind === "invoice" && d.status !== "void" ? balance : d.total, d.currency)}</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-tertiary">
               {d.kind === "invoice" ? (d.status === "paid" ? `Paid in full${d.paidAt ? ` on ${formatDate(d.paidAt.slice(0, 10))}` : ""}` : d.status === "void" ? "Void" : `due ${formatDate(d.dueDate)}`) : `${KIND_LABEL[d.kind].one} total`}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-tertiary">
               {detail.client.name}
               {detail.project ? (
                 <>
@@ -546,7 +546,7 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
                 </Button>
               ) : null}
               {d.status !== "void" && can(p, "invoice", "void") ? (
-                <Button variant="ghost" className="text-danger" onClick={() => confirm(`Void ${d.number}? The number stays used, and it no longer counts as owed.`) && voidDoc.mutate(undefined)}>
+                <Button variant="ghost" className="text-error-primary" onClick={() => confirm(`Void ${d.number}? The number stays used, and it no longer counts as owed.`) && voidDoc.mutate(undefined)}>
                   <Ban /> Void
                 </Button>
               ) : null}
@@ -556,13 +556,13 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
           {d.kind === "invoice" ? (
             <Card className="p-5">
               <h2 className="font-bold">Payments</h2>
-              {detail.payments.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Nothing received yet.</p> : null}
-              <ul className="mt-2 divide-y divide-border">
+              {detail.payments.length === 0 ? <p className="mt-2 text-sm text-tertiary">Nothing received yet.</p> : null}
+              <ul className="mt-2 divide-y divide-border-secondary">
                 {detail.payments.map((pay) => (
-                  <li key={pay.id} className={cn("flex items-center gap-2 py-2 text-sm", pay.voidedAt && "text-muted-foreground line-through")}>
+                  <li key={pay.id} className={cn("flex items-center gap-2 py-2 text-sm", pay.voidedAt && "text-tertiary line-through")}>
                     <div className="min-w-0 flex-1">
                       <div className="font-mono">{money(pay.amount, d.currency)}</div>
-                      <div className="truncate text-xs text-muted-foreground">
+                      <div className="truncate text-xs text-tertiary">
                         {formatDate(pay.paidOn, { day: "numeric", month: "short" })} · {PAYMENT_METHOD_LABEL[pay.method] ?? pay.method}
                         {pay.reference ? ` · ${pay.reference}` : ""}
                       </div>
@@ -584,7 +584,7 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
               <ul className="mt-2 space-y-1 text-sm">
                 {detail.related.map((r) => (
                   <li key={r.id}>
-                    <Link to="/finance/invoices/$id" params={{ id: r.id }} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                    <Link to="/finance/invoices/$id" params={{ id: r.id }} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-secondary">
                       <span>
                         {KIND_LABEL[r.kind].one} <span className="font-mono text-xs">{r.number ?? "Draft"}</span>
                       </span>
@@ -615,7 +615,7 @@ export function DocumentPage({ me }: { me: Me }) {
   if (error || !data) {
     return (
       <FinanceBody>
-        <p className="text-sm text-muted-foreground">{error?.message ?? "Not found"}</p>
+        <p className="text-sm text-tertiary">{error?.message ?? "Not found"}</p>
       </FinanceBody>
     );
   }

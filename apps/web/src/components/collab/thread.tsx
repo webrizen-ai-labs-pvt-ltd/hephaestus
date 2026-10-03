@@ -19,7 +19,7 @@ export function Thread({ type, id, placeholder = "Write a comment" }: { type: Th
           <MessageList messages={messages} meId={me?.me} />
         </div>
       ) : (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 text-sm text-tertiary">
           <MessagesSquare className="size-4" /> No comments yet. Start the conversation.
         </p>
       )}

@@ -17,18 +17,18 @@ function inline(text: string, names: Record<string, string>, meId: string | unde
     if (mention) {
       const id = mention.slice(9, -1);
       out.push(
-        <span key={k} className={id === meId ? "rounded bg-primary/20 px-1 font-medium text-accent" : "rounded bg-collab/15 px-1 font-medium text-collab"}>
+        <span key={k} className={id === meId ? "rounded bg-brand-solid/20 px-1 font-medium text-brand-secondary" : "rounded bg-collab/15 px-1 font-medium text-collab"}>
           @{names[id] ?? "someone"}
         </span>,
       );
     } else if (url) {
       out.push(
-        <a key={k} href={url} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-accent underline-offset-2 hover:underline">
+        <a key={k} href={url} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-brand-secondary underline-offset-2 hover:underline">
           {url}
         </a>,
       );
     } else if (bold) out.push(<strong key={k}>{bold.slice(2, -2)}</strong>);
-    else if (code) out.push(<code key={k} className="rounded bg-surface-2 px-1 py-0.5 font-mono text-[0.85em]">{code.slice(1, -1)}</code>);
+    else if (code) out.push(<code key={k} className="rounded bg-secondary px-1 py-0.5 font-mono text-[0.85em]">{code.slice(1, -1)}</code>);
     else if (italic) out.push(<em key={k}>{italic.slice(1, -1)}</em>);
     else out.push(whole);
     last = m.index! + whole.length;

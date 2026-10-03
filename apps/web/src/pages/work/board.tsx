@@ -30,23 +30,23 @@ function CardFace({ task, today, dragging }: { task: TaskCard; today: string; dr
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-surface p-3 text-left transition-shadow",
-        dragging ? "rotate-2 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.6)]" : "hover:border-input",
+        "rounded-lg border border-secondary bg-primary p-3 text-left transition-shadow",
+        dragging ? "rotate-2 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.6)]" : "hover:border-primary",
       )}
     >
       <div className="flex items-center gap-2">
         <PriorityIcon priority={task.priority} />
-        {ref ? <span className="font-mono text-[11px] text-muted-foreground">{ref}</span> : null}
-        <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
+        {ref ? <span className="font-mono text-[11px] text-tertiary">{ref}</span> : null}
+        <span className="ml-auto flex items-center gap-1.5 text-tertiary">
           {task.recurrence ? <Repeat className="size-3.5" aria-label="Repeats" /> : null}
-          {task.blocked ? <Link2 className="size-3.5 text-danger" aria-label="Blocked" /> : null}
+          {task.blocked ? <Link2 className="size-3.5 text-error-primary" aria-label="Blocked" /> : null}
         </span>
       </div>
-      <p className={cn("mt-1.5 text-sm leading-snug", done && "text-muted-foreground line-through")}>{task.title}</p>
+      <p className={cn("mt-1.5 text-sm leading-snug", done && "text-tertiary line-through")}>{task.title}</p>
       {task.labels.length ? (
         <div className="mt-2 flex flex-wrap gap-1">
           {task.labels.map((l) => (
-            <span key={l.id} className="inline-flex items-center gap-1 rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground">
+            <span key={l.id} className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[11px] text-tertiary">
               <span className="size-1.5 rounded-full" style={{ background: l.color }} />
               {l.name}
             </span>
@@ -56,7 +56,7 @@ function CardFace({ task, today, dragging }: { task: TaskCard; today: string; dr
       <div className="mt-2.5 flex items-center gap-2">
         <DueChip date={task.dueDate} done={done} today={today} />
         {task.subtasks.total ? (
-          <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1 font-mono text-[11px] text-tertiary">
             <GitBranch className="size-3" />
             {task.subtasks.done}/{task.subtasks.total}
           </span>
@@ -110,11 +110,11 @@ function Column({
   return (
     <div className="flex w-72 shrink-0 flex-col">
       <div className="mb-2 flex items-center gap-2 px-1">
-        <span className="size-2.5 rounded-full" style={{ background: stage.color ?? "var(--muted-foreground)" }} />
+        <span className="size-2.5 rounded-full" style={{ background: stage.color ?? "var(--color-text-tertiary)" }} />
         <span className="text-sm font-medium">{stage.name}</span>
-        <span className="font-mono text-xs text-muted-foreground">{ids.length}</span>
+        <span className="font-mono text-xs text-tertiary">{ids.length}</span>
       </div>
-      <div ref={setNodeRef} className={cn("flex min-h-24 flex-1 flex-col gap-2 rounded-xl bg-surface-2/40 p-2 transition-colors", isOver && "bg-surface-2")}>
+      <div ref={setNodeRef} className={cn("flex min-h-24 flex-1 flex-col gap-2 rounded-xl bg-secondary/40 p-2 transition-colors", isOver && "bg-secondary")}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           {ids.map((id) => {
             const t = byId.get(id);

@@ -31,12 +31,12 @@ function PersonCard({ node }: { node: Node }) {
     <Link
       to="/people/$id"
       params={{ id: node.id }}
-      className="relative flex w-48 flex-col items-center overflow-hidden rounded-xl border border-border bg-surface px-3 pb-3 pt-4 text-center shadow-card transition-all hover:-translate-y-0.5 hover:border-border-strong"
+      className="relative flex w-48 flex-col items-center overflow-hidden rounded-xl border border-secondary bg-primary px-3 pb-3 pt-4 text-center shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary"
     >
       <span className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
       <Avatar name={node.fullName} src={node.image} className="size-11" />
       <div className="mt-2 w-full truncate text-[13px] font-semibold">{node.fullName}</div>
-      <div className="w-full truncate text-[11.5px] text-muted-foreground">{node.jobTitle ?? "—"}</div>
+      <div className="w-full truncate text-[11.5px] text-tertiary">{node.jobTitle ?? "—"}</div>
       {node.departmentName ? (
         <span className="mt-2 inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-[10.5px]" style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}>
           {node.departmentName}
@@ -59,7 +59,7 @@ function Branch({ node, children, depth }: { node: Node; children: Map<string, N
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="relative z-[1] -mt-2.5 flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2 py-0.5 font-mono text-[10.5px] text-muted-foreground shadow-card hover:text-foreground"
+          className="relative z-[1] -mt-2.5 flex items-center gap-1 rounded-full border border-secondary bg-secondary px-2 py-0.5 font-mono text-[10.5px] text-tertiary shadow-xs hover:text-primary"
           aria-expanded={open}
           aria-label={`${open ? "Collapse" : "Expand"} ${node.fullName}'s team`}
         >
@@ -117,7 +117,7 @@ export function OrgChartPage() {
         }
       />
       {depts.size ? (
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-tertiary">
           {[...depts].map(([name, color]) => (
             <span key={name} className="inline-flex items-center gap-1.5">
               <span className="size-2.5 rounded-sm" style={{ background: color }} />
@@ -131,7 +131,7 @@ export function OrgChartPage() {
           <EmptyState icon={<Network />} title="No one here yet" description="Add people to the directory and set their managers." />
         </Card>
       ) : (
-        <Card className="rise rise-1 overflow-x-auto bg-[radial-gradient(var(--border)_1px,transparent_1px)] p-8 [background-size:18px_18px]">
+        <Card className="rise rise-1 overflow-x-auto bg-[radial-gradient(var(--color-border-secondary)_1px,transparent_1px)] p-8 [background-size:18px_18px]">
           <div className="org-tree mx-auto w-max">
             <ul>
               {roots.map((r) => (

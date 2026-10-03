@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Badge, Button, Card, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { Badge, Button, Card, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
 import { Pencil, Plus, Target, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -58,7 +58,7 @@ function GoalDialog({ open, onOpenChange, goal }: { open: boolean; onOpenChange:
             </Select>
           </Field>
           <Field label="Target date">
-            <Input type="date" value={targetDate} onChange={(e) => setTarget(e.target.value)} />
+            <DateInput value={targetDate} onChange={(v) => setTarget(v)} />
           </Field>
           <Field label="Status">
             <Select value={status} onChange={(e) => setStatus(e.target.value as Goal["status"])}>
@@ -76,10 +76,10 @@ function GoalDialog({ open, onOpenChange, goal }: { open: boolean; onOpenChange:
 }
 
 const STATUS_COLOR: Record<Goal["status"], string> = {
-  on_track: "var(--success)",
-  at_risk: "var(--warning)",
-  off_track: "var(--danger)",
-  done: "var(--subtle-foreground)",
+  on_track: "var(--color-fg-success-primary)",
+  at_risk: "var(--color-fg-warning-primary)",
+  off_track: "var(--color-fg-error-primary)",
+  done: "var(--color-text-quaternary)",
 };
 
 function daysLeft(date: string | null) {
@@ -109,7 +109,7 @@ export function GoalsPage({ me }: { me: Me }) {
               <Em tone="var(--work)">{goals.length} goals</Em>, <Em>{avg}%</Em> done on average.{" "}
               {count("at_risk") + count("off_track") ? (
                 <>
-                  <Em tone="var(--warning)">{count("at_risk") + count("off_track")}</Em> need attention.
+                  <Em tone="var(--color-fg-warning-primary)">{count("at_risk") + count("off_track")}</Em> need attention.
                 </>
               ) : (
                 "All on track."
@@ -130,10 +130,10 @@ export function GoalsPage({ me }: { me: Me }) {
       {goals.length ? (
         <div className="rise rise-1 flex flex-wrap gap-2">
           {(Object.keys(GOAL_STATUS) as Goal["status"][]).map((s) => (
-            <span key={s} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] shadow-card">
+            <span key={s} className="inline-flex items-center gap-2 rounded-full border border-secondary bg-primary px-3 py-1.5 text-[13px] shadow-xs">
               <span className="size-2 rounded-full" style={{ background: STATUS_COLOR[s] }} />
               {GOAL_STATUS[s].label}
-              <span className="font-mono text-xs text-muted-foreground">{count(s)}</span>
+              <span className="font-mono text-xs text-tertiary">{count(s)}</span>
             </span>
           ))}
         </div>
@@ -158,18 +158,18 @@ export function GoalsPage({ me }: { me: Me }) {
                     <h3 className="min-w-0 flex-1 font-display text-[17px] font-bold leading-snug">{g.title}</h3>
                     <span className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                       {canEdit ? (
-                        <button type="button" aria-label={`Edit ${g.title}`} onClick={() => setDialog({ open: true, goal: g })} className="rounded p-1 text-muted-foreground hover:text-foreground">
+                        <button type="button" aria-label={`Edit ${g.title}`} onClick={() => setDialog({ open: true, goal: g })} className="rounded p-1 text-tertiary hover:text-primary">
                           <Pencil className="size-4" />
                         </button>
                       ) : null}
                       {canDelete ? (
-                        <button type="button" aria-label={`Delete ${g.title}`} onClick={() => confirm(`Delete "${g.title}"? Linked projects are kept.`) && remove.mutate(g.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                        <button type="button" aria-label={`Delete ${g.title}`} onClick={() => confirm(`Delete "${g.title}"? Linked projects are kept.`) && remove.mutate(g.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                           <Trash2 className="size-4" />
                         </button>
                       ) : null}
                     </span>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-tertiary">
                     <Badge tone={GOAL_STATUS[g.status].tone}>{GOAL_STATUS[g.status].label}</Badge>
                     {g.ownerName ? <span>{g.ownerName}</span> : null}
                     {g.targetDate ? (
@@ -180,19 +180,19 @@ export function GoalsPage({ me }: { me: Me }) {
                   </div>
                 </div>
               </div>
-              {g.description ? <p className="mt-4 text-sm text-muted-foreground">{g.description}</p> : null}
+              {g.description ? <p className="mt-4 text-sm text-tertiary">{g.description}</p> : null}
               <div className="mt-auto pt-4">
                 {g.projects.length ? (
-                  <ul className="space-y-2 border-t border-border pt-3">
+                  <ul className="space-y-2 border-t border-secondary pt-3">
                     {g.projects.map((p) => (
                       <li key={p.id}>
                         <Link to="/work/projects/$id" params={{ id: p.id }} className="flex items-center gap-3 text-[13px] hover:underline">
                           <span className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
                           <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                          <span className="h-1 w-24 overflow-hidden rounded-full bg-surface-2">
+                          <span className="h-1 w-24 overflow-hidden rounded-full bg-secondary">
                             <span className="block h-full rounded-full" style={{ width: `${p.total ? (p.done / p.total) * 100 : 0}%`, background: p.color }} />
                           </span>
-                          <span className="w-10 text-right font-mono text-[11px] text-muted-foreground">
+                          <span className="w-10 text-right font-mono text-[11px] text-tertiary">
                             {p.done}/{p.total}
                           </span>
                         </Link>
@@ -200,7 +200,7 @@ export function GoalsPage({ me }: { me: Me }) {
                     ))}
                   </ul>
                 ) : (
-                  <p className="border-t border-border pt-3 text-xs text-muted-foreground">No projects linked yet. Pick this goal in a project's settings.</p>
+                  <p className="border-t border-secondary pt-3 text-xs text-tertiary">No projects linked yet. Pick this goal in a project's settings.</p>
                 )}
               </div>
             </Card>

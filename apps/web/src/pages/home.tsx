@@ -51,10 +51,10 @@ function YourDay({ data }: { data: HomeData }) {
     success: "Nice. Marked as done.",
   });
   const chips = [
-    { label: "Overdue", n: buckets.overdue, color: "var(--danger)" },
+    { label: "Overdue", n: buckets.overdue, color: "var(--color-fg-error-primary)" },
     { label: "Today", n: buckets.today, color: "var(--work)" },
     { label: "This week", n: buckets.week, color: "var(--finance)" },
-    { label: "Later", n: buckets.later + buckets.noDate, color: "var(--muted-foreground)" },
+    { label: "Later", n: buckets.later + buckets.noDate, color: "var(--color-text-tertiary)" },
   ];
   const finished = data.day.doneThisWeek;
   const remaining = buckets.overdue + buckets.today + buckets.week;
@@ -66,7 +66,7 @@ function YourDay({ data }: { data: HomeData }) {
       tone="var(--work)"
       meta={data.day.openTotal ? `${data.day.openTotal} open` : undefined}
       action={
-        <Link to="/work" className="inline-flex items-center gap-1 text-accent hover:underline">
+        <Link to="/work" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
           My work <ArrowRight className="size-3.5" />
         </Link>
       }
@@ -74,32 +74,32 @@ function YourDay({ data }: { data: HomeData }) {
     >
       <div className="grid grid-cols-4 gap-2">
         {chips.map((c) => (
-          <div key={c.label} className="rounded-xl border border-border bg-surface-2/60 px-3 py-2.5">
-            <div className="font-display text-2xl font-bold leading-none tabular" style={{ color: c.n ? c.color : "var(--subtle-foreground)" }}>
+          <div key={c.label} className="rounded-xl border border-secondary bg-secondary/60 px-3 py-2.5">
+            <div className="font-display text-2xl font-bold leading-none tabular" style={{ color: c.n ? c.color : "var(--color-text-quaternary)" }}>
               {c.n}
             </div>
-            <div className="mt-1 text-[11.5px] text-muted-foreground">{c.label}</div>
+            <div className="mt-1 text-[11.5px] text-tertiary">{c.label}</div>
           </div>
         ))}
       </div>
 
       {!data.me ? (
-        <p className="mt-5 text-sm text-muted-foreground">Your account isn't linked to an employee profile yet, so no tasks can be assigned to you.</p>
+        <p className="mt-5 text-sm text-tertiary">Your account isn't linked to an employee profile yet, so no tasks can be assigned to you.</p>
       ) : tasks.length === 0 ? (
-        <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
+        <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-secondary px-4 py-5 text-sm text-tertiary">
           <PartyPopper className="size-5 text-work" /> Nothing on your plate. Enjoy it, or pick something up from a project.
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-border">
+        <ul className="mt-3 divide-y divide-border-secondary">
           {tasks.map((t) => (
             <li key={t.id} className="group flex items-center gap-3 py-2.5">
               <button
                 type="button"
                 aria-label={`Complete "${t.title}"`}
                 onClick={() => complete.mutate(t.id)}
-                className="flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 border-input transition-colors hover:border-success hover:bg-success/15"
+                className="flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 border-primary transition-colors hover:border-success-500 hover:bg-success-solid/15"
               >
-                <CircleCheck className="size-3 text-success opacity-0 transition-opacity group-hover:opacity-100" />
+                <CircleCheck className="size-3 text-success-primary opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
               <button
                 type="button"
@@ -110,7 +110,7 @@ function YourDay({ data }: { data: HomeData }) {
                 <span className="truncate text-sm">{t.title}</span>
               </button>
               {t.projectName ? (
-                <span className="hidden max-w-36 shrink-0 items-center gap-1.5 truncate rounded-md bg-surface-2 px-2 py-0.5 text-[11.5px] text-muted-foreground sm:inline-flex">
+                <span className="hidden max-w-36 shrink-0 items-center gap-1.5 truncate rounded-md bg-secondary px-2 py-0.5 text-[11.5px] text-tertiary sm:inline-flex">
                   <span className="size-1.5 shrink-0 rounded-full" style={{ background: t.projectColor ?? undefined }} />
                   <span className="truncate font-mono">{t.projectKey && t.number ? `${t.projectKey}-${t.number}` : t.projectName}</span>
                 </span>
@@ -124,11 +124,11 @@ function YourDay({ data }: { data: HomeData }) {
           ))}
         </ul>
       )}
-      <div className="mt-4 flex items-center gap-3 rounded-xl bg-surface-2/60 px-3.5 py-2.5 text-[13px]">
-        <ProgressRing value={(finished / Math.max(1, finished + remaining)) * 100} size={34} stroke={3.5} color="var(--success)">
+      <div className="mt-4 flex items-center gap-3 rounded-xl bg-secondary/60 px-3.5 py-2.5 text-[13px]">
+        <ProgressRing value={(finished / Math.max(1, finished + remaining)) * 100} size={34} stroke={3.5} color="var(--color-fg-success-primary)">
           <span className="text-[10px]">{finished}</span>
         </ProgressRing>
-        <span className="text-muted-foreground">
+        <span className="text-tertiary">
           <Em>{plural(finished, "task")}</Em> finished this week
           {remaining ? <>, {remaining} still to do</> : null}.
         </span>
@@ -141,7 +141,7 @@ function YourDay({ data }: { data: HomeData }) {
 
 const ATTENTION_META: Record<string, { icon: typeof Users; color: string }> = {
   leave: { icon: Palmtree, color: "var(--people)" },
-  overdue_invoices: { icon: Banknote, color: "var(--danger)" },
+  overdue_invoices: { icon: Banknote, color: "var(--color-fg-error-primary)" },
   draft_invoices: { icon: FileText, color: "var(--finance)" },
   onboarding: { icon: Rocket, color: "var(--people)" },
   mentions: { icon: AtSign, color: "var(--collab)" },
@@ -150,19 +150,19 @@ const ATTENTION_META: Record<string, { icon: typeof Users; color: string }> = {
 function Attention({ data }: { data: HomeData }) {
   const router = useRouter();
   return (
-    <Panel title="Needs your attention" icon={<Sparkles />} tone="var(--ember)" meta={data.attention.length ? String(data.counts.attention) : undefined} className="lg:col-span-5">
+    <Panel title="Needs your attention" icon={<Sparkles />} tone="var(--color-brand-600)" meta={data.attention.length ? String(data.counts.attention) : undefined} className="lg:col-span-5">
       {data.attention.length === 0 ? (
         <EmptyState icon={<CircleCheckBig />} title="You're all caught up" description="Approvals, overdue invoices and mentions land here the moment they need you." />
       ) : (
         <ul className="space-y-2">
           {data.attention.map((a) => {
-            const meta = ATTENTION_META[a.kind] ?? { icon: Sparkles, color: "var(--ember)" };
+            const meta = ATTENTION_META[a.kind] ?? { icon: Sparkles, color: "var(--color-brand-600)" };
             return (
               <li key={a.kind}>
                 <button
                   type="button"
                   onClick={() => router.history.push(a.link)}
-                  className="group flex w-full items-center gap-3 rounded-xl border border-border bg-surface-2/50 px-3.5 py-3 text-left transition-colors hover:border-border-strong hover:bg-surface-2"
+                  className="group flex w-full items-center gap-3 rounded-xl border border-secondary bg-secondary/50 px-3.5 py-3 text-left transition-colors hover:border-primary hover:bg-secondary"
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg [&_svg]:size-[18px]" style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 14%, transparent)` }}>
                     <meta.icon />
@@ -170,14 +170,14 @@ function Attention({ data }: { data: HomeData }) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{a.title}</span>
                     {a.detail || a.amount ? (
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {a.amount ? <span className="font-mono text-danger">{formatMoney(a.amount)}</span> : null}
+                      <span className="block truncate text-xs text-tertiary">
+                        {a.amount ? <span className="font-mono text-error-primary">{formatMoney(a.amount)}</span> : null}
                         {a.amount && a.detail ? " · " : null}
                         {a.detail}
                       </span>
                     ) : null}
                   </span>
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="size-4 shrink-0 text-tertiary transition-transform group-hover:translate-x-0.5" />
                 </button>
               </li>
             );
@@ -214,15 +214,15 @@ function Pulse({ data, me }: { data: HomeData; me: Me }) {
               <div className="flex items-center gap-2">
                 <span className="flex -space-x-1.5">
                   {data.people.away.slice(0, 4).map((p) => (
-                    <Avatar key={p.id} name={p.name} src={p.image} className="size-6 border-2 border-surface text-[9px]" />
+                    <Avatar key={p.id} name={p.name} src={p.image} className="size-6 border-2 border-bg-primary text-[9px]" />
                   ))}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate text-xs text-tertiary">
                   {data.people.away.length === 1 ? `${data.people.away[0]!.name.split(" ")[0]} is away today` : `${data.people.away.length} away today`}
                 </span>
               </div>
             ) : (
-              <span className="text-xs text-muted-foreground">Everyone's in today</span>
+              <span className="text-xs text-tertiary">Everyone's in today</span>
             )
           }
         />
@@ -233,13 +233,13 @@ function Pulse({ data, me }: { data: HomeData; me: Me }) {
           icon={<FolderKanban />}
           tone="var(--work)"
           value={data.work.open}
-          hint={data.work.overdue ? <span className="text-danger">{data.work.overdue} overdue</span> : `${data.work.inProgress} in progress`}
+          hint={data.work.overdue ? <span className="text-error-primary">{data.work.overdue} overdue</span> : `${data.work.inProgress} in progress`}
           trend={doneLast7 || donePrev7 ? { label: `${doneLast7} done · 7d`, good: doneLast7 >= donePrev7 ? true : null } : undefined}
           onClick={() => navigate({ to: "/work/projects" })}
           footer={
             <div>
               <Sparkline values={velocity} color="var(--work)" height={30} bars />
-              <div className="mt-1 text-[11px] text-subtle-foreground">Tasks finished, last 14 days</div>
+              <div className="mt-1 text-[11px] text-quaternary">Tasks finished, last 14 days</div>
             </div>
           }
         />
@@ -253,7 +253,7 @@ function Pulse({ data, me }: { data: HomeData; me: Me }) {
           hint={data.counts.notifications ? `${plural(data.counts.notifications, "notification")} waiting` : "No notifications waiting"}
           onClick={() => navigate({ to: "/collab" })}
           footer={
-            <span className="inline-flex items-center gap-1 text-xs text-accent">
+            <span className="inline-flex items-center gap-1 text-xs text-brand-secondary">
               Open conversations <ArrowRight className="size-3" />
             </span>
           }
@@ -265,13 +265,13 @@ function Pulse({ data, me }: { data: HomeData; me: Me }) {
           icon={<Banknote />}
           tone="var(--finance)"
           value={compactMoney(f.outstanding, f.currency)}
-          hint={f.overdue ? <span className="text-danger">{compactMoney(f.overdue, f.currency)} overdue</span> : "Nothing overdue"}
+          hint={f.overdue ? <span className="text-error-primary">{compactMoney(f.overdue, f.currency)} overdue</span> : "Nothing overdue"}
           trend={collectedDelta !== null ? { label: `${collectedDelta >= 0 ? "+" : ""}${collectedDelta}% vs ${new Date(new Date().getFullYear(), new Date().getMonth() - 1).toLocaleDateString("en-IN", { month: "short" })}`, good: collectedDelta >= 0 } : undefined}
           onClick={() => navigate({ to: "/finance" })}
           footer={
             <div>
               <Sparkline values={f.monthly.map((m) => m.amount)} color="var(--chart-collected)" height={30} />
-              <div className="mt-1 flex justify-between text-[11px] text-subtle-foreground">
+              <div className="mt-1 flex justify-between text-[11px] text-quaternary">
                 <span>Collected, 6 months</span>
                 <span className="font-mono">{compactMoney(f.collectedThisMonth, f.currency)} this month</span>
               </div>
@@ -292,7 +292,7 @@ function Projects({ data }: { data: HomeData }) {
       icon={<FolderKanban />}
       tone="var(--work)"
       action={
-        <Link to="/work/projects" className="inline-flex items-center gap-1 text-accent hover:underline">
+        <Link to="/work/projects" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
           All projects <ArrowRight className="size-3.5" />
         </Link>
       }
@@ -306,7 +306,7 @@ function Projects({ data }: { data: HomeData }) {
             const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
             return (
               <li key={p.id}>
-                <Link to="/work/projects/$id" params={{ id: p.id }} className="flex items-center gap-3.5 rounded-xl border border-border bg-surface-2/50 p-3.5 transition-colors hover:border-border-strong hover:bg-surface-2">
+                <Link to="/work/projects/$id" params={{ id: p.id }} className="flex items-center gap-3.5 rounded-xl border border-secondary bg-secondary/50 p-3.5 transition-colors hover:border-primary hover:bg-secondary">
                   <ProgressRing value={pct} size={48} color={p.color} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -315,9 +315,9 @@ function Projects({ data }: { data: HomeData }) {
                       </span>
                       <span className="truncate text-sm font-medium">{p.name}</span>
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <div className="mt-1 text-xs text-tertiary">
                       {p.done}/{p.total} done
-                      {p.overdue ? <span className="text-danger"> · {p.overdue} overdue</span> : null}
+                      {p.overdue ? <span className="text-error-primary"> · {p.overdue} overdue</span> : null}
                       {p.dueDate ? ` · due ${new Date(`${p.dueDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null}
                     </div>
                   </div>
@@ -353,8 +353,8 @@ function ComingUp({ data }: { data: HomeData }) {
             const isToday = date === data.today;
             return (
               <li key={date} className="flex gap-3">
-                <div className={cn("flex w-11 shrink-0 flex-col items-center rounded-lg border py-1", isToday ? "border-primary/50 bg-primary/10" : "border-border bg-surface-2/60")}>
-                  <span className="text-[10px] uppercase text-muted-foreground">{d.toLocaleDateString("en-IN", { weekday: "short" })}</span>
+                <div className={cn("flex w-11 shrink-0 flex-col items-center rounded-lg border py-1", isToday ? "border-brand/50 bg-brand-solid/10" : "border-secondary bg-secondary/60")}>
+                  <span className="text-[10px] uppercase text-tertiary">{d.toLocaleDateString("en-IN", { weekday: "short" })}</span>
                   <span className="font-display text-lg font-bold leading-tight">{d.getDate()}</span>
                 </div>
                 <ul className="min-w-0 flex-1 space-y-1.5 pt-0.5">
@@ -366,7 +366,7 @@ function ComingUp({ data }: { data: HomeData }) {
                           <meta.icon className="mt-0.5 size-3.5 shrink-0" style={{ color: u.color ?? meta.color }} />
                           <span className="min-w-0">
                             <span className="block truncate text-[13px]">{u.title}</span>
-                            {u.detail ? <span className="block truncate text-[11.5px] text-muted-foreground">{u.detail}</span> : null}
+                            {u.detail ? <span className="block truncate text-[11.5px] text-tertiary">{u.detail}</span> : null}
                           </span>
                         </button>
                       </li>
@@ -442,16 +442,16 @@ function Activity({ data, wide }: { data: HomeData; wide: boolean }) {
   return (
     <Panel title="What's been happening" icon={<Sparkles />} tone="var(--finance)" className={wide ? "lg:col-span-12" : "lg:col-span-7"}>
       {data.activity.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Activity from across the company shows up here.</p>
+        <p className="text-sm text-tertiary">Activity from across the company shows up here.</p>
       ) : (
         <ol className={cn("relative grid gap-x-8 gap-y-3.5", wide && "md:grid-cols-2")}>
           {data.activity.map((a) => (
             <li key={a.id} className="flex items-start gap-3">
               <Avatar name={a.actorName ?? "Hephaestus"} src={a.actorImage} className="size-7 text-[10px]" />
-              <p className="min-w-0 flex-1 pt-1 text-[13px] text-muted-foreground">
-                <span className="font-medium text-foreground">{a.actorName ?? "Hephaestus"}</span> {describe(a)}
+              <p className="min-w-0 flex-1 pt-1 text-[13px] text-tertiary">
+                <span className="font-medium text-primary">{a.actorName ?? "Hephaestus"}</span> {describe(a)}
               </p>
-              <span className="shrink-0 pt-1 font-mono text-[11px] text-subtle-foreground">{ago(a.createdAt)}</span>
+              <span className="shrink-0 pt-1 font-mono text-[11px] text-quaternary">{ago(a.createdAt)}</span>
             </li>
           ))}
         </ol>
@@ -473,20 +473,20 @@ function GettingStarted({ data, me }: { data: HomeData; me: Me }) {
   const steps = setupSteps(data);
   const done = steps.filter((s) => s.done).length;
   return (
-    <Panel title="Get set up" icon={<Rocket />} tone="var(--ember)" meta={`${done}/${steps.length}`} className="lg:col-span-5">
-      <Meter value={done} max={steps.length} color="var(--ember)" label="Setup progress" />
+    <Panel title="Get set up" icon={<Rocket />} tone="var(--color-brand-600)" meta={`${done}/${steps.length}`} className="lg:col-span-5">
+      <Meter value={done} max={steps.length} color="var(--color-brand-600)" label="Setup progress" />
       <ul className="mt-4 space-y-1">
         {steps.map((s) => (
           <li key={s.label}>
-            <Link to={s.to} className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
-              {s.done ? <CircleCheck className="size-[18px] text-success" /> : <span className="size-[18px] rounded-full border-2 border-input" />}
-              <span className={s.done ? "text-muted-foreground line-through" : ""}>{s.label}</span>
-              {!s.done ? <ArrowRight className="ml-auto size-3.5 text-muted-foreground" /> : null}
+            <Link to={s.to} className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-secondary">
+              {s.done ? <CircleCheck className="size-[18px] text-success-primary" /> : <span className="size-[18px] rounded-full border-2 border-primary" />}
+              <span className={s.done ? "text-tertiary line-through" : ""}>{s.label}</span>
+              {!s.done ? <ArrowRight className="ml-auto size-3.5 text-tertiary" /> : null}
             </Link>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-muted-foreground">Welcome to {me.org.name}'s workspace.</p>
+      <p className="mt-3 text-xs text-tertiary">Welcome to {me.org.name}'s workspace.</p>
     </Panel>
   );
 }
@@ -498,7 +498,7 @@ export function HomePage({ me }: { me: Me }) {
 
   if (isLoading || !data) {
     return (
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-8">
+      <div className="mx-auto space-y-6 px-4 py-8 sm:px-8">
         <Skeleton className="h-20 w-2/3" />
         <div className="grid gap-4 lg:grid-cols-12">
           <Skeleton className="h-80 lg:col-span-7" />
@@ -521,12 +521,12 @@ export function HomePage({ me }: { me: Me }) {
       )}
       {data.counts.attention ? (
         <>
-          , and <Em tone="var(--ember)">{plural(data.counts.attention, "thing")}</Em> waiting for you
+          , and <Em tone="var(--color-brand-600)">{plural(data.counts.attention, "thing")}</Em> waiting for you
         </>
       ) : null}
       {data.finance && data.finance.overdue ? (
         <>
-          . <Em tone="var(--danger)">{compactMoney(data.finance.overdue, data.finance.currency)}</Em> in invoices is overdue
+          . <Em tone="var(--color-fg-error-primary)">{compactMoney(data.finance.overdue, data.finance.currency)}</Em> in invoices is overdue
         </>
       ) : null}
       .
@@ -535,7 +535,7 @@ export function HomePage({ me }: { me: Me }) {
   const showSetup = setupSteps(data).some((s) => !s.done);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+    <div className="mx-auto space-y-6 px-4 py-6 sm:px-8 sm:py-8">
       <PageHero eyebrow={date} title={`${greeting()}, ${firstName}`} summary={summary} />
 
       <div className="rise rise-1 grid gap-4 lg:grid-cols-12">

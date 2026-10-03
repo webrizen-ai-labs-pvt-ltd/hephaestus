@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Avatar, Button, Card, Dialog, DialogContent, Em, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, Card, CheckboxBase, Dialog, DialogContent, Em, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
 import { Building2, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/app-shell.tsx";
@@ -86,7 +86,7 @@ function DepartmentDialog({ open, onOpenChange, dept }: { open: boolean; onOpenC
                   aria-label={`Colour ${s}`}
                   aria-pressed={color === s}
                   onClick={() => setColor(s)}
-                  className="size-7 rounded-full ring-offset-2 ring-offset-surface aria-pressed:ring-2 aria-pressed:ring-foreground"
+                  className="size-7 rounded-full ring-offset-2 ring-offset-bg-primary aria-pressed:ring-2 aria-pressed:ring-fg-primary"
                   style={{ background: s }}
                 />
               ))}
@@ -153,17 +153,18 @@ function TeamDialog({ open, onOpenChange, team }: { open: boolean; onOpenChange:
           </Field>
           <div>
             <div className="mb-1.5 flex items-center justify-between text-sm font-medium">
-              Members <span className="font-mono text-xs text-muted-foreground">{memberIds.length} selected</span>
+              Members <span className="font-mono text-xs text-tertiary">{memberIds.length} selected</span>
             </div>
             <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter people" className="mb-2" />
-            <ul className="max-h-56 overflow-y-auto rounded-lg border border-border">
+            <ul className="max-h-56 overflow-y-auto rounded-lg border border-secondary">
               {visible.map((p) => (
                 <li key={p.id}>
-                  <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-surface-2">
-                    <input type="checkbox" checked={memberIds.includes(p.id)} onChange={() => toggle(p.id)} className="accent-[var(--primary)]" />
+                  <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-secondary">
+                    <input type="checkbox" checked={memberIds.includes(p.id)} onChange={() => toggle(p.id)} className="peer sr-only" />
+                    <CheckboxBase isSelected={memberIds.includes(p.id)} className="peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus-ring" />
                     <Avatar name={p.fullName} src={p.image} className="size-6" />
                     <span className="flex-1 truncate">{p.fullName}</span>
-                    <span className="truncate text-xs text-muted-foreground">{p.jobTitle}</span>
+                    <span className="truncate text-xs text-tertiary">{p.jobTitle}</span>
                   </label>
                 </li>
               ))}
@@ -181,7 +182,7 @@ function IconAction({ label, onClick, danger, children }: { label: string; onCli
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 ${danger ? "hover:text-danger" : "hover:text-foreground"}`}
+      className={`rounded-md p-1.5 text-tertiary hover:bg-secondary ${danger ? "hover:text-error-primary" : "hover:text-primary"}`}
     >
       {children}
     </button>
@@ -221,7 +222,7 @@ function DepartmentCard({
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-[17px] font-bold leading-tight">{d.name}</h3>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{d.description ?? "No description"}</p>
+          <p className="mt-0.5 truncate text-xs text-tertiary">{d.description ?? "No description"}</p>
         </div>
         {canManage ? (
           <span className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
@@ -237,13 +238,13 @@ function DepartmentCard({
       <div className="relative mt-5 flex items-end justify-between">
         <div>
           <div className="font-display text-3xl font-bold leading-none tabular">{people}</div>
-          <div className="mt-1 text-xs text-muted-foreground">{people === 1 ? "person" : "people"}</div>
+          <div className="mt-1 text-xs text-tertiary">{people === 1 ? "person" : "people"}</div>
         </div>
-        <div className="text-right text-xs text-muted-foreground">
+        <div className="text-right text-xs text-tertiary">
           {d.headName ? (
             <>
-              <div className="text-[11px] text-subtle-foreground">Head</div>
-              <div className="font-medium text-foreground">{d.headName}</div>
+              <div className="text-[11px] text-quaternary">Head</div>
+              <div className="font-medium text-primary">{d.headName}</div>
             </>
           ) : (
             <span>No head yet</span>
@@ -251,24 +252,24 @@ function DepartmentCard({
         </div>
       </div>
       <div className="relative mt-3">
-        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
           <div className="h-full rounded-full" style={{ width: `${share}%`, background: color }} />
         </div>
-        <div className="mt-1 text-[11px] text-subtle-foreground">{share}% of the company</div>
+        <div className="mt-1 text-[11px] text-quaternary">{share}% of the company</div>
       </div>
       {subs.length ? (
-        <div className="relative mt-4 flex flex-wrap gap-1.5 border-t border-border pt-3">
+        <div className="relative mt-4 flex flex-wrap gap-1.5 border-t border-secondary pt-3">
           {subs.map((s) => (
             <button
               key={s.id}
               type="button"
               disabled={!canManage}
               onClick={() => onEdit(s)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-[11.5px] text-muted-foreground enabled:hover:border-border-strong enabled:hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full border border-secondary px-2 py-0.5 text-[11.5px] text-tertiary enabled:hover:border-primary enabled:hover:text-primary"
             >
               <span className="size-1.5 rounded-full" style={{ background: s.color ?? color }} />
               {s.name}
-              <span className="font-mono text-[10px] text-subtle-foreground">{s.headcount}</span>
+              <span className="font-mono text-[10px] text-quaternary">{s.headcount}</span>
             </button>
           ))}
         </div>
@@ -362,7 +363,7 @@ export function StructurePage({ me }: { me: Me }) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-display text-[17px] font-bold leading-tight">{t.name}</h3>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{t.description ?? "No description"}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-tertiary">{t.description ?? "No description"}</p>
                   </div>
                   {canManage ? (
                     <span className="flex opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
@@ -378,13 +379,13 @@ export function StructurePage({ me }: { me: Me }) {
                 <div className="mt-auto flex items-center justify-between pt-5">
                   <div className="flex -space-x-2">
                     {t.members.slice(0, 7).map((m) => (
-                      <Avatar key={m.id} name={m.fullName} src={m.image} className="size-8 border-2 border-surface" />
+                      <Avatar key={m.id} name={m.fullName} src={m.image} className="size-8 border-2 border-bg-primary" />
                     ))}
                     {t.members.length > 7 ? (
-                      <span className="flex size-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 font-mono text-[10px]">+{t.members.length - 7}</span>
+                      <span className="flex size-8 items-center justify-center rounded-full border-2 border-bg-primary bg-secondary font-mono text-[10px]">+{t.members.length - 7}</span>
                     ) : null}
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-tertiary">
                     {t.members.length} {t.members.length === 1 ? "member" : "members"}
                   </span>
                 </div>

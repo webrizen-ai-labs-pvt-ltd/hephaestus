@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Badge, Button, Card, cn, EmptyState, Input, ProgressRing, Select, Skeleton } from "@hephaestus/ui";
+import { Badge, Button, Card, cn, DateInput, EmptyState, Input, ProgressRing, Select, Skeleton } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Kanban, List, MessagesSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -51,10 +51,10 @@ function Filters({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative w-full sm:w-56">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tertiary" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter tasks" className="h-8 pl-9" />
       </div>
-      <Select value={assignee} onChange={(e) => setAssignee(e.target.value)} className="h-8 w-auto" aria-label="Assignee">
+      <Select value={assignee} onChange={(e) => setAssignee(e.target.value)} size="xs" className="w-auto" aria-label="Assignee">
         <option value="">Anyone</option>
         <option value="none">Unassigned</option>
         {people?.employees.map((p) => (
@@ -63,7 +63,7 @@ function Filters({
           </option>
         ))}
       </Select>
-      <Select value={priority} onChange={(e) => setPriority(e.target.value)} className="h-8 w-auto" aria-label="Priority">
+      <Select value={priority} onChange={(e) => setPriority(e.target.value)} size="xs" className="w-auto" aria-label="Priority">
         <option value="">Any priority</option>
         {(Object.keys(PRIORITY_META) as Priority[]).map((p) => (
           <option key={p} value={p}>
@@ -71,7 +71,7 @@ function Filters({
           </option>
         ))}
       </Select>
-      <Select value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 w-auto" aria-label="Label">
+      <Select value={label} onChange={(e) => setLabel(e.target.value)} size="xs" className="w-auto" aria-label="Label">
         <option value="">Any label</option>
         {labels?.labels.map((l) => (
           <option key={l.id} value={l.id}>
@@ -90,12 +90,12 @@ function ListView({ detail, tasks, today, onOpen, canCreate }: { detail: Project
         const list = tasks.filter((t) => t.stageId === s.id).sort((a, b) => a.position - b.position);
         return (
           <Card key={s.id}>
-            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+            <div className="flex items-center gap-2 border-b border-secondary px-4 py-2.5">
               <span className="size-2.5 rounded-full" style={{ background: s.color ?? undefined }} />
               <span className="text-sm font-medium">{s.name}</span>
-              <span className="font-mono text-xs text-muted-foreground">{list.length}</span>
+              <span className="font-mono text-xs text-tertiary">{list.length}</span>
             </div>
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-border-secondary">
               {list.map((t) => (
                 <TaskRow key={t.id} task={t} today={today} onOpen={onOpen} showProject={false} />
               ))}
@@ -131,7 +131,7 @@ function CalendarView({ tasks, today, onOpen }: { tasks: TaskCard[]; today: stri
     <Card className="p-4">
       <div className="mb-4 flex items-center gap-2">
         <h2 className="flex-1 font-display text-lg font-bold">{first.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" })}</h2>
-        {undated ? <span className="text-xs text-muted-foreground">{undated} without a due date</span> : null}
+        {undated ? <span className="text-xs text-tertiary">{undated} without a due date</span> : null}
         <Button size="icon" variant="ghost" aria-label="Previous month" onClick={() => move(-1)}>
           <ChevronLeft />
         </Button>
@@ -142,31 +142,31 @@ function CalendarView({ tasks, today, onOpen }: { tasks: TaskCard[]; today: stri
           <ChevronRight />
         </Button>
       </div>
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border text-xs">
+      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-secondary bg-border-secondary text-xs">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="bg-surface-2 px-2 py-1.5 font-medium text-muted-foreground">
+          <div key={d} className="bg-secondary px-2 py-1.5 font-medium text-tertiary">
             {d}
           </div>
         ))}
         {cells.map((date, i) => {
           const due = date ? tasks.filter((t) => t.dueDate === date) : [];
           return (
-            <div key={i} className={cn("min-h-28 bg-surface p-1.5", !date && "bg-surface-2/50")}>
+            <div key={i} className={cn("min-h-28 bg-primary p-1.5", !date && "bg-secondary/50")}>
               {date ? (
                 <>
-                  <div className={cn("mb-1 flex size-6 items-center justify-center rounded-full font-mono", date === today && "bg-primary text-primary-foreground")}>{Number(date.slice(8))}</div>
+                  <div className={cn("mb-1 flex size-6 items-center justify-center rounded-full font-mono", date === today && "bg-brand-solid text-white")}>{Number(date.slice(8))}</div>
                   {due.slice(0, 4).map((t) => (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => onOpen(t.id)}
-                      className={cn("mb-0.5 flex w-full items-center gap-1 truncate rounded bg-surface-2 px-1.5 py-0.5 text-left text-[11px] hover:bg-input", t.status === "done" && "text-muted-foreground line-through")}
+                      className={cn("mb-0.5 flex w-full items-center gap-1 truncate rounded bg-secondary px-1.5 py-0.5 text-left text-[11px] hover:bg-quaternary", t.status === "done" && "text-tertiary line-through")}
                     >
                       <StatusDot status={t.status} className="size-2.5 border" />
                       <span className="truncate">{t.title}</span>
                     </button>
                   ))}
-                  {due.length > 4 ? <div className="text-[11px] text-muted-foreground">+{due.length - 4} more</div> : null}
+                  {due.length > 4 ? <div className="text-[11px] text-tertiary">+{due.length - 4} more</div> : null}
                 </>
               ) : null}
             </div>
@@ -230,12 +230,12 @@ function MilestonesView({ detail, canEdit, today }: { detail: ProjectDetail; can
                     disabled={!canEdit}
                     onClick={() => toggle.mutate({ id: m.id, completed: !m.completedAt })}
                     aria-label={m.completedAt ? "Reopen milestone" : "Complete milestone"}
-                    className={cn("mt-0.5 flex size-5 items-center justify-center rounded-full border-2", m.completedAt ? "border-success bg-success text-white" : "border-input")}
+                    className={cn("mt-0.5 flex size-5 items-center justify-center rounded-full border-2", m.completedAt ? "border-success-500 bg-success-solid text-white" : "border-primary")}
                   >
                     {m.completedAt ? <Check className="size-3" /> : null}
                   </button>
                   <div className="min-w-0 flex-1">
-                    <h3 className={cn("font-bold", m.completedAt && "text-muted-foreground line-through")}>{m.name}</h3>
+                    <h3 className={cn("font-bold", m.completedAt && "text-tertiary line-through")}>{m.name}</h3>
                     {m.amount ? (
                       <p className="text-xs text-finance">
                         Bills {(m.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })} + GST on completion
@@ -249,24 +249,24 @@ function MilestonesView({ detail, canEdit, today }: { detail: ProjectDetail; can
                         ) : null}
                       </p>
                     ) : null}
-                    <p className={cn("text-xs", late ? "text-danger" : "text-muted-foreground")}>
+                    <p className={cn("text-xs", late ? "text-error-primary" : "text-tertiary")}>
                       {m.dueDate ? `Due ${formatDate(m.dueDate)}` : "No due date"}
                       {m.completedAt ? ` · completed ${formatDate(m.completedAt.slice(0, 10), { day: "numeric", month: "short" })}` : ""}
                     </p>
                   </div>
                   {canEdit ? (
-                    <button type="button" aria-label={`Delete ${m.name}`} onClick={() => confirm(`Delete ${m.name}? Its tasks stay in the project.`) && remove.mutate(m.id)} className="rounded p-1 text-muted-foreground hover:text-danger">
+                    <button type="button" aria-label={`Delete ${m.name}`} onClick={() => confirm(`Delete ${m.name}? Its tasks stay in the project.`) && remove.mutate(m.id)} className="rounded p-1 text-tertiary hover:text-error-primary">
                       <Trash2 className="size-4" />
                     </button>
                   ) : null}
                 </div>
-                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                <div className="mt-4 flex items-center justify-between text-xs text-tertiary">
                   <span>
                     {m.done}/{m.total} tasks
                   </span>
                   <span className="font-mono">{pct}%</span>
                 </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
                   <div className="h-full rounded-full bg-work" style={{ width: `${pct}%` }} />
                 </div>
               </Card>
@@ -283,7 +283,7 @@ function MilestonesView({ detail, canEdit, today }: { detail: ProjectDetail; can
           }}
         >
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New milestone, e.g. Beta launch" maxLength={120} className="flex-1" />
-          <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="w-44" aria-label="Due date" />
+          <DateInput value={due} onChange={(v) => setDue(v)} className="w-44" aria-label="Due date" />
           {billable ? (
             <Input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="₹ to bill (optional)" className="w-48 font-mono" aria-label="Amount to bill in rupees" />
           ) : null}
@@ -335,10 +335,10 @@ function SettingsView({ detail, me }: { detail: ProjectDetail; me: Me }) {
     <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
       <Card className="p-5">
         <h2 className="font-bold">Stages</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Your workflow, left to right. The type decides what counts as started or done in reports.</p>
+        <p className="mt-1 text-sm text-tertiary">Your workflow, left to right. The type decides what counts as started or done in reports.</p>
         <ul className="mt-4 space-y-2">
           {stages.map((s, i) => (
-            <li key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2">
+            <li key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-secondary p-2">
               <input
                 type="color"
                 value={s.color ?? "#8a8178"}
@@ -353,7 +353,7 @@ function SettingsView({ detail, me }: { detail: ProjectDetail; me: Me }) {
                 className="h-8 flex-1"
                 aria-label="Stage name"
               />
-              <Select value={s.category} onChange={(e) => patchStage.mutate({ id: s.id, body: { category: e.target.value } })} className="h-8 w-36" aria-label="Stage type">
+              <Select value={s.category} onChange={(e) => patchStage.mutate({ id: s.id, body: { category: e.target.value } })} size="xs" className="w-36" aria-label="Stage type">
                 {Object.entries(STATUS_META).map(([k, m]) => (
                   <option key={k} value={k}>
                     {m.label}
@@ -409,15 +409,15 @@ function SettingsView({ detail, me }: { detail: ProjectDetail; me: Me }) {
           <h2 className="font-bold">Details</h2>
           <dl className="mt-3 space-y-2 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Lead</dt>
+              <dt className="text-tertiary">Lead</dt>
               <dd>{detail.project.leadName ?? "—"}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Goal</dt>
+              <dt className="text-tertiary">Goal</dt>
               <dd className="truncate">{detail.project.goalTitle ?? "—"}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Dates</dt>
+              <dt className="text-tertiary">Dates</dt>
               <dd>
                 {formatDate(detail.project.startDate, { day: "numeric", month: "short" })} → {formatDate(detail.project.dueDate, { day: "numeric", month: "short" })}
               </dd>
@@ -485,7 +485,7 @@ export function ProjectPage({ me }: { me: Me }) {
   if (error || !detail) {
     return (
       <WorkBody>
-        <p className="text-sm text-muted-foreground">{error?.message ?? "Project not found"}</p>
+        <p className="text-sm text-tertiary">{error?.message ?? "Project not found"}</p>
       </WorkBody>
     );
   }
@@ -505,7 +505,7 @@ export function ProjectPage({ me }: { me: Me }) {
 
   return (
     <WorkBody className="space-y-5">
-      <Link to="/work/projects" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link to="/work/projects" className="inline-flex items-center gap-1 text-sm text-tertiary hover:text-primary">
         <ArrowLeft className="size-4" /> {me.settings.terms.project.many}
       </Link>
       <div className="flex flex-wrap items-end gap-4">
@@ -515,7 +515,7 @@ export function ProjectPage({ me }: { me: Me }) {
           </span>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold sm:text-3xl">{detail.project.name}</h1>
-            <p className="truncate text-sm text-muted-foreground">
+            <p className="truncate text-sm text-tertiary">
               {[detail.project.leadName && `Led by ${detail.project.leadName}`, detail.project.dueDate && `due ${formatDate(detail.project.dueDate, { day: "numeric", month: "short" })}`]
                 .filter(Boolean)
                 .join(" · ") || detail.project.description || " "}
@@ -523,24 +523,24 @@ export function ProjectPage({ me }: { me: Me }) {
           </div>
           {detail.project.status !== "active" ? <Badge className="capitalize">{detail.project.status}</Badge> : null}
         </div>
-        <div className="flex items-center gap-5 rounded-xl border border-border bg-surface px-4 py-2.5 shadow-card">
+        <div className="flex items-center gap-5 rounded-xl border border-secondary bg-primary px-4 py-2.5 shadow-xs">
           <ProgressRing value={pct} size={44} stroke={4} color={detail.project.color}>
             <span className="text-[10px]">{pct}%</span>
           </ProgressRing>
           {[
             ["Done", `${done}/${all.length}`, ""],
-            ["Overdue", String(overdue), overdue ? "text-danger" : "text-subtle-foreground"],
+            ["Overdue", String(overdue), overdue ? "text-error-primary" : "text-quaternary"],
             ["Open", String(all.length - done), ""],
           ].map(([label, value, tone]) => (
             <div key={label}>
-              <div className="text-[11px] text-muted-foreground">{label}</div>
+              <div className="text-[11px] text-tertiary">{label}</div>
               <div className={cn("font-display text-lg font-bold leading-tight tabular", tone)}>{value}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-secondary pb-3">
         <div className="flex gap-1 overflow-x-auto text-sm">
           {views.map((v) => (
             <button
@@ -549,7 +549,7 @@ export function ProjectPage({ me }: { me: Me }) {
               onClick={() => navigate({ to: "/work/projects/$id", params: { id }, search: { view: v.key === "board" ? undefined : v.key }, replace: true })}
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5",
-                view === v.key ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground",
+                view === v.key ? "bg-secondary font-medium" : "text-tertiary hover:text-primary",
               )}
             >
               <v.icon className="size-4" />

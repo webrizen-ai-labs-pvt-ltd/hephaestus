@@ -10,7 +10,7 @@ export function PriorityIcon({ priority, className }: { priority: Priority; clas
   const meta = PRIORITY_META[priority];
   if (priority === "urgent") {
     return (
-      <span title={meta.label} className={cn("inline-flex size-4 items-center justify-center rounded-[4px] bg-danger font-mono text-[10px] font-bold text-white", className)}>
+      <span title={meta.label} className={cn("inline-flex size-4 items-center justify-center rounded-[4px] bg-error-solid font-mono text-[10px] font-bold text-white", className)}>
         !
       </span>
     );
@@ -19,7 +19,7 @@ export function PriorityIcon({ priority, className }: { priority: Priority; clas
   return (
     <span title={meta.label} className={cn("inline-flex h-4 w-4 items-end gap-[2px]", className)}>
       {[1, 2, 3].map((i) => (
-        <span key={i} className="w-[3px] rounded-sm" style={{ height: `${4 + i * 3}px`, background: i <= filled ? meta.color : "var(--input)" }} />
+        <span key={i} className="w-[3px] rounded-sm" style={{ height: `${4 + i * 3}px`, background: i <= filled ? meta.color : "var(--color-border-primary)" }} />
       ))}
     </span>
   );
@@ -45,10 +45,10 @@ export function AssigneeStack({ people, max = 3, size = "size-6" }: { people: Pe
   return (
     <span className="flex -space-x-1.5" title={people.map((p) => p.fullName).join(", ")}>
       {people.slice(0, max).map((p) => (
-        <Avatar key={p.id} name={p.fullName} src={p.image} className={cn(size, "border-2 border-surface text-[10px]")} />
+        <Avatar key={p.id} name={p.fullName} src={p.image} className={cn(size, "border-2 border-bg-primary text-[10px]")} />
       ))}
       {people.length > max ? (
-        <span className={cn(size, "flex items-center justify-center rounded-full border-2 border-surface bg-surface-2 font-mono text-[9px]")}>+{people.length - max}</span>
+        <span className={cn(size, "flex items-center justify-center rounded-full border-2 border-bg-primary bg-secondary font-mono text-[9px]")}>+{people.length - max}</span>
       ) : null}
     </span>
   );
@@ -68,7 +68,7 @@ export function DueChip({ date, done, today }: { date: string | null; done: bool
   const overdue = !done && date < today;
   const soon = !done && !overdue && Date.parse(date) - Date.parse(today) <= 2 * 86_400_000;
   return (
-    <span className={cn("font-mono text-xs", overdue ? "text-danger" : soon ? "text-work" : "text-muted-foreground")}>{dueLabel(date, today)}</span>
+    <span className={cn("font-mono text-xs", overdue ? "text-error-primary" : soon ? "text-work" : "text-tertiary")}>{dueLabel(date, today)}</span>
   );
 }
 
@@ -96,7 +96,7 @@ export function TaskRow({
   );
   const ref = taskRef(task);
   return (
-    <li className="group flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2/50">
+    <li className="group flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/50">
       <button
         type="button"
         aria-label={done ? `Reopen "${task.title}"` : `Complete "${task.title}"`}
@@ -104,29 +104,29 @@ export function TaskRow({
         disabled={toggle.isPending}
         className="shrink-0 rounded-full"
       >
-        {done ? <CircleCheck className="size-[18px] text-success" /> : <StatusDot status={task.status} className="size-[18px] transition-colors group-hover:border-success" />}
+        {done ? <CircleCheck className="size-[18px] text-success-primary" /> : <StatusDot status={task.status} className="size-[18px] transition-colors group-hover:border-success-500" />}
       </button>
       <button type="button" onClick={() => onOpen(task.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <PriorityIcon priority={task.priority} />
-        {ref ? <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{ref}</span> : null}
-        <span className={cn("truncate text-sm", done && "text-muted-foreground line-through")}>{task.title}</span>
-        {task.recurrence ? <Repeat className="size-3.5 shrink-0 text-muted-foreground" aria-label="Repeats" /> : null}
-        {task.blocked ? <Link2 className="size-3.5 shrink-0 text-danger" aria-label="Blocked" /> : null}
+        {ref ? <span className="hidden font-mono text-xs text-tertiary sm:inline">{ref}</span> : null}
+        <span className={cn("truncate text-sm", done && "text-tertiary line-through")}>{task.title}</span>
+        {task.recurrence ? <Repeat className="size-3.5 shrink-0 text-tertiary" aria-label="Repeats" /> : null}
+        {task.blocked ? <Link2 className="size-3.5 shrink-0 text-error-primary" aria-label="Blocked" /> : null}
         {task.subtasks.total ? (
-          <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground">
+          <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-tertiary">
             <GitBranch className="size-3" />
             {task.subtasks.done}/{task.subtasks.total}
           </span>
         ) : null}
         <span className="ml-auto flex shrink-0 items-center gap-3">
           {task.labels.slice(0, 2).map((l) => (
-            <span key={l.id} className="hidden items-center gap-1 text-xs text-muted-foreground md:inline-flex">
+            <span key={l.id} className="hidden items-center gap-1 text-xs text-tertiary md:inline-flex">
               <span className="size-2 rounded-full" style={{ background: l.color }} />
               {l.name}
             </span>
           ))}
           {showProject && task.projectName ? (
-            <span className="hidden max-w-32 truncate rounded-md bg-surface-2 px-2 py-0.5 text-xs text-muted-foreground lg:inline" style={{ borderLeft: `2px solid ${task.projectColor}` }}>
+            <span className="hidden max-w-32 truncate rounded-md bg-secondary px-2 py-0.5 text-xs text-tertiary lg:inline" style={{ borderLeft: `2px solid ${task.projectColor}` }}>
               {task.projectName}
             </span>
           ) : null}
@@ -173,7 +173,7 @@ export function QuickAdd({
         onKeyDown={(e) => e.key === "Escape" && setTitle("")}
         placeholder={placeholder}
         maxLength={300}
-        className="h-9 w-full rounded-lg border border-dashed border-input bg-transparent px-3 text-sm placeholder:text-muted-foreground focus:border-solid focus:border-ring focus:bg-surface focus:outline-none"
+        className="h-9 w-full rounded-lg border border-dashed border-primary bg-transparent px-3 text-sm placeholder:text-tertiary focus:border-solid focus:border-brand focus:bg-primary focus:outline-none"
       />
     </form>
   );

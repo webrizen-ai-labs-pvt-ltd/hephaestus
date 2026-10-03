@@ -21,7 +21,7 @@ export function useCommandPalette() {
   return [open, setOpen] as const;
 }
 
-const item = "flex cursor-default items-center gap-3 rounded-md px-2 py-2 text-sm [&_svg]:size-4 [&_svg]:text-muted-foreground";
+const item = "flex cursor-default items-center gap-3 rounded-md px-2 py-2 text-sm [&_svg]:size-4 [&_svg]:text-tertiary";
 
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const navigate = useNavigate();
@@ -35,21 +35,21 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       open={open}
       onOpenChange={onOpenChange}
       label="Command palette"
-      overlayClassName="fixed inset-0 z-50 bg-obsidian/60 backdrop-blur-sm"
-      contentClassName="fixed left-1/2 top-[18vh] z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-card border border-border bg-surface shadow-[0_24px_64px_-16px_rgb(0_0_0/0.6)]"
+      overlayClassName="fixed inset-0 z-50 bg-overlay/60 backdrop-blur-sm"
+      contentClassName="fixed left-1/2 top-[18vh] z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-xl border border-secondary bg-primary shadow-[0_24px_64px_-16px_rgb(0_0_0/0.6)]"
     >
       <Command.Input
         placeholder="Search or jump to…"
-        className="h-12 w-full border-b border-border bg-transparent px-4 text-sm outline-none placeholder:text-muted-foreground"
+        className="h-12 w-full border-b border-secondary bg-transparent px-4 text-sm outline-none placeholder:text-tertiary"
       />
       <Command.List className="max-h-[50vh] overflow-y-auto p-2">
-        <Command.Empty className="px-2 py-6 text-center text-sm text-muted-foreground">Nothing found.</Command.Empty>
+        <Command.Empty className="px-2 py-6 text-center text-sm text-tertiary">Nothing found.</Command.Empty>
         <Command.Group heading="Go to">
           {[...MAIN_NAV, ...ADMIN_NAV].map((n) => (
             <Command.Item key={n.to} value={`${n.label} ${n.hint ?? ""}`} className={item} onSelect={() => run(() => navigate({ to: n.to }))}>
               <n.icon className={n.tone} />
               {n.label}
-              {n.hint ? <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span> : null}
+              {n.hint ? <span className="ml-auto text-xs text-tertiary">{n.hint}</span> : null}
             </Command.Item>
           ))}
         </Command.Group>
