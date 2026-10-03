@@ -1,7 +1,7 @@
 import { can, countLeaveDays } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Segmented, Select, Textarea } from "@hephaestus/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { CalendarCheck, CalendarPlus, ChevronLeft, ChevronRight, Palmtree, Plus, Trash2 } from "lucide-react";
+import { CalendarCheck, CalendarPlus, CalendarX2, ChevronLeft, ChevronRight, Palmtree, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "../../components/app-shell.tsx";
@@ -63,6 +63,7 @@ function RequestLeaveDialog({ open, onOpenChange, workWeek }: { open: boolean; o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Request leave"
+        icon={CalendarPlus}
         footer={
           <>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -286,6 +287,8 @@ function Approvals() {
       <Dialog open={noteFor !== null} onOpenChange={(o) => !o && setNoteFor(null)}>
         <DialogContent
           title="Decline request"
+        icon={CalendarX2}
+        iconColor="error"
           footer={
             <>
               <Button variant="ghost" onClick={() => setNoteFor(null)}>
@@ -542,22 +545,12 @@ export function LeavePage({ me }: { me: Me }) {
           </Button>
         }
       />
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-secondary bg-primary p-1 text-sm shadow-xs sm:w-fit">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => navigate({ to: "/people/leave", search: { tab: t.key }, replace: true })}
-            className={cn(
-              "flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 transition-colors",
-              tab === t.key ? "bg-tertiary font-medium text-primary" : "text-tertiary hover:text-primary",
-            )}
-          >
-            {t.label}
-            {"count" in t && t.count ? <span className="rounded-full bg-brand-solid px-1.5 font-mono text-[10px] text-white">{t.count}</span> : null}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        aria-label="Leave views"
+        value={tab}
+        onChange={(key) => navigate({ to: "/people/leave", search: { tab: key }, replace: true })}
+        items={tabs.map((t) => ({ key: t.key, label: t.label, count: "count" in t ? t.count : undefined }))}
+      />
       <RequestLeaveDialog open={requesting} onOpenChange={setRequesting} workWeek={me.settings.workWeek} />
       {tab === "mine" ? <MyLeave /> : null}
       {tab === "approvals" ? <Approvals /> : null}

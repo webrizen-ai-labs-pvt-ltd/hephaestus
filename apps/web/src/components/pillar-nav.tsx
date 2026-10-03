@@ -1,4 +1,4 @@
-import { cn } from "@hephaestus/ui";
+import { Badge, cn } from "@hephaestus/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 
@@ -13,37 +13,41 @@ export interface PillarTab {
   count?: number;
 }
 
-/** The sticky section bar under the header: pillar name, then pill tabs. */
+/** The sticky section bar under the header: pillar name, then Untitled UI underline tabs. */
 export function PillarNav({ name, color, icon: Icon, tabs }: { name: string; color: string; icon: LucideIcon; tabs: PillarTab[] }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="sticky top-0 z-10 border-b border-secondary bg-secondary/75 backdrop-blur-md print:hidden">
-      <div className="mx-auto flex max-w-7xl items-center gap-3 overflow-x-auto px-4 py-2.5 sm:px-8">
-        <div className="flex shrink-0 items-center gap-2 pr-2">
-          <span className="flex size-7 items-center justify-center rounded-lg [&_svg]:size-4" style={{ color, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+    <div className="sticky top-0 z-10 border-b border-secondary bg-primary print:hidden">
+      <div className="mx-auto flex max-w-7xl items-center gap-5 overflow-x-auto px-4 sm:px-8">
+        <div className="flex shrink-0 items-center gap-2.5 py-3">
+          <span
+            className="flex size-8 items-center justify-center rounded-lg bg-primary shadow-xs-skeuomorphic ring-1 ring-primary ring-inset [&_svg]:size-4"
+            style={{ color }}
+          >
             <Icon />
           </span>
-          <span className="font-display text-[15px] font-bold">{name}</span>
+          <span className="font-display text-md font-bold text-primary">{name}</span>
         </div>
-        <span className="h-5 w-px shrink-0 bg-border-secondary" />
-        <nav className="flex items-center gap-1">
+        <span className="h-6 w-px shrink-0 bg-border-secondary" />
+        <nav className="flex items-center gap-5 self-stretch" aria-label={`${name} sections`}>
           {tabs.map((t) => {
             const active = t.exact ? pathname === t.to : pathname === t.to || pathname.startsWith(`${t.to}/`) || Boolean(t.also?.(pathname));
             return (
               <Link
                 key={t.to}
                 to={t.to}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] transition-colors",
-                  active ? "bg-tertiary font-medium text-primary shadow-xs" : "text-tertiary hover:bg-secondary hover:text-primary",
+                  "-mb-px flex shrink-0 items-center gap-2 border-b-2 px-0.5 text-sm font-semibold whitespace-nowrap outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:-outline-offset-2",
+                  active ? "border-fg-brand-primary_alt text-brand-secondary" : "border-transparent text-quaternary hover:border-fg-brand-primary_alt hover:text-brand-secondary",
                 )}
               >
-                {t.icon ? <t.icon className="size-3.5" style={active ? { color } : undefined} /> : null}
+                {t.icon ? <t.icon className={cn("size-4", active ? "text-fg-brand-secondary_hover" : "text-fg-quaternary")} /> : null}
                 {t.label}
                 {t.count ? (
-                  <span className="rounded-full px-1.5 font-mono text-[10px] leading-4" style={{ background: `color-mix(in srgb, ${color} 20%, transparent)`, color }}>
+                  <Badge tone={active ? "brand" : "neutral"} pill>
                     {t.count}
-                  </span>
+                  </Badge>
                 ) : null}
               </Link>
             );

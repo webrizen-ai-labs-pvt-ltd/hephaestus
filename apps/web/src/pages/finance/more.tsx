@@ -73,30 +73,30 @@ export function PaymentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-secondary text-left text-xs text-tertiary">
-                  <th className="px-4 py-2.5 font-medium">Date</th>
-                  <th className="px-4 py-2.5 font-medium">Client</th>
-                  <th className="px-4 py-2.5 font-medium">Invoice</th>
-                  <th className="px-4 py-2.5 font-medium">Method</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Amount</th>
+                <tr className="border-b border-secondary bg-secondary text-left text-xs font-semibold text-quaternary">
+                  <th className="px-5 py-3 font-semibold">Date</th>
+                  <th className="px-5 py-3 font-semibold">Client</th>
+                  <th className="px-5 py-3 font-semibold">Invoice</th>
+                  <th className="px-5 py-3 font-semibold">Method</th>
+                  <th className="px-5 py-3 text-right font-semibold">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-secondary">
                 {list.map((p) => (
                   <tr key={p.id} className={cn(p.voidedAt && "text-tertiary line-through")}>
-                    <td className="px-4 py-3">{formatDate(p.paidOn)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">{formatDate(p.paidOn)}</td>
+                    <td className="px-5 py-3.5">
                       <span className="flex items-center gap-2.5">
                         <Avatar name={p.clientName} className="size-7 rounded-lg text-[10px]" />
                         {p.clientName}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">
                       <Link to="/finance/invoices/$id" params={{ id: p.invoiceId }} className="font-mono text-xs text-brand-secondary hover:underline">
                         {p.invoiceNumber}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-tertiary">
+                    <td className="px-5 py-3.5 text-tertiary">
                       {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
                       {p.reference ? <span className="ml-1 font-mono text-xs">· {p.reference}</span> : null}
                     </td>
@@ -142,6 +142,7 @@ function RetainerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="New retainer"
+        icon={Repeat}
         description="An invoice created automatically every month, quarter or year."
         className="w-[min(960px,calc(100vw-32px))]"
         footer={

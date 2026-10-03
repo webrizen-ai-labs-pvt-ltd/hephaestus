@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Badge, Button, Card, cn, DateInput, EmptyState, Input, ProgressRing, Select, Skeleton } from "@hephaestus/ui";
+import { Badge, Button, Card, cn, DateInput, EmptyState, Input, ProgressRing, Segmented, Select, Skeleton } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Kanban, List, MessagesSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -540,23 +540,13 @@ export function ProjectPage({ me }: { me: Me }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-secondary pb-3">
-        <div className="flex gap-1 overflow-x-auto text-sm">
-          {views.map((v) => (
-            <button
-              key={v.key}
-              type="button"
-              onClick={() => navigate({ to: "/work/projects/$id", params: { id }, search: { view: v.key === "board" ? undefined : v.key }, replace: true })}
-              className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5",
-                view === v.key ? "bg-secondary font-medium" : "text-tertiary hover:text-primary",
-              )}
-            >
-              <v.icon className="size-4" />
-              {v.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Segmented
+          aria-label="Project views"
+          value={view}
+          onChange={(key) => navigate({ to: "/work/projects/$id", params: { id }, search: { view: key === "board" ? undefined : key }, replace: true })}
+          items={views.map((v) => ({ key: v.key, label: v.label, icon: v.icon }))}
+        />
         {view === "board" || view === "list" || view === "calendar" ? (
           <Filters q={q} setQ={setQ} assignee={assignee} setAssignee={setAssignee} priority={priority} setPriority={setPriority} label={label} setLabel={setLabel} />
         ) : null}

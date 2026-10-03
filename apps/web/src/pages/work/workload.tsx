@@ -58,17 +58,17 @@ export function WorkloadPage() {
         <Card className="rise rise-2 overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-secondary text-left text-xs text-tertiary">
+              <tr className="border-b border-secondary bg-secondary text-left text-xs font-semibold text-quaternary">
                 <th className="sticky left-0 bg-primary px-4 py-2.5 font-medium">Person</th>
-                <th className="px-2 py-2.5 text-center font-medium">Overdue</th>
+                <th className="px-2 py-3 text-center font-semibold">Overdue</th>
                 {data?.weeks.map((w, i) => (
                   <th key={w} className="px-2 py-2.5 text-center font-medium">
                     {i === 0 ? "This week" : new Date(`${w}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     <div className="font-normal">{i === 0 ? "" : `– ${new Date(`${addDays(w, 6)}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric" })}`}</div>
                   </th>
                 ))}
-                <th className="px-2 py-2.5 text-center font-medium">No date</th>
-                <th className="px-4 py-2.5 font-medium">Total open</th>
+                <th className="px-2 py-3 text-center font-semibold">No date</th>
+                <th className="px-5 py-3 font-semibold">Total open</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-secondary">

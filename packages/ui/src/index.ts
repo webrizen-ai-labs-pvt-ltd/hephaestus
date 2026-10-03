@@ -28,6 +28,7 @@ export {
   Textarea,
 } from "./components/forms.tsx";
 export { Avatar, Badge, type BadgeTone, Card, Input, initials, Kbd, Label, Logo, Skeleton, Tooltip } from "./components/primitives.tsx";
+export { Segmented, type SegmentedItem } from "./components/segmented.tsx";
 export { Em, KpiTile, Meter, PageHero, Panel, ProgressRing, Sparkline } from "./components/data.tsx";
 
 /* Untitled UI components, used directly. */

@@ -28,6 +28,7 @@ function GoalDialog({ open, onOpenChange, goal }: { open: boolean; onOpenChange:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={goal ? "Edit goal" : "New goal"}
+        icon={Target}
         description="Goals are company outcomes. Link projects to them to track progress."
         footer={
           <>

@@ -136,6 +136,8 @@ function OffboardDialog({ open, onOpenChange, id, name }: { open: boolean; onOpe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={`Offboard ${name}?`}
+        icon={UserMinus}
+        iconColor="error"
         description="They'll move to former employees. Their direct reports move up to their manager."
         footer={
           <>

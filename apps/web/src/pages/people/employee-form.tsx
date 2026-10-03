@@ -1,4 +1,5 @@
 import { Button, DateInput, Dialog, DialogContent, Field, Input, Select } from "@hephaestus/ui";
+import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../lib/api.ts";
 import {
@@ -120,6 +121,7 @@ export function EmployeeFormDialog({
     <Dialog open={open} onOpenChange={(o) => (o ? setForm(initial) : null, onOpenChange(o))}>
       <DialogContent
         title={employee ? "Edit profile" : "Add employee"}
+        icon={UserPlus}
         description={employee ? employee.employeeCode : "They'll be linked to their Webrizen account automatically when the work email matches."}
         className="w-[min(640px,calc(100vw-32px))]"
         footer={

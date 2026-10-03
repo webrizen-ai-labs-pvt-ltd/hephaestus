@@ -1,7 +1,7 @@
 import { can, supplyTypeFor } from "@hephaestus/core";
-import { Avatar, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { Avatar, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { ArrowLeft, Ban, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, Banknote, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Trash2 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "../../components/app-shell.tsx";
@@ -135,27 +135,23 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
       />
       <Card>
         <div className="flex flex-wrap items-center gap-2 border-b border-secondary p-3">
-          <div className="flex gap-1 overflow-x-auto text-sm">
-            {FILTERS[effectiveKind].map(([k, l]) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setStatus(k)}
-                className={cn("shrink-0 rounded-md px-2.5 py-1", status === k ? "bg-secondary font-medium" : "text-tertiary hover:text-primary")}
-              >
-                {l}
-              </button>
-            ))}
-            {kind === "invoice" ? (
-              <button
-                type="button"
-                onClick={() => (setShowCredit((s) => !s), setStatus(""))}
-                className={cn("shrink-0 rounded-md px-2.5 py-1", showCredit ? "bg-secondary font-medium" : "text-tertiary hover:text-primary")}
-              >
-                Credit notes
-              </button>
-            ) : null}
-          </div>
+          <Segmented
+            aria-label="Filter"
+            value={showCredit ? "credit" : status || "all"}
+            onChange={(key) => {
+              if (key === "credit") {
+                setShowCredit(true);
+                setStatus("");
+              } else {
+                setShowCredit(false);
+                setStatus(key === "all" ? "" : key);
+              }
+            }}
+            items={[
+              ...FILTERS[kind].map(([k, l]) => ({ key: k || "all", label: l })),
+              ...(kind === "invoice" ? [{ key: "credit", label: "Credit notes" }] : []),
+            ]}
+          />
           <div className="relative ml-auto w-full sm:w-64">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-tertiary" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Number or client" className="h-8 pl-9" />
@@ -172,14 +168,14 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-secondary text-left text-xs text-tertiary">
-                  <th className="px-4 py-2.5 font-medium">Number</th>
-                  <th className="px-4 py-2.5 font-medium">Client</th>
-                  <th className="px-4 py-2.5 font-medium">Date</th>
-                  <th className="px-4 py-2.5 font-medium">{effectiveKind === "quote" ? "Valid until" : "Due"}</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Amount</th>
-                  {effectiveKind === "invoice" ? <th className="px-4 py-2.5 text-right font-medium">Balance</th> : null}
+                <tr className="border-b border-secondary bg-secondary text-left text-xs font-semibold text-quaternary">
+                  <th className="px-5 py-3 font-semibold">Number</th>
+                  <th className="px-5 py-3 font-semibold">Client</th>
+                  <th className="px-5 py-3 font-semibold">Date</th>
+                  <th className="px-5 py-3 font-semibold">{effectiveKind === "quote" ? "Valid until" : "Due"}</th>
+                  <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 text-right font-semibold">Amount</th>
+                  {effectiveKind === "invoice" ? <th className="px-5 py-3 text-right font-semibold">Balance</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-secondary">
@@ -187,24 +183,24 @@ export function DocumentsPage({ me, kind }: { me: Me; kind: "invoice" | "quote" 
                   const st = displayStatus(d, today);
                   return (
                     <tr key={d.id} className="cursor-pointer hover:bg-secondary/60" onClick={() => navigate({ to: "/finance/invoices/$id", params: { id: d.id } })}>
-                      <td className="px-4 py-3 font-mono text-xs">
+                      <td className="px-5 py-3.5 font-mono text-xs">
                         {d.number ?? <span className="text-tertiary">Draft</span>}
                         {d.recurringId ? <span className="ml-2 font-sans text-[11px] text-finance">Retainer</span> : null}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <span className="flex items-center gap-2.5">
                           <Avatar name={d.clientName} className="size-7 rounded-lg text-[10px]" />
                           <span className="truncate">{d.clientName}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-tertiary">{formatDate(d.issueDate, { day: "numeric", month: "short" })}</td>
+                      <td className="px-5 py-3.5 text-tertiary">{formatDate(d.issueDate, { day: "numeric", month: "short" })}</td>
                       <td className={cn("px-4 py-3", st === "overdue" ? "text-error-primary" : "text-tertiary")}>{formatDate(d.dueDate, { day: "numeric", month: "short" })}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <StatusPill status={st} />
                       </td>
-                      <td className="px-4 py-3 text-right font-mono">{money(d.total, d.currency)}</td>
+                      <td className="px-5 py-3.5 text-right font-mono">{money(d.total, d.currency)}</td>
                       {effectiveKind === "invoice" ? (
-                        <td className="px-4 py-3 text-right font-mono">{["sent", "partially_paid"].includes(d.status) ? money(d.total - d.amountPaid, d.currency) : "—"}</td>
+                        <td className="px-5 py-3.5 text-right font-mono">{["sent", "partially_paid"].includes(d.status) ? money(d.total - d.amountPaid, d.currency) : "—"}</td>
                       ) : null}
                     </tr>
                   );
@@ -390,6 +386,8 @@ function RecordPaymentDialog({ open, onOpenChange, detail }: { open: boolean; on
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Record a payment"
+        icon={Banknote}
+        iconColor="success"
         description={`Balance due ${money(balance, detail.document.currency)}`}
         footer={
           <>

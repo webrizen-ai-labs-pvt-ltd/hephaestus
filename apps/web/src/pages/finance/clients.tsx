@@ -85,6 +85,7 @@ export function ClientDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={client ? "Edit client" : "New client"}
+        icon={Building2}
         className="w-[min(680px,calc(100vw-32px))]"
         footer={
           <>

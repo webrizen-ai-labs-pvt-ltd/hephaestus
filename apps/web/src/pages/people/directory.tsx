@@ -1,5 +1,5 @@
 import { can } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, EmptyState, Input, Select } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, EmptyState, Input, Segmented, Select } from "@hephaestus/ui";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Download, LayoutGrid, List, Search, UserPlus, Users } from "lucide-react";
 import { useDeferredValue, useState } from "react";
@@ -80,25 +80,16 @@ export function DirectoryPage({ me }: { me: Me }) {
             <option value="offboarded">Former</option>
             <option value="all">Everyone</option>
           </Select>
-          <div className="ml-auto inline-flex rounded-lg border border-secondary bg-primary p-0.5 shadow-xs" role="group" aria-label="View">
-            {(
-              [
-                ["cards", LayoutGrid, "Cards"],
-                ["list", List, "List"],
-              ] as const
-            ).map(([k, Icon, label]) => (
-              <button
-                key={k}
-                type="button"
-                aria-pressed={view === k}
-                aria-label={label}
-                onClick={() => setView(k)}
-                className={cn("flex size-8 items-center justify-center rounded-md", view === k ? "bg-tertiary text-primary" : "text-tertiary hover:text-primary")}
-              >
-                <Icon className="size-4" />
-              </button>
-            ))}
-          </div>
+          <Segmented
+            className="ml-auto"
+            aria-label="View"
+            value={view}
+            onChange={setView}
+            items={[
+              { key: "cards", icon: LayoutGrid, title: "Cards" },
+              { key: "list", icon: List, title: "List" },
+            ]}
+          />
         </div>
         {depts?.departments.length ? (
           <div className="flex flex-wrap gap-1.5">
@@ -173,12 +164,12 @@ export function DirectoryPage({ me }: { me: Me }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-secondary text-left text-xs text-tertiary">
-                  <th className="px-4 py-2.5 font-medium">Name</th>
-                  <th className="px-4 py-2.5 font-medium">Department</th>
-                  <th className="px-4 py-2.5 font-medium">Manager</th>
-                  <th className="px-4 py-2.5 font-medium">Type</th>
-                  <th className="px-4 py-2.5 font-medium">ID</th>
+                <tr className="border-b border-secondary bg-secondary text-left text-xs font-semibold text-quaternary">
+                  <th className="px-5 py-3 font-semibold">Name</th>
+                  <th className="px-5 py-3 font-semibold">Department</th>
+                  <th className="px-5 py-3 font-semibold">Manager</th>
+                  <th className="px-5 py-3 font-semibold">Type</th>
+                  <th className="px-5 py-3 font-semibold">ID</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-secondary">
@@ -188,7 +179,7 @@ export function DirectoryPage({ me }: { me: Me }) {
                     className="cursor-pointer hover:bg-secondary/60"
                     onClick={() => navigate({ to: "/people/$id", params: { id: e.id } })}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">
                       <Link to="/people/$id" params={{ id: e.id }} className="flex items-center gap-3" onClick={(ev) => ev.stopPropagation()}>
                         <Avatar name={e.fullName} src={e.image} className="size-9" />
                         <div className="min-w-0">
@@ -200,7 +191,7 @@ export function DirectoryPage({ me }: { me: Me }) {
                         </div>
                       </Link>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-3.5">
                       {e.departmentName ? (
                         <span className="inline-flex items-center gap-2">
                           <span className="size-2 rounded-full" style={{ background: e.departmentColor ?? "var(--people)" }} />
@@ -210,9 +201,9 @@ export function DirectoryPage({ me }: { me: Me }) {
                         <span className="text-tertiary">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-tertiary">{e.managerName ?? "—"}</td>
-                    <td className="px-4 py-3 text-tertiary">{EMPLOYMENT_LABEL[e.employmentType]}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-tertiary">{e.employeeCode}</td>
+                    <td className="px-5 py-3.5 text-tertiary">{e.managerName ?? "—"}</td>
+                    <td className="px-5 py-3.5 text-tertiary">{EMPLOYMENT_LABEL[e.employmentType]}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs text-tertiary">{e.employeeCode}</td>
                   </tr>
                 ))}
               </tbody>

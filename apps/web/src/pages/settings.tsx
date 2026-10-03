@@ -305,9 +305,9 @@ function dayLabel(day: string) {
 export function PreferencesPage() {
   const [pref, setPref] = useTheme();
   const options = [
-    { key: "dark", label: "Dark", icon: Moon, preview: "bg-overlay" },
+    { key: "dark", label: "Dark", icon: Moon, preview: "bg-[#0c0e12]" },
     { key: "light", label: "Light", icon: Sun, preview: "bg-white" },
-    { key: "system", label: "Match system", icon: SunMoon, preview: "bg-[linear-gradient(135deg,var(--ash)_50%,var(--obsidian)_50%)]" },
+    { key: "system", label: "Match system", icon: SunMoon, preview: "bg-[linear-gradient(135deg,#ffffff_50%,#0c0e12_50%)]" },
   ] as const;
 
   return (

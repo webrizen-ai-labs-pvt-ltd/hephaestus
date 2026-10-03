@@ -1,7 +1,7 @@
 import { can } from "@hephaestus/core";
 import { Avatar, Button, CheckboxBase, cn, Dialog, DialogContent, Field, Input, Select, Textarea } from "@hephaestus/ui";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { AtSign, Gavel, Hash, Lock, Plus, Search } from "lucide-react";
+import { AtSign, Gavel, Hash, Lock, MessageSquarePlus, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { api, type Me } from "../../lib/api.ts";
 import { type ChannelSummary, COLLAB_KEYS, useChannels, useMembers } from "../../lib/collab.ts";
@@ -30,6 +30,7 @@ function NewChannelDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="New channel"
+        icon={Hash}
         description="Channels are for topics, teams or clients."
         footer={
           <>
@@ -100,6 +101,7 @@ function NewDmDialog({ open, onOpenChange, meId }: { open: boolean; onOpenChange
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="New message"
+        icon={MessageSquarePlus}
         description="Pick one person, or a few for a small group."
         footer={
           <>
@@ -185,7 +187,7 @@ export function CollabLayout({ me }: { me: Me }) {
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)]">
-      <aside className={cn("w-full shrink-0 flex-col overflow-y-auto border-r border-secondary bg-sidebar/40 p-3 md:flex md:w-64", inChannel ? "hidden" : "flex")}>
+      <aside className={cn("w-full shrink-0 flex-col overflow-y-auto border-r border-secondary bg-primary p-3 md:flex md:w-64", inChannel ? "hidden" : "flex")}>
         <div className="flex items-center gap-2 px-2 pb-3 pt-1">
           <span className="size-2 rounded-full bg-collab" />
           <span className="font-display text-sm font-bold">Collaboration</span>

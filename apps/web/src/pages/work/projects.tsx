@@ -1,5 +1,5 @@
 import { can, projectKeyFrom } from "@hephaestus/core";
-import { Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Segmented, Select, Textarea } from "@hephaestus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { FolderKanban, Plus } from "lucide-react";
@@ -66,6 +66,7 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={project ? "Project settings" : "New project"}
+        icon={FolderKanban}
         className="w-[min(600px,calc(100vw-32px))]"
         footer={
           <>
@@ -78,7 +79,7 @@ export function ProjectDialog({ open, onOpenChange, project }: { open: boolean; 
           </>
         }
       >
-        <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
+        <div className="grid gap-4 sm:grid-cols-[1fr_168px]">
           <Field label="Name" error={error}>
             <Input
               value={name}
@@ -268,22 +269,16 @@ export function ProjectsPage({ me }: { me: Me }) {
           ) : null
         }
       />
-      <div className="inline-flex gap-1 rounded-xl border border-secondary bg-primary p-1 text-sm shadow-xs">
-        {[
-          ["current", "Current"],
-          ["completed", "Completed"],
-          ["archived", "Archived"],
-        ].map(([k, label]) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setStatus(k!)}
-            className={cn("rounded-lg px-3 py-1.5", status === k ? "bg-tertiary font-medium text-primary" : "text-tertiary hover:text-primary")}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        aria-label="Project status"
+        value={status}
+        onChange={setStatus}
+        items={[
+          { key: "current", label: "Current" },
+          { key: "completed", label: "Completed" },
+          { key: "archived", label: "Archived" },
+        ]}
+      />
       {data && projects.length === 0 ? (
         <Card>
           <EmptyState
@@ -308,7 +303,7 @@ export function ProjectsPage({ me }: { me: Me }) {
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-secondary text-sm text-tertiary transition-colors hover:border-primary hover:bg-primary/60 hover:text-primary"
+              className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-secondary text-sm text-tertiary transition-colors hover:border-primary hover:bg-primary/60 hover:text-primary"
             >
               <Plus className="size-5" /> New {me.settings.terms.project.one.toLowerCase()}
             </button>

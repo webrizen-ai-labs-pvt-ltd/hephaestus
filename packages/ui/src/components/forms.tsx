@@ -353,13 +353,14 @@ export function DialogContent({
           className,
         )}
       >
+        {icon ? (
+          // The pattern is clipped to the top of the dialog; the dialog itself stays unclipped for popovers.
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-36 overflow-hidden rounded-t-2xl">
+            <BackgroundPattern pattern="circle" size="sm" className="absolute top-12 left-12 hidden -translate-x-1/2 -translate-y-1/2 text-border-secondary sm:block" />
+          </div>
+        ) : null}
         <div className="relative flex items-start gap-4 px-6 pt-6 pb-1">
-          {icon ? (
-            <div className="relative shrink-0">
-              <BackgroundPattern pattern="circle" size="sm" className="absolute top-1/2 left-1/2 -z-0 hidden -translate-x-1/2 -translate-y-1/2 text-border-secondary sm:block" />
-              <FeaturedIcon color={iconColor} theme="light" size="lg" icon={icon} className="relative" />
-            </div>
-          ) : null}
+          {icon ? <FeaturedIcon color={iconColor} theme="light" size="lg" icon={icon} className="relative shrink-0" /> : null}
           <div className="relative min-w-0 flex-1 pt-0.5">
             <DialogPrimitive.Title className="text-lg font-semibold text-primary">{title}</DialogPrimitive.Title>
             {description ? (

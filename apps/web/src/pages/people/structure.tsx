@@ -31,6 +31,7 @@ function DepartmentDialog({ open, onOpenChange, dept }: { open: boolean; onOpenC
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={dept ? "Edit department" : "New department"}
+        icon={Building2}
         footer={
           <>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -122,6 +123,7 @@ function TeamDialog({ open, onOpenChange, team }: { open: boolean; onOpenChange:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={team ? "Edit team" : "New team"}
+        icon={UsersRound}
         description="Teams can cut across departments, e.g. a project squad or a branch."
         footer={
           <>

@@ -38,6 +38,7 @@ function StartDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Start onboarding"
+        icon={Rocket}
         description="Steps go to the new joiner and their manager, with due dates from the start date."
         footer={
           <>
@@ -101,6 +102,7 @@ function TemplateDialog({ open, onOpenChange, template }: { open: boolean; onOpe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={template ? "Edit checklist" : "New checklist"}
+        icon={ClipboardList}
         className="w-[min(720px,calc(100vw-32px))]"
         footer={
           <>
