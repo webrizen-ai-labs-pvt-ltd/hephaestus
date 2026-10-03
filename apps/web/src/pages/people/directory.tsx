@@ -83,6 +83,7 @@ export function DirectoryPage({ me }: { me: Me }) {
           <Segmented
             className="ml-auto"
             aria-label="View"
+            variant="toggle"
             value={view}
             onChange={setView}
             items={[

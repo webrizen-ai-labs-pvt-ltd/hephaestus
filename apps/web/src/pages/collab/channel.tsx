@@ -10,6 +10,7 @@ import { MessageList } from "../../components/collab/message-list.tsx";
 import { api, type Me } from "../../lib/api.ts";
 import { COLLAB_KEYS, type ContextMessage, type Message, useChannel, useChannelMessages, useChannels, useDecisions, useMentions } from "../../lib/collab.ts";
 import { useApiMutation } from "../../lib/people.ts";
+import { useCrumb } from "../../lib/breadcrumbs.ts";
 
 function MobileBack() {
   return (
@@ -25,6 +26,7 @@ export function ChannelPage({ me }: { me: Me }) {
   const navigate = useNavigate();
   const { data: info, error } = useChannel(id);
   const { data: list } = useChannels();
+  useCrumb(info ? (info.channel.kind === "dm" ? info.channel.name : `#${info.channel.name}`) : null);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useChannelMessages(id);
   const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);

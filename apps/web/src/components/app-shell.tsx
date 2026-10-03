@@ -18,159 +18,306 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import {
   ArrowLeftRight,
   CalendarPlus,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
   FilePlus2,
   Hash,
+  House,
   ListPlus,
   LogOut,
   Menu,
+  Monitor,
   Moon,
   Plus,
   Search,
+  Settings,
   Sun,
-  SunMoon,
   UserPlus,
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { type Me, signIn, signOut } from "../lib/api.ts";
+import { useDetailCrumb } from "../lib/breadcrumbs.ts";
 import { useChannels } from "../lib/collab.ts";
 import { useHome } from "../lib/home.ts";
-import { ADMIN_NAV, MAIN_NAV, type NavItem } from "../lib/nav.ts";
+import { isChildActive, isItemActive, MAIN_NAV, type NavItem, SETTINGS_NAV } from "../lib/nav.ts";
 import { useLiveEvents } from "../lib/realtime.ts";
 import { useTheme } from "../lib/theme.ts";
 import { CommandPalette, useCommandPalette } from "./command-palette.tsx";
 import { NotificationBell } from "./notification-bell.tsx";
 
-function isActive(pathname: string, to: string) {
-  // "/settings" is its own page; its sub-pages have their own nav items.
-  return to === "/" || to === "/settings" ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
-}
+/* ---------------- Sidebar ---------------- */
 
-function NavLink({ item, onNavigate, badge, badgeTone }: { item: NavItem; onNavigate?: () => void; badge?: number; badgeTone?: "brand" }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const active = isActive(pathname, item.to);
+const itemBase =
+  "group relative flex w-full items-center gap-3 rounded-md px-3 text-left outline-focus-ring transition duration-100 ease-linear select-none focus-visible:outline-2 focus-visible:outline-offset-2";
+
+function Count({ n, tone }: { n?: number; tone?: "brand" }) {
+  if (!n) return null;
   return (
-    <Link
-      to={item.to}
-      onClick={onNavigate}
-      className={cn(
-        "group relative flex h-10 items-center gap-3 rounded-md px-3 outline-focus-ring transition duration-100 ease-linear select-none focus-visible:outline-2 focus-visible:outline-offset-2",
-        active ? "bg-secondary hover:bg-secondary_hover" : "hover:bg-primary_hover",
-      )}
-    >
-      <item.icon
-        aria-hidden
-        className={cn("size-5 shrink-0 transition-colors", active ? "" : "text-fg-quaternary group-hover:text-fg-quaternary_hover")}
-        style={active ? { color: item.color } : undefined}
-      />
-      <span className={cn("flex-1 truncate text-sm font-semibold", active ? "text-secondary_hover" : "text-secondary group-hover:text-secondary_hover")}>{item.label}</span>
-      {badge ? (
-        <Badge tone={badgeTone ? "brand" : "neutral"} pill>
-          {badge > 99 ? "99+" : badge}
-        </Badge>
-      ) : null}
-    </Link>
+    <Badge tone={tone ?? "neutral"} pill className="px-1.5 py-0 text-[11px]">
+      {n > 99 ? "99+" : n}
+    </Badge>
   );
 }
 
-function ThemeSwitch() {
-  const [pref, setPref] = useTheme();
-  const options = [
-    { key: "light", icon: Sun, label: "Light" },
-    { key: "dark", icon: Moon, label: "Dark" },
-    { key: "system", icon: SunMoon, label: "Match system" },
-  ] as const;
+/** One sidebar entry; with children it expands to show the section's pages. */
+function SidebarItem({
+  item,
+  counts,
+  onNavigate,
+}: {
+  item: NavItem;
+  counts: Record<string, { n?: number; tone?: "brand" }>;
+  onNavigate?: () => void;
+}) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const active = isItemActive(pathname, item);
+  const [open, setOpen] = useState(active);
+  useEffect(() => {
+    if (active) setOpen(true);
+  }, [active]);
+
+  const icon = (
+    <item.icon
+      aria-hidden
+      className={cn("size-5 shrink-0 transition-colors", active ? "" : "text-fg-quaternary group-hover:text-fg-quaternary_hover")}
+      style={active ? { color: item.color } : undefined}
+    />
+  );
+  const label = <span className={cn("flex-1 truncate text-sm font-semibold", active ? "text-primary" : "text-secondary group-hover:text-secondary_hover")}>{item.label}</span>;
+
+  if (!item.children) {
+    return (
+      <Link to={item.to} onClick={onNavigate} className={cn(itemBase, "h-10", active ? "bg-secondary" : "hover:bg-primary_hover")}>
+        {icon}
+        {label}
+        <Count {...counts[item.to]} />
+      </Link>
+    );
+  }
+
+  // Sum of the children's counts, shown while the group is collapsed.
+  const total = item.children.reduce((n, c) => n + (counts[c.to]?.n ?? 0), 0);
   return (
-    <div className="flex rounded-lg bg-secondary p-0.5 ring-1 ring-secondary ring-inset" role="radiogroup" aria-label="Theme">
-      {options.map((o) => (
-        <button
-          key={o.key}
-          type="button"
-          role="radio"
-          aria-checked={pref === o.key}
-          aria-label={o.label}
-          title={o.label}
-          onClick={() => setPref(o.key)}
-          className={cn(
-            "flex size-7 items-center justify-center rounded-md transition",
-            pref === o.key ? "bg-primary text-fg-secondary shadow-xs ring-1 ring-primary ring-inset" : "text-fg-quaternary hover:text-fg-quaternary_hover",
-          )}
-        >
-          <o.icon className="size-3.5" />
-        </button>
-      ))}
+    <div>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cn(itemBase, "h-10 hover:bg-primary_hover", active && !open && "bg-secondary")}>
+        {icon}
+        {label}
+        {!open ? <Count n={total} /> : null}
+        <ChevronDown className={cn("size-4 shrink-0 text-fg-quaternary transition-transform duration-150", open ? "rotate-0" : "-rotate-90")} />
+      </button>
+      {open ? (
+        <ul className="relative mt-0.5 mb-1 space-y-0.5 pl-[22px] before:absolute before:top-1 before:bottom-1 before:left-[22px] before:w-px before:bg-border-secondary">
+          {item.children.map((c) => {
+            const on = isChildActive(pathname, c);
+            return (
+              <li key={c.to}>
+                <Link
+                  to={c.to}
+                  onClick={onNavigate}
+                  aria-current={on ? "page" : undefined}
+                  className={cn(
+                    itemBase,
+                    "ml-3 h-9 w-[calc(100%-12px)] text-sm font-semibold",
+                    on ? "bg-secondary text-primary" : "text-tertiary hover:bg-primary_hover hover:text-secondary",
+                  )}
+                >
+                  {on ? <span className="absolute -left-[15px] top-2 bottom-2 w-0.5 rounded-full" style={{ background: item.color }} /> : null}
+                  <span className="flex-1 truncate">{c.label}</span>
+                  <Count {...counts[c.to]} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }
 
-function Sidebar({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
+const THEMES = [
+  { key: "light", label: "Light", icon: Sun },
+  { key: "dark", label: "Dark", icon: Moon },
+  { key: "system", label: "System", icon: Monitor },
+] as const;
+
+/** The signed-in person at the foot of the sidebar; opens the account menu. */
+function AccountMenu({ me }: { me: Me }) {
+  const [pref, setPref] = useTheme();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="group flex w-full items-center gap-3 rounded-xl p-2 text-left outline-focus-ring transition hover:bg-primary_hover focus-visible:outline-2 data-[state=open]:bg-primary_hover"
+        >
+          <span className="relative">
+            <Avatar name={me.user.name} src={me.user.image} className="size-10" />
+            <span className="absolute right-0 bottom-0 size-2.5 rounded-full bg-fg-success-secondary ring-[1.5px] ring-bg-primary" />
+          </span>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-sm font-semibold text-primary">{me.user.name}</span>
+            <span className="block truncate text-sm text-tertiary">{me.user.email || me.org.name}</span>
+          </span>
+          <ChevronsUpDown className="size-4 shrink-0 text-fg-quaternary group-hover:text-fg-quaternary_hover" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-[248px]">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Avatar name={me.user.name} src={me.user.image} className="size-10" />
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-sm font-semibold text-primary">{me.user.name}</div>
+            <div className="truncate text-sm text-tertiary">{me.user.email}</div>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Organization</DropdownMenuLabel>
+        <div className="mx-1.5 mb-1 flex items-center gap-2.5 rounded-md px-2.5 py-2">
+          <span className="flex size-6 items-center justify-center rounded-md bg-brand-solid text-[11px] font-bold text-white shadow-xs-skeuomorphic">
+            {me.org.name.slice(0, 1).toUpperCase()}
+          </span>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-sm font-semibold text-secondary">{me.org.name}</span>
+            <span className="block truncate text-xs capitalize text-tertiary">{me.org.roles.join(", ") || "member"}</span>
+          </span>
+        </div>
+        {me.edition === "cloud" ? (
+          <DropdownMenuItem onSelect={() => signIn("/")}>
+            <ArrowLeftRight />
+            Switch organization
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        {THEMES.map((t) => (
+          <DropdownMenuItem
+            key={t.key}
+            onSelect={(e) => {
+              e.preventDefault();
+              setPref(t.key);
+            }}
+          >
+            <t.icon />
+            <span className="flex-1">{t.label}</span>
+            {pref === t.key ? <Check className="!text-fg-brand-primary" /> : null}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/settings/preferences">
+            <Settings />
+            Preferences
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => void signOut()}>
+          <LogOut />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function Sidebar({ me, onNavigate, onSearch }: { me: Me; onNavigate?: () => void; onSearch: () => void }) {
   const enabled = new Set(me.settings.enabledPillars);
   const { data: home } = useHome();
   const { data: chats } = useChannels();
   const unreadChats = (chats?.channels ?? []).reduce((n, c) => n + c.unread, 0);
-  const badges: Record<string, { n?: number; tone?: "brand" }> = {
-    "/": { n: home?.counts.attention, tone: "brand" as const },
-    "/work": { n: home?.counts.myOpenTasks },
+  const attention = (kind: string) => home?.attention.find((a) => a.kind === kind)?.count;
+  const counts: Record<string, { n?: number; tone?: "brand" }> = {
+    "/": { n: home?.counts.attention, tone: "brand" },
+    "/work": { n: home ? home.day.buckets.overdue + home.day.buckets.today : undefined },
     "/collab": { n: unreadChats },
+    "/people/leave": { n: attention("leave") },
+    "/people/onboarding": { n: attention("onboarding") },
+    "/finance/invoices": { n: (attention("overdue_invoices") ?? 0) + (attention("draft_invoices") ?? 0) },
   };
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center gap-2.5 px-5">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-solid text-white shadow-xs-skeuomorphic ring-1 ring-transparent ring-inset">
+      <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-solid text-white shadow-xs-skeuomorphic">
           <Logo className="size-6" />
         </span>
-        <div className="leading-tight">
-          <div className="font-display text-md font-bold tracking-tight text-primary">Hephaestus</div>
-          <div className="text-xs text-quaternary">by Webrizen</div>
-        </div>
+        <span className="text-lg font-bold tracking-tight text-primary">Hephaestus</span>
       </div>
 
-      <div className="px-3">
-        <div className="flex items-center gap-3 rounded-xl bg-primary p-2.5 shadow-xs ring-1 ring-secondary ring-inset">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--color-brand-500),var(--color-brand-700))] font-display text-sm font-bold text-white shadow-xs-skeuomorphic">
-            {me.org.name.slice(0, 1).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-primary">{me.org.name}</div>
-            <div className="truncate text-xs capitalize text-tertiary">{me.org.roles.join(", ") || "member"}</div>
-          </div>
-          {me.edition === "cloud" ? (
-            <button
-              type="button"
-              title="Switch organization"
-              aria-label="Switch organization"
-              onClick={() => signIn("/")}
-              className="flex size-8 items-center justify-center rounded-md text-fg-quaternary transition hover:bg-primary_hover hover:text-fg-quaternary_hover"
-            >
-              <ArrowLeftRight className="size-4" />
-            </button>
-          ) : null}
-        </div>
+      <div className="px-4 pb-2">
+        <button
+          type="button"
+          onClick={onSearch}
+          className="flex h-10 w-full items-center gap-2 rounded-lg bg-primary px-3 text-md text-placeholder shadow-xs ring-1 ring-primary outline-hidden transition ring-inset hover:bg-primary_hover focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <Search className="size-5 text-fg-quaternary" />
+          <span className="flex-1 text-left">Search</span>
+          <Kbd>Ctrl K</Kbd>
+        </button>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3 pt-4">
-        <div className="px-3 pb-2 text-xs font-semibold text-quaternary">Workspace</div>
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-4 py-2" aria-label="Main">
         {MAIN_NAV.filter((n) => !n.pillar || enabled.has(n.pillar)).map((n) => (
-          <NavLink key={n.to} item={n} onNavigate={onNavigate} badge={badges[n.to]?.n} badgeTone={badges[n.to]?.tone} />
-        ))}
-        <div className="px-3 pb-2 pt-6 text-xs font-semibold text-quaternary">Admin</div>
-        {ADMIN_NAV.map((n) => (
-          <NavLink key={n.to} item={n} onNavigate={onNavigate} />
+          <SidebarItem key={n.to} item={n} counts={counts} onNavigate={onNavigate} />
         ))}
       </nav>
 
-      <div className="p-3">
-        <div className="flex items-center gap-3 rounded-xl bg-primary p-2.5 shadow-xs ring-1 ring-secondary ring-inset">
-          <Avatar name={me.user.name} src={me.user.image} className="size-9" />
-          <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-sm font-semibold text-primary">{me.user.name}</div>
-            <div className="truncate text-xs text-tertiary">{me.edition === "cloud" ? "Cloud" : "Offline edition"}</div>
-          </div>
-          <ThemeSwitch />
+      <div className="space-y-2 px-4 pb-4">
+        <SidebarItem item={SETTINGS_NAV} counts={counts} onNavigate={onNavigate} />
+        <div className="border-t border-secondary pt-3">
+          <AccountMenu me={me} />
         </div>
       </div>
     </div>
+  );
+}
+
+/* ---------------- Top bar ---------------- */
+
+function Breadcrumbs() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const detail = useDetailCrumb();
+  const crumbs: { label: string; to?: string }[] = [];
+
+  const item = [...MAIN_NAV.slice(1), SETTINGS_NAV].find((n) => isItemActive(pathname, n));
+  if (item) {
+    crumbs.push({ label: item.label, to: item.to });
+    const child = item.children?.find((c) => isChildActive(pathname, c));
+    if (child && child.to !== item.to) crumbs.push({ label: child.label, to: child.to });
+    else if (child && child.to === item.to && !detail) crumbs.push({ label: child.label });
+    if (pathname.startsWith("/finance/new") && !detail) crumbs.push({ label: "New" });
+  } else if (pathname === "/") {
+    crumbs.push({ label: "Dashboard" });
+  }
+  if (detail) crumbs.push({ label: detail });
+
+  return (
+    <nav aria-label="Breadcrumb" className="min-w-0">
+      <ol className="flex min-w-0 items-center gap-1.5">
+        <li>
+          <Link to="/" aria-label="Home" className="flex rounded-md p-1 text-fg-quaternary transition hover:bg-primary_hover hover:text-fg-quaternary_hover">
+            <House className="size-5" />
+          </Link>
+        </li>
+        {crumbs.map((c, i) => {
+          const last = i === crumbs.length - 1;
+          return (
+            <li key={`${c.label}-${i}`} className={cn("flex min-w-0 items-center gap-1.5", !last && "max-sm:hidden")}>
+              <ChevronRight className="size-4 shrink-0 text-fg-quaternary" aria-hidden />
+              {c.to && !last ? (
+                <Link to={c.to} className="truncate rounded-md px-1.5 py-1 text-sm font-semibold text-quaternary transition hover:bg-primary_hover hover:text-tertiary">
+                  {c.label}
+                </Link>
+              ) : (
+                <span aria-current="page" className="truncate rounded-md bg-primary_hover px-2 py-1 text-sm font-semibold text-secondary">
+                  {c.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 
@@ -189,17 +336,17 @@ function CreateMenu({ me }: { me: Me }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="primary" size="sm" className="h-9 gap-1.5 rounded-lg px-3">
+        <Button variant="primary" size="md">
           <Plus /> <span className="hidden sm:inline">New</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>Create</DropdownMenuLabel>
         {items.map((i) => (
           <DropdownMenuItem key={i.label} onSelect={i.go}>
             <i.icon />
             <span className="flex-1">{i.label}</span>
-            <span className="text-xs text-tertiary">{i.hint}</span>
+            <span className="text-xs font-medium text-quaternary">{i.hint}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -215,64 +362,40 @@ export function AppShell({ me }: { me: Me }) {
   useEffect(() => setMobileOpen(false), [pathname]);
 
   return (
-    <div className="flex h-dvh overflow-hidden">
-      <aside className="hidden w-[272px] shrink-0 border-r border-secondary bg-primary lg:block">
-        <Sidebar me={me} />
+    <div className="flex h-dvh overflow-hidden bg-secondary">
+      <aside className="hidden w-[280px] shrink-0 border-r border-secondary bg-primary lg:block">
+        <Sidebar me={me} onSearch={() => setPaletteOpen(true)} />
       </aside>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-overlay/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative h-full w-72 max-w-[85vw] border-r border-secondary bg-primary shadow-xl">
-            <Sidebar me={me} onNavigate={() => setMobileOpen(false)} />
+          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-overlay/70 backdrop-blur-[6px]" onClick={() => setMobileOpen(false)} />
+          <aside className="relative h-full w-[296px] max-w-[85vw] bg-primary shadow-xl">
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMobileOpen(false)}
+              className="absolute top-4 -right-12 flex size-10 items-center justify-center rounded-lg text-white/80 hover:text-white"
+            >
+              <X className="size-6" />
+            </button>
+            <Sidebar me={me} onNavigate={() => setMobileOpen(false)} onSearch={() => setPaletteOpen(true)} />
           </aside>
         </div>
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-secondary bg-primary px-4 sm:px-6">
-          <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
-            {mobileOpen ? <X /> : <Menu />}
+        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-secondary bg-primary px-4 sm:px-8">
+          <Button variant="ghost" size="icon" className="-ml-2 lg:hidden" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
+            <Menu />
           </Button>
-
-          <button
-            type="button"
-            onClick={() => setPaletteOpen(true)}
-            className="flex h-10 w-full min-w-0 max-w-md items-center gap-2 rounded-lg bg-primary px-3.5 text-md text-placeholder shadow-xs ring-1 ring-primary ring-inset transition hover:ring-border-primary focus-visible:ring-2 focus-visible:ring-brand outline-hidden"
-          >
-            <Search className="size-5 text-fg-quaternary" />
-            <span className="flex-1 truncate text-left">Search people, projects, invoices…</span>
-            <span className="hidden gap-1 sm:flex">
-              <Kbd>Ctrl</Kbd>
-              <Kbd>K</Kbd>
-            </span>
-          </button>
-
-          <div className="ml-auto flex items-center gap-1.5">
-            <CreateMenu me={me} />
+          <Breadcrumbs />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Search" onClick={() => setPaletteOpen(true)}>
+              <Search />
+            </Button>
             <NotificationBell />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className="ml-1 rounded-full ring-2 ring-transparent transition hover:ring-primary" aria-label="Account menu">
-                  <Avatar name={me.user.name} src={me.user.image} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel>
-                  <div className="truncate text-sm font-medium text-primary">{me.user.name}</div>
-                  <div className="truncate">{me.user.email}</div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/settings/preferences">Preferences</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => void signOut()}>
-                  <LogOut />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <CreateMenu me={me} />
           </div>
         </header>
 
@@ -286,14 +409,10 @@ export function AppShell({ me }: { me: Me }) {
   );
 }
 
-/** Kept for pages not yet moved to PageHero. */
-/** Page title block. The eyebrow and accent colour come from the section you're in. */
+/** Page title block for list and settings pages. */
 export function PageHeader({ title, description, actions, eyebrow, children }: { title: string; description?: ReactNode; actions?: ReactNode; eyebrow?: ReactNode; children?: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const section = [...MAIN_NAV.slice(1), ...ADMIN_NAV].find((n) => pathname === n.to || pathname.startsWith(`${n.to}/`));
-  const isAdmin = section ? ADMIN_NAV.includes(section) : false;
   return (
-    <PageHero eyebrow={eyebrow ?? (isAdmin ? "Admin" : section?.label)} tone={isAdmin ? "var(--color-brand-600)" : section?.color} title={title} summary={description} actions={actions}>
+    <PageHero eyebrow={eyebrow} title={title} summary={description} actions={actions}>
       {children}
     </PageHero>
   );

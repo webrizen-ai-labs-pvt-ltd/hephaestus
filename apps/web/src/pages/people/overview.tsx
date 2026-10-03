@@ -20,7 +20,6 @@ export function PeopleOverviewPage() {
   return (
     <PageBody>
       <PageHero
-        eyebrow="People"
         tone="var(--people)"
         title="Your team"
         summary={

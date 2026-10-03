@@ -1,15 +1,12 @@
 import { can } from "@hephaestus/core";
 import { Badge, Card, cn, EmptyState } from "@hephaestus/ui";
 import { Outlet } from "@tanstack/react-router";
-import { Banknote, Building2, FileSignature, FileText, LayoutGrid, Lock, Repeat, Settings2, Wallet } from "lucide-react";
-import { PillarNav } from "../../components/pillar-nav.tsx";
-import { useHome } from "../../lib/home.ts";
+import { Lock } from "lucide-react";
 import { STATUS_META } from "../../lib/finance.ts";
 import { useViewer } from "../../lib/viewer.ts";
 
 export function FinanceLayout() {
   const me = useViewer();
-  const { data: home } = useHome();
   const allowed = can(me.org.permissions, "invoice", "read") || can(me.org.permissions, "client", "read");
 
   if (!allowed) {
@@ -22,24 +19,8 @@ export function FinanceLayout() {
     );
   }
 
-  const overdue = home?.attention.find((a) => a.kind === "overdue_invoices")?.count;
-  const drafts = home?.attention.find((a) => a.kind === "draft_invoices")?.count;
   return (
     <div>
-      <PillarNav
-        name="Finance"
-        color="var(--finance)"
-        icon={Banknote}
-        tabs={[
-          { to: "/finance", label: "Overview", icon: LayoutGrid, exact: true },
-          { to: "/finance/invoices", label: "Invoices", icon: FileText, also: (p) => p.startsWith("/finance/new"), count: (overdue ?? 0) + (drafts ?? 0) || undefined },
-          { to: "/finance/quotes", label: "Quotes", icon: FileSignature },
-          { to: "/finance/clients", label: "Clients", icon: Building2 },
-          { to: "/finance/payments", label: "Payments", icon: Wallet },
-          { to: "/finance/retainers", label: "Retainers", icon: Repeat },
-          { to: "/finance/settings", label: "Settings", icon: Settings2 },
-        ]}
-      />
       <Outlet />
     </div>
   );

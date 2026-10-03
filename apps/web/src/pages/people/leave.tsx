@@ -547,6 +547,7 @@ export function LeavePage({ me }: { me: Me }) {
       />
       <Segmented
         aria-label="Leave views"
+        variant="underline"
         value={tab}
         onChange={(key) => navigate({ to: "/people/leave", search: { tab: key }, replace: true })}
         items={tabs.map((t) => ({ key: t.key, label: t.label, count: "count" in t ? t.count : undefined }))}

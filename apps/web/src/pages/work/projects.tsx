@@ -243,7 +243,6 @@ export function ProjectsPage({ me }: { me: Me }) {
   return (
     <WorkBody>
       <PageHero
-        eyebrow={`Work · ${many}`}
         tone="var(--work)"
         title="Everything in flight"
         summary={

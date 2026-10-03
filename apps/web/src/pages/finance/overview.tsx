@@ -159,7 +159,7 @@ export function FinanceOverviewPage({ me }: { me: Me }) {
   return (
     <FinanceBody>
       <PageHero
-        eyebrow={`Finance · ${fy}`}
+        eyebrow={fy}
         tone="var(--finance)"
         title="Money in, money owed"
         summary={

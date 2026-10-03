@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, type Me } from "../../lib/api.ts";
 import { formatDate, useApiMutation, useEmployees } from "../../lib/people.ts";
+import { useCrumb } from "../../lib/breadcrumbs.ts";
 import {
   PRIORITY_META,
   type Priority,
@@ -452,6 +453,7 @@ export function ProjectPage({ me }: { me: Me }) {
   const navigate = useNavigate();
   const openTask = useOpenTask();
   const { data: detail, isLoading, error } = useProject(id);
+  useCrumb(detail?.project.name);
   const { data: taskData } = useTasks({ projectId: id });
   const [q, setQ] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -540,9 +542,10 @@ export function ProjectPage({ me }: { me: Me }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-4">
         <Segmented
           aria-label="Project views"
+          variant="underline"
           value={view}
           onChange={(key) => navigate({ to: "/work/projects/$id", params: { id }, search: { view: key === "board" ? undefined : key }, replace: true })}
           items={views.map((v) => ({ key: v.key, label: v.label, icon: v.icon }))}

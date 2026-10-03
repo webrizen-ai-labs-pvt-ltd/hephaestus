@@ -52,7 +52,6 @@ export function MyWorkPage() {
   return (
     <WorkBody>
       <PageHero
-        eyebrow="Work · My work"
         tone="var(--work)"
         title="What's on your plate"
         summary={

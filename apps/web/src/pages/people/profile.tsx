@@ -5,6 +5,7 @@ import { ArrowLeft, Briefcase, Cake, FileText, Mail, MapPin, Paperclip, Pencil, 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../lib/api.ts";
+import { useCrumb } from "../../lib/breadcrumbs.ts";
 import {
   EMPLOYMENT_LABEL,
   formatDate,
@@ -161,6 +162,7 @@ function OffboardDialog({ open, onOpenChange, id, name }: { open: boolean; onOpe
 export function ProfilePage() {
   const { id } = useParams({ strict: false }) as { id: string };
   const { data, isLoading, error } = useEmployee(id);
+  useCrumb(data?.employee.fullName);
   const { data: balances } = useBalances(data?.access.seesPrivate || data?.access.isSelf ? id : undefined);
   const { data: runs } = useOnboardingRuns({ employeeId: id });
   const [editing, setEditing] = useState(false);

@@ -10,6 +10,7 @@ import { type ClientInfo, compactMoney, FINANCE_KEYS, money, useClient, useClien
 import { formatDate, useApiMutation } from "../../lib/people.ts";
 import { FinanceBody, StatusPill } from "./layout.tsx";
 import { displayStatus } from "../../lib/finance.ts";
+import { useCrumb } from "../../lib/breadcrumbs.ts";
 
 type Contact = { name: string; email: string | null; phone: string | null; designation: string | null; isPrimary: boolean };
 
@@ -278,6 +279,7 @@ export function ClientPage({ me }: { me: Me }) {
   const { id } = useParams({ strict: false }) as { id: string };
   const navigate = useNavigate();
   const { data, isLoading } = useClient(id);
+  useCrumb(data?.client.name);
   const { data: docs } = useDocs({ clientId: id });
   const [editing, setEditing] = useState(false);
   const archive = useApiMutation(() => api(`clients/${id}`, { method: "PATCH", body: JSON.stringify({ archived: true }) }), {

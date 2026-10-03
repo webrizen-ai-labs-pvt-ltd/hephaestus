@@ -27,6 +27,7 @@ import {
 } from "../../lib/finance.ts";
 import { formatDate, useApiMutation } from "../../lib/people.ts";
 import { useProjects } from "../../lib/work.ts";
+import { useCrumb } from "../../lib/breadcrumbs.ts";
 import { ClientDialog } from "./clients.tsx";
 import { InvoiceDocument } from "./invoice-document.tsx";
 import { FinanceBody, StatusPill } from "./layout.tsx";
@@ -367,6 +368,7 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
 export function NewDocumentPage({ me }: { me: Me }) {
   const search = useSearch({ strict: false }) as { kind?: DocKind };
   const kind: DocKind = search.kind === "quote" ? "quote" : "invoice";
+  useCrumb(`New ${KIND_LABEL[kind].one.toLowerCase()}`);
   return <Editor me={me} kind={kind} />;
 }
 
@@ -603,6 +605,7 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
 export function DocumentPage({ me }: { me: Me }) {
   const { id } = useParams({ strict: false }) as { id: string };
   const { data, isLoading, error } = useDoc(id);
+  useCrumb(data ? (data.document.number ?? `Draft ${KIND_LABEL[data.document.kind].one.toLowerCase()}`) : null);
   if (isLoading) {
     return (
       <FinanceBody>
