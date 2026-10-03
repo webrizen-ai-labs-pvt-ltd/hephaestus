@@ -832,7 +832,7 @@ export function HomePage({ me }: { me: Me }) {
   );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-8">
+    <div className="mx-auto space-y-8 px-4 py-8 sm:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-tertiary">{date}</p>
