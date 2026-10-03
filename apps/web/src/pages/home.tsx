@@ -1,29 +1,33 @@
-import { formatMoney } from "@hephaestus/core";
-import { Avatar, cn, Em, EmptyState, KpiTile, Meter, PageHero, Panel, ProgressRing, Skeleton, Sparkline } from "@hephaestus/ui";
+import { can, formatMoney } from "@hephaestus/core";
+import { Avatar, Badge, Button, CheckboxBase, cn, Em, FeaturedIcon, Segmented, Skeleton } from "@hephaestus/ui";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
   AtSign,
   Banknote,
   CalendarDays,
-  CircleCheck,
-  CircleCheckBig,
+  ChevronRight,
   FileText,
   Flag,
-  FolderKanban,
-  MessagesSquare,
+  ListPlus,
   Palmtree,
   PartyPopper,
+  Plus,
   Rocket,
   Sparkles,
-  Users,
+  CircleCheckBig,
 } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { api, type Me } from "../lib/api.ts";
-import { compactMoney } from "../lib/finance.ts";
+import { compactMoney, money, useFinanceSummary } from "../lib/finance.ts";
 import { type HomeData, useHome } from "../lib/home.ts";
 import { useApiMutation } from "../lib/people.ts";
 import { WORK_KEYS } from "../lib/work.ts";
 import { DueChip, PriorityIcon } from "./work/task-bits.tsx";
+
+/* ---------------- helpers ---------------- */
 
 function greeting() {
   const h = new Date().getHours();
@@ -34,72 +38,486 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 
 function ago(iso: string) {
   const s = Math.round((Date.now() - Date.parse(iso)) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86_400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 60) return "Just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86_400) return `${Math.floor(s / 3600)} hr ago`;
   if (s < 7 * 86_400) return `${Math.floor(s / 86_400)}d ago`;
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-/* ---------------- Your day ---------------- */
+const pct = (now: number, before: number) => (before ? Math.round(((now - before) / before) * 100) + 0 : null);
 
-function YourDay({ data }: { data: HomeData }) {
+/** Untitled UI card: white surface, hairline ring, header with title, supporting text and actions. */
+function Card({
+  title,
+  description,
+  action,
+  children,
+  className,
+  bodyClassName,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  bodyClassName?: string;
+}) {
+  return (
+    <section className={cn("flex min-w-0 flex-col rounded-xl bg-primary shadow-xs ring-1 ring-secondary ring-inset", className)}>
+      <header className="flex flex-wrap items-start gap-4 border-b border-secondary px-5 py-4 sm:px-6">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-semibold tracking-normal text-primary">{title}</h2>
+          {description ? <p className="mt-0.5 text-sm text-tertiary">{description}</p> : null}
+        </div>
+        {action}
+      </header>
+      <div className={cn("flex-1 px-5 py-4 sm:px-6", bodyClassName)}>{children}</div>
+    </section>
+  );
+}
+
+function ViewAll({ to, children = "View all" }: { to: string; children?: ReactNode }) {
+  return (
+    <Button size="sm" variant="secondary" asChild>
+      <Link to={to}>{children}</Link>
+    </Button>
+  );
+}
+
+/* ---------------- metric cards ---------------- */
+
+function Trend({ value, suffix = "vs last month", goodWhenUp = true }: { value: number | null; suffix?: string; goodWhenUp?: boolean }) {
+  if (value === null) return <span className="text-sm font-medium whitespace-nowrap text-tertiary">New this period</span>;
+  const up = value >= 0;
+  const good = up === goodWhenUp || value === 0;
+  return (
+    <span className="flex items-center gap-2 text-sm">
+      <span
+        className={cn(
+          "inline-flex items-center gap-0.5 rounded-full py-0.5 pr-2 pl-1.5 text-xs font-medium ring-1 ring-inset",
+          value === 0
+            ? "bg-utility-neutral-50 text-utility-neutral-700 ring-utility-neutral-200"
+            : good
+              ? "bg-utility-green-50 text-utility-green-700 ring-utility-green-200"
+              : "bg-utility-red-50 text-utility-red-700 ring-utility-red-200",
+        )}
+      >
+        {up ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}
+        {Math.abs(value)}%
+      </span>
+      <span className="truncate font-medium text-tertiary">{suffix}</span>
+    </span>
+  );
+}
+
+/** A small trend line for a metric card: one series, no axes, the latest point marked. */
+function MiniChart({ values, color }: { values: number[]; color: string }) {
+  const w = 120;
+  const h = 56;
+  if (values.length < 2) return <div className="h-12 w-24" />;
+  const max = Math.max(1, ...values);
+  const step = w / (values.length - 1);
+  const pts = values.map((v, i) => [i * step, h - 4 - (v / max) * (h - 10)] as const);
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const id = `mini-${color.replace(/[^a-z0-9]/gi, "")}`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-12 w-24 shrink-0 overflow-visible" preserveAspectRatio="none" aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.24" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${w},${h} L0,${h} Z`} fill={`url(#${id})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  trend,
+  chart,
+  footer,
+  to,
+}: {
+  label: string;
+  value: ReactNode;
+  trend: ReactNode;
+  chart?: ReactNode;
+  footer?: string;
+  to: string;
+}) {
+  return (
+    <section className="flex min-w-0 flex-col rounded-xl bg-primary shadow-xs ring-1 ring-secondary ring-inset">
+      <div className="flex flex-1 flex-col gap-4 px-5 pt-5 pb-5">
+        <h3 className="text-md font-semibold tracking-normal text-primary">{label}</h3>
+        <div className="flex items-center justify-between gap-4">
+          <p className="min-w-0 truncate text-display-sm font-semibold tracking-tight text-primary tabular-nums">{value}</p>
+          {chart}
+        </div>
+        <div className="-mt-1 min-w-0">{trend}</div>
+      </div>
+      <div className="flex justify-end border-t border-secondary px-5 py-3">
+        <Link to={to} className="inline-flex items-center gap-1 text-sm font-semibold text-brand-secondary hover:text-brand-secondary_hover">
+          {footer ?? "View details"}
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function Metrics({ data, me }: { data: HomeData; me: Me }) {
+  const enabled = new Set(me.settings.enabledPillars);
+  const v = data.work.velocity.map((x) => x.done);
+  const doneThisWeek = v.slice(7).reduce((a, b) => a + b, 0);
+  const donePrevWeek = v.slice(0, 7).reduce((a, b) => a + b, 0);
+  const f = data.finance;
+  const cards: ReactNode[] = [];
+
+  if (enabled.has("work")) {
+    cards.push(
+      <Metric
+        key="tasks"
+        label="Tasks completed"
+        value={doneThisWeek}
+        trend={<Trend value={pct(doneThisWeek, donePrevWeek)} suffix="vs last week" />}
+        chart={<MiniChart values={v} color="var(--color-brand-600)" />}
+        footer="Open My work"
+        to="/work"
+      />,
+      <Metric
+        key="open"
+        label="Open tasks"
+        value={data.work.open}
+        trend={
+          <span className="text-sm font-medium text-tertiary">
+            {data.work.overdue ? <span className="text-error-primary">{data.work.overdue} overdue</span> : "Nothing overdue"} · {data.work.inProgress} in progress
+          </span>
+        }
+        footer="View projects"
+        to="/work/projects"
+      />,
+    );
+  }
+  if (enabled.has("finance") && f) {
+    cards.push(
+      <Metric
+        key="collected"
+        label="Collected this month"
+        value={compactMoney(f.collectedThisMonth, f.currency)}
+        trend={<Trend value={pct(f.collectedThisMonth, f.collectedLastMonth)} />}
+        chart={<MiniChart values={f.monthly.map((m) => m.amount)} color="var(--chart-collected)" />}
+        footer="View payments"
+        to="/finance/payments"
+      />,
+      <Metric
+        key="outstanding"
+        label="Outstanding"
+        value={compactMoney(f.outstanding, f.currency)}
+        trend={
+          <span className="text-sm font-medium text-tertiary">
+            {f.overdue ? <span className="text-error-primary">{compactMoney(f.overdue, f.currency)} overdue</span> : "Nothing overdue"}
+          </span>
+        }
+        footer="View invoices"
+        to="/finance/invoices"
+      />,
+    );
+  }
+  if (enabled.has("people") && cards.length < 4) {
+    cards.push(
+      <Metric
+        key="people"
+        label="Team"
+        value={data.people.headcount}
+        trend={
+          <span className="flex items-center gap-2 text-sm font-medium text-tertiary">
+            {data.people.away.length ? (
+              <>
+                <span className="flex -space-x-1.5">
+                  {data.people.away.slice(0, 3).map((p) => (
+                    <Avatar key={p.id} name={p.name} src={p.image} className="size-6 ring-2 ring-bg-primary text-[9px]" />
+                  ))}
+                </span>
+                {data.people.away.length} away today
+              </>
+            ) : (
+              "Everyone's in today"
+            )}
+          </span>
+        }
+        footer="Open directory"
+        to="/people/directory"
+      />,
+    );
+  }
+  return <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{cards.slice(0, 4)}</div>;
+}
+
+/* ---------------- main chart ---------------- */
+
+type Series = { key: string; label: string; color: string; values: number[]; format: (v: number) => string };
+
+function niceTicks(max: number, count = 4) {
+  if (max <= 0) return [0, 1];
+  const raw = max / count;
+  const pow = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((n) => n * pow).find((s) => s >= raw)!;
+  return Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
+}
+
+/** Area/line chart with one y-axis, a legend, and a crosshair tooltip on hover. */
+function TrendChart({ labels, series, axis }: { labels: string[]; series: Series[]; axis: (v: number) => string }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const W = 760;
+  const H = 260;
+  const pad = { l: 52, r: 12, t: 12, b: 30 };
+  const max = Math.max(0, ...series.flatMap((s) => s.values));
+  const ticks = niceTicks(max);
+  const top = ticks.at(-1)!;
+  const x = (i: number) => pad.l + ((W - pad.l - pad.r) * i) / Math.max(1, labels.length - 1);
+  const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - v / top);
+  const path = (vals: number[]) => vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const empty = max === 0;
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+        {series.map((s) => (
+          <span key={s.key} className="flex items-center gap-2 text-sm text-tertiary">
+            <span className="size-2 rounded-full" style={{ background: s.color }} />
+            {s.label}
+          </span>
+        ))}
+      </div>
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="h-auto w-full"
+          role="img"
+          aria-label={series.map((s) => `${s.label}: ${s.values.map((v, i) => `${labels[i]} ${s.format(v)}`).join(", ")}`).join(". ")}
+          onMouseLeave={() => setHover(null)}
+        >
+          <defs>
+            {series.map((s) => (
+              <linearGradient key={s.key} id={`area-${s.key}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={s.color} stopOpacity="0.18" />
+                <stop offset="100%" stopColor={s.color} stopOpacity="0" />
+              </linearGradient>
+            ))}
+          </defs>
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="var(--color-border-secondary)" strokeWidth={1} />
+              <text x={pad.l - 10} y={y(t)} textAnchor="end" dominantBaseline="middle" className="fill-[var(--color-text-tertiary)] text-[12px]">
+                {axis(t)}
+              </text>
+            </g>
+          ))}
+          {labels.map((l, i) => (
+            <text key={l + i} x={x(i)} y={H - 8} textAnchor="middle" className="fill-[var(--color-text-tertiary)] text-[12px]">
+              {l}
+            </text>
+          ))}
+          {series.map((s) => (
+            <g key={s.key}>
+              <path d={`${path(s.values)} L${x(s.values.length - 1)},${y(0)} L${x(0)},${y(0)} Z`} fill={`url(#area-${s.key})`} />
+              <path d={path(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+          ))}
+          {hover !== null ? (
+            <g>
+              <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={H - pad.b} stroke="var(--color-border-primary)" strokeDasharray="3 3" />
+              {series.map((s) => (
+                <circle key={s.key} cx={x(hover)} cy={y(s.values[hover] ?? 0)} r={4.5} fill={s.color} stroke="var(--color-bg-primary)" strokeWidth={2} />
+              ))}
+            </g>
+          ) : null}
+          {labels.map((l, i) => {
+            const w = (W - pad.l - pad.r) / Math.max(1, labels.length - 1);
+            return <rect key={`hit-${l}-${i}`} x={x(i) - w / 2} y={0} width={w} height={H} fill="transparent" onMouseEnter={() => setHover(i)} />;
+          })}
+        </svg>
+        {hover !== null ? (
+          <div
+            className="pointer-events-none absolute top-2 z-10 min-w-44 rounded-lg bg-primary px-3 py-2.5 shadow-lg ring-1 ring-secondary_alt"
+            style={{ left: `clamp(0px, calc(${(x(hover) / W) * 100}% + 12px), calc(100% - 184px))` }}
+          >
+            <div className="mb-1.5 text-xs font-semibold text-primary">{labels[hover]}</div>
+            {series.map((s) => (
+              <div key={s.key} className="flex items-center gap-2 text-xs">
+                <span className="size-2 rounded-full" style={{ background: s.color }} />
+                <span className="text-tertiary">{s.label}</span>
+                <span className="ml-auto font-semibold text-primary tabular-nums">{s.format(s.values[hover] ?? 0)}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {empty ? <p className="absolute inset-0 flex items-center justify-center text-sm text-tertiary">Nothing to chart yet.</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function MainChart({ data, me }: { data: HomeData; me: Me }) {
+  const canFinance = me.settings.enabledPillars.includes("finance") && can(me.org.permissions, "invoice", "read");
+  const { data: fin } = useFinanceSummary();
+  const [range, setRange] = useState<"6" | "12">("12");
+
+  if (canFinance && fin) {
+    const months = fin.months.slice(-Number(range));
+    const labels = months.map((m) => new Date(`${m.month}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short" }));
+    const billed = fin.months.reduce((a, m) => a + m.billed, 0);
+    const collected = fin.months.reduce((a, m) => a + m.collected, 0);
+    return (
+      <Card
+        className="lg:col-span-8"
+        title="Billed vs collected"
+        description={
+          <>
+            {money(collected)} collected of {money(billed)} billed in the last 12 months.
+          </>
+        }
+        action={
+          <Segmented
+            aria-label="Range"
+            value={range}
+            onChange={setRange}
+            items={[
+              { key: "6", label: "6 months" },
+              { key: "12", label: "12 months" },
+            ]}
+          />
+        }
+      >
+        <TrendChart
+          labels={labels}
+          axis={(v) => compactMoney(v)}
+          series={[
+            { key: "billed", label: "Billed", color: "var(--chart-billed)", values: months.map((m) => m.billed), format: (v) => money(v) },
+            { key: "collected", label: "Collected", color: "var(--chart-collected)", values: months.map((m) => m.collected), format: (v) => money(v) },
+          ]}
+        />
+      </Card>
+    );
+  }
+
+  const v = data.work.velocity;
+  return (
+    <Card className="lg:col-span-8" title="Tasks completed" description="Across the team, last 14 days.">
+      <TrendChart
+        labels={v.map((d) => new Date(`${d.day}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" }))}
+        axis={(n) => String(Math.round(n))}
+        series={[{ key: "done", label: "Completed", color: "var(--color-brand-600)", values: v.map((d) => d.done), format: (n) => plural(n, "task") }]}
+      />
+    </Card>
+  );
+}
+
+/* ---------------- attention ---------------- */
+
+const ATTENTION_META: Record<string, { icon: typeof Sparkles; color: "brand" | "gray" | "success" | "warning" | "error" }> = {
+  leave: { icon: Palmtree, color: "success" },
+  overdue_invoices: { icon: Banknote, color: "error" },
+  draft_invoices: { icon: FileText, color: "warning" },
+  onboarding: { icon: Rocket, color: "brand" },
+  mentions: { icon: AtSign, color: "brand" },
+};
+
+function Attention({ data }: { data: HomeData }) {
+  const router = useRouter();
+  return (
+    <Card className="lg:col-span-4" title="Needs your attention" description={data.attention.length ? plural(data.counts.attention, "item") + " waiting on you" : "You're all caught up."} bodyClassName="p-0 sm:p-0">
+      {data.attention.length === 0 ? (
+        <div className="flex flex-col items-center px-6 py-12 text-center">
+          <FeaturedIcon color="success" theme="light" size="lg" icon={CircleCheckBig} />
+          <p className="mt-4 text-sm font-semibold text-primary">Nothing needs you right now</p>
+          <p className="mt-1 text-sm text-tertiary">Approvals, overdue invoices and mentions show up here.</p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-border-secondary">
+          {data.attention.map((a) => {
+            const meta = ATTENTION_META[a.kind] ?? { icon: Sparkles, color: "gray" as const };
+            return (
+              <li key={a.kind}>
+                <button
+                  type="button"
+                  onClick={() => router.history.push(a.link)}
+                  className="group flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-primary_hover sm:px-6"
+                >
+                  <FeaturedIcon color={meta.color} theme="light" size="md" icon={meta.icon} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-primary">{a.title}</span>
+                    <span className="block truncate text-sm text-tertiary">
+                      {a.amount ? <span className="font-medium text-error-primary">{formatMoney(a.amount)}</span> : null}
+                      {a.amount && a.detail ? " · " : null}
+                      {a.detail}
+                    </span>
+                  </span>
+                  <ChevronRight className="size-5 shrink-0 text-fg-quaternary transition group-hover:translate-x-0.5" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/* ---------------- tasks ---------------- */
+
+function MyTasks({ data }: { data: HomeData }) {
   const navigate = useNavigate();
-  const { buckets, tasks } = data.day;
+  const [filter, setFilter] = useState<"soon" | "overdue" | "all">("soon");
   const complete = useApiMutation((id: string) => api(`tasks/${id}`, { method: "PATCH", body: JSON.stringify({ status: "done" }) }), {
     invalidate: WORK_KEYS,
     success: "Nice. Marked as done.",
   });
-  const chips = [
-    { label: "Overdue", n: buckets.overdue, color: "var(--color-fg-error-primary)" },
-    { label: "Today", n: buckets.today, color: "var(--work)" },
-    { label: "This week", n: buckets.week, color: "var(--finance)" },
-    { label: "Later", n: buckets.later + buckets.noDate, color: "var(--color-text-tertiary)" },
-  ];
-  const finished = data.day.doneThisWeek;
-  const remaining = buckets.overdue + buckets.today + buckets.week;
+  const today = data.today;
+  const weekEnd = new Date(Date.parse(today) + 7 * 86_400_000).toISOString().slice(0, 10);
+  const tasks = data.day.tasks.filter((t) =>
+    filter === "overdue" ? Boolean(t.dueDate && t.dueDate < today) : filter === "soon" ? Boolean(t.dueDate && t.dueDate <= weekEnd) : true,
+  );
+  const b = data.day.buckets;
 
   return (
-    <Panel
-      title="Your day"
-      icon={<CircleCheckBig />}
-      tone="var(--work)"
-      meta={data.day.openTotal ? `${data.day.openTotal} open` : undefined}
-      action={
-        <Link to="/work" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
-          My work <ArrowRight className="size-3.5" />
-        </Link>
-      }
-      className="lg:col-span-7"
+    <Card
+      className="lg:col-span-8"
+      title="My tasks"
+      description={`${plural(data.day.openTotal, "open task")} · ${data.day.doneThisWeek} finished this week`}
+      action={<ViewAll to="/work">Open My work</ViewAll>}
+      bodyClassName="p-0 sm:p-0"
     >
-      <div className="grid grid-cols-4 gap-2">
-        {chips.map((c) => (
-          <div key={c.label} className="rounded-xl border border-secondary bg-secondary/60 px-3 py-2.5">
-            <div className="font-display text-2xl font-bold leading-none tabular" style={{ color: c.n ? c.color : "var(--color-text-quaternary)" }}>
-              {c.n}
-            </div>
-            <div className="mt-1 text-[11.5px] text-tertiary">{c.label}</div>
-          </div>
-        ))}
+      <div className="border-b border-secondary px-5 py-3 sm:px-6">
+        <Segmented
+          aria-label="Filter tasks"
+          value={filter}
+          onChange={setFilter}
+          items={[
+            { key: "soon", label: "Due this week", count: b.overdue + b.today + b.week },
+            { key: "overdue", label: "Overdue", count: b.overdue },
+            { key: "all", label: "All" },
+          ]}
+        />
       </div>
-
       {!data.me ? (
-        <p className="mt-5 text-sm text-tertiary">Your account isn't linked to an employee profile yet, so no tasks can be assigned to you.</p>
+        <p className="px-6 py-10 text-center text-sm text-tertiary">Your account isn't linked to an employee profile yet, so no tasks can be assigned to you.</p>
       ) : tasks.length === 0 ? (
-        <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-secondary px-4 py-5 text-sm text-tertiary">
-          <PartyPopper className="size-5 text-work" /> Nothing on your plate. Enjoy it, or pick something up from a project.
+        <div className="flex flex-col items-center px-6 py-10 text-center">
+          <FeaturedIcon color="gray" theme="light" size="lg" icon={PartyPopper} />
+          <p className="mt-4 text-sm font-semibold text-primary">{filter === "overdue" ? "Nothing overdue" : "Nothing due here"}</p>
+          <p className="mt-1 text-sm text-tertiary">Enjoy it, or pick something up from a project.</p>
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-border-secondary">
+        <ul className="divide-y divide-border-secondary">
           {tasks.map((t) => (
-            <li key={t.id} className="group flex items-center gap-3 py-2.5">
-              <button
-                type="button"
-                aria-label={`Complete "${t.title}"`}
-                onClick={() => complete.mutate(t.id)}
-                className="flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 border-primary transition-colors hover:border-success-500 hover:bg-success-solid/15"
-              >
-                <CircleCheck className="size-3 text-success-primary opacity-0 transition-opacity group-hover:opacity-100" />
+            <li key={t.id} className="group flex items-center gap-3 px-5 py-3.5 transition hover:bg-primary_hover sm:px-6">
+              <button type="button" aria-label={`Complete "${t.title}"`} onClick={() => complete.mutate(t.id)} className="rounded outline-focus-ring focus-visible:outline-2">
+                <CheckboxBase size="md" isSelected={false} className="group-hover:ring-brand" />
               </button>
               <button
                 type="button"
@@ -107,229 +525,30 @@ function YourDay({ data }: { data: HomeData }) {
                 className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
               >
                 <PriorityIcon priority={t.priority} />
-                <span className="truncate text-sm">{t.title}</span>
+                <span className="truncate text-sm font-medium text-primary">{t.title}</span>
               </button>
               {t.projectName ? (
-                <span className="hidden max-w-36 shrink-0 items-center gap-1.5 truncate rounded-md bg-secondary px-2 py-0.5 text-[11.5px] text-tertiary sm:inline-flex">
-                  <span className="size-1.5 shrink-0 rounded-full" style={{ background: t.projectColor ?? undefined }} />
-                  <span className="truncate font-mono">{t.projectKey && t.number ? `${t.projectKey}-${t.number}` : t.projectName}</span>
+                <span className="hidden max-w-40 items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium text-secondary ring-1 ring-primary ring-inset sm:inline-flex">
+                  <span className="size-1.5 shrink-0 rounded-full" style={{ background: t.projectColor ?? "var(--color-fg-quaternary)" }} />
+                  <span className="truncate">{t.projectKey && t.number ? `${t.projectKey}-${t.number}` : t.projectName}</span>
                 </span>
               ) : t.source === "onboarding" ? (
-                <span className="hidden rounded-md bg-people/15 px-2 py-0.5 text-[11.5px] text-people sm:inline">Onboarding</span>
+                <Badge tone="people" className="hidden sm:inline-flex">
+                  Onboarding
+                </Badge>
               ) : null}
-              <span className="w-16 shrink-0 text-right">
-                <DueChip date={t.dueDate} done={false} today={data.today} />
+              <span className="w-20 shrink-0 text-right">
+                <DueChip date={t.dueDate} done={false} today={today} />
               </span>
             </li>
           ))}
         </ul>
       )}
-      <div className="mt-4 flex items-center gap-3 rounded-xl bg-secondary/60 px-3.5 py-2.5 text-[13px]">
-        <ProgressRing value={(finished / Math.max(1, finished + remaining)) * 100} size={34} stroke={3.5} color="var(--color-fg-success-primary)">
-          <span className="text-[10px]">{finished}</span>
-        </ProgressRing>
-        <span className="text-tertiary">
-          <Em>{plural(finished, "task")}</Em> finished this week
-          {remaining ? <>, {remaining} still to do</> : null}.
-        </span>
-      </div>
-    </Panel>
+    </Card>
   );
 }
 
-/* ---------------- Needs attention ---------------- */
-
-const ATTENTION_META: Record<string, { icon: typeof Users; color: string }> = {
-  leave: { icon: Palmtree, color: "var(--people)" },
-  overdue_invoices: { icon: Banknote, color: "var(--color-fg-error-primary)" },
-  draft_invoices: { icon: FileText, color: "var(--finance)" },
-  onboarding: { icon: Rocket, color: "var(--people)" },
-  mentions: { icon: AtSign, color: "var(--collab)" },
-};
-
-function Attention({ data }: { data: HomeData }) {
-  const router = useRouter();
-  return (
-    <Panel title="Needs your attention" icon={<Sparkles />} tone="var(--color-brand-600)" meta={data.attention.length ? String(data.counts.attention) : undefined} className="lg:col-span-5">
-      {data.attention.length === 0 ? (
-        <EmptyState icon={<CircleCheckBig />} title="You're all caught up" description="Approvals, overdue invoices and mentions land here the moment they need you." />
-      ) : (
-        <ul className="space-y-2">
-          {data.attention.map((a) => {
-            const meta = ATTENTION_META[a.kind] ?? { icon: Sparkles, color: "var(--color-brand-600)" };
-            return (
-              <li key={a.kind}>
-                <button
-                  type="button"
-                  onClick={() => router.history.push(a.link)}
-                  className="group flex w-full items-center gap-3 rounded-xl border border-secondary bg-secondary/50 px-3.5 py-3 text-left transition-colors hover:border-primary hover:bg-secondary"
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg [&_svg]:size-[18px]" style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 14%, transparent)` }}>
-                    <meta.icon />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{a.title}</span>
-                    {a.detail || a.amount ? (
-                      <span className="block truncate text-xs text-tertiary">
-                        {a.amount ? <span className="font-mono text-error-primary">{formatMoney(a.amount)}</span> : null}
-                        {a.amount && a.detail ? " · " : null}
-                        {a.detail}
-                      </span>
-                    ) : null}
-                  </span>
-                  <ArrowRight className="size-4 shrink-0 text-tertiary transition-transform group-hover:translate-x-0.5" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Panel>
-  );
-}
-
-/* ---------------- Pillar pulse ---------------- */
-
-function Pulse({ data, me }: { data: HomeData; me: Me }) {
-  const navigate = useNavigate();
-  const enabled = new Set(me.settings.enabledPillars);
-  const f = data.finance;
-  const collectedDelta = f && f.collectedLastMonth ? Math.round(((f.collectedThisMonth - f.collectedLastMonth) / f.collectedLastMonth) * 100) + 0 : null;
-  const velocity = data.work.velocity.map((v) => v.done);
-  const doneLast7 = velocity.slice(7).reduce((a, b) => a + b, 0);
-  const donePrev7 = velocity.slice(0, 7).reduce((a, b) => a + b, 0);
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {enabled.has("people") ? (
-        <KpiTile
-          label="People"
-          icon={<Users />}
-          tone="var(--people)"
-          value={data.people.headcount}
-          hint={data.people.joinersThisMonth ? `${plural(data.people.joinersThisMonth, "new joiner")} this month` : "On the team"}
-          onClick={() => navigate({ to: "/people" })}
-          footer={
-            data.people.away.length ? (
-              <div className="flex items-center gap-2">
-                <span className="flex -space-x-1.5">
-                  {data.people.away.slice(0, 4).map((p) => (
-                    <Avatar key={p.id} name={p.name} src={p.image} className="size-6 border-2 border-bg-primary text-[9px]" />
-                  ))}
-                </span>
-                <span className="truncate text-xs text-tertiary">
-                  {data.people.away.length === 1 ? `${data.people.away[0]!.name.split(" ")[0]} is away today` : `${data.people.away.length} away today`}
-                </span>
-              </div>
-            ) : (
-              <span className="text-xs text-tertiary">Everyone's in today</span>
-            )
-          }
-        />
-      ) : null}
-      {enabled.has("work") ? (
-        <KpiTile
-          label="Open tasks"
-          icon={<FolderKanban />}
-          tone="var(--work)"
-          value={data.work.open}
-          hint={data.work.overdue ? <span className="text-error-primary">{data.work.overdue} overdue</span> : `${data.work.inProgress} in progress`}
-          trend={doneLast7 || donePrev7 ? { label: `${doneLast7} done · 7d`, good: doneLast7 >= donePrev7 ? true : null } : undefined}
-          onClick={() => navigate({ to: "/work/projects" })}
-          footer={
-            <div>
-              <Sparkline values={velocity} color="var(--work)" height={30} bars />
-              <div className="mt-1 text-[11px] text-quaternary">Tasks finished, last 14 days</div>
-            </div>
-          }
-        />
-      ) : null}
-      {enabled.has("collab") ? (
-        <KpiTile
-          label="Unread messages"
-          icon={<MessagesSquare />}
-          tone="var(--collab)"
-          value={data.counts.chat}
-          hint={data.counts.notifications ? `${plural(data.counts.notifications, "notification")} waiting` : "No notifications waiting"}
-          onClick={() => navigate({ to: "/collab" })}
-          footer={
-            <span className="inline-flex items-center gap-1 text-xs text-brand-secondary">
-              Open conversations <ArrowRight className="size-3" />
-            </span>
-          }
-        />
-      ) : null}
-      {enabled.has("finance") && f ? (
-        <KpiTile
-          label="Outstanding"
-          icon={<Banknote />}
-          tone="var(--finance)"
-          value={compactMoney(f.outstanding, f.currency)}
-          hint={f.overdue ? <span className="text-error-primary">{compactMoney(f.overdue, f.currency)} overdue</span> : "Nothing overdue"}
-          trend={collectedDelta !== null ? { label: `${collectedDelta >= 0 ? "+" : ""}${collectedDelta}% vs ${new Date(new Date().getFullYear(), new Date().getMonth() - 1).toLocaleDateString("en-IN", { month: "short" })}`, good: collectedDelta >= 0 } : undefined}
-          onClick={() => navigate({ to: "/finance" })}
-          footer={
-            <div>
-              <Sparkline values={f.monthly.map((m) => m.amount)} color="var(--chart-collected)" height={30} />
-              <div className="mt-1 flex justify-between text-[11px] text-quaternary">
-                <span>Collected, 6 months</span>
-                <span className="font-mono">{compactMoney(f.collectedThisMonth, f.currency)} this month</span>
-              </div>
-            </div>
-          }
-        />
-      ) : null}
-    </div>
-  );
-}
-
-/* ---------------- Projects, coming up, activity ---------------- */
-
-function Projects({ data }: { data: HomeData }) {
-  return (
-    <Panel
-      title="Projects in flight"
-      icon={<FolderKanban />}
-      tone="var(--work)"
-      action={
-        <Link to="/work/projects" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">
-          All projects <ArrowRight className="size-3.5" />
-        </Link>
-      }
-      className="lg:col-span-7"
-    >
-      {data.work.projects.length === 0 ? (
-        <EmptyState icon={<FolderKanban />} title="No active projects" description="Create a project to plan work on a board, with milestones and owners." />
-      ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {data.work.projects.map((p) => {
-            const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
-            return (
-              <li key={p.id}>
-                <Link to="/work/projects/$id" params={{ id: p.id }} className="flex items-center gap-3.5 rounded-xl border border-secondary bg-secondary/50 p-3.5 transition-colors hover:border-primary hover:bg-secondary">
-                  <ProgressRing value={pct} size={48} color={p.color} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded px-1.5 font-mono text-[10px] font-semibold text-white" style={{ background: p.color }}>
-                        {p.key}
-                      </span>
-                      <span className="truncate text-sm font-medium">{p.name}</span>
-                    </div>
-                    <div className="mt-1 text-xs text-tertiary">
-                      {p.done}/{p.total} done
-                      {p.overdue ? <span className="text-error-primary"> · {p.overdue} overdue</span> : null}
-                      {p.dueDate ? ` · due ${new Date(`${p.dueDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null}
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Panel>
-  );
-}
+/* ---------------- upcoming ---------------- */
 
 const UPCOMING_META = {
   holiday: { icon: PartyPopper, color: "var(--finance)" },
@@ -338,35 +557,50 @@ const UPCOMING_META = {
   task: { icon: CircleCheckBig, color: "var(--collab)" },
 } as const;
 
-function ComingUp({ data }: { data: HomeData }) {
+function Upcoming({ data }: { data: HomeData }) {
   const router = useRouter();
   const groups = new Map<string, HomeData["upcoming"]>();
   for (const u of data.upcoming) groups.set(u.date, [...(groups.get(u.date) ?? []), u]);
   return (
-    <Panel title="Coming up" icon={<CalendarDays />} tone="var(--collab)" meta="next 14 days" className="lg:col-span-5">
+    <Card className="lg:col-span-4" title="Upcoming" description="Holidays, milestones, leave and due dates · next 14 days">
       {groups.size === 0 ? (
-        <EmptyState icon={<CalendarDays />} title="A quiet fortnight" description="Holidays, milestones, leave and your due dates appear here." />
+        <p className="py-8 text-center text-sm text-tertiary">A quiet fortnight.</p>
       ) : (
-        <ol className="space-y-3">
+        <ol className="space-y-4">
           {[...groups.entries()].map(([date, items]) => {
             const d = new Date(`${date}T00:00:00`);
             const isToday = date === data.today;
             return (
-              <li key={date} className="flex gap-3">
-                <div className={cn("flex w-11 shrink-0 flex-col items-center rounded-lg border py-1", isToday ? "border-brand/50 bg-brand-solid/10" : "border-secondary bg-secondary/60")}>
-                  <span className="text-[10px] uppercase text-tertiary">{d.toLocaleDateString("en-IN", { weekday: "short" })}</span>
-                  <span className="font-display text-lg font-bold leading-tight">{d.getDate()}</span>
+              <li key={date} className="flex gap-4">
+                <div
+                  className={cn(
+                    "flex w-12 shrink-0 flex-col items-center overflow-hidden rounded-lg text-center shadow-xs ring-1 ring-inset",
+                    isToday ? "ring-brand" : "ring-secondary",
+                  )}
+                >
+                  <span className={cn("w-full py-0.5 text-[10px] font-semibold uppercase", isToday ? "bg-brand-solid text-white" : "bg-secondary text-tertiary")}>
+                    {d.toLocaleDateString("en-IN", { month: "short" })}
+                  </span>
+                  <span className="py-1 text-lg leading-none font-semibold text-primary">{d.getDate()}</span>
                 </div>
-                <ul className="min-w-0 flex-1 space-y-1.5 pt-0.5">
+                <ul className="min-w-0 flex-1 space-y-2 pt-0.5">
                   {items.map((u, i) => {
                     const meta = UPCOMING_META[u.kind];
                     return (
                       <li key={i}>
-                        <button type="button" disabled={!u.link} onClick={() => u.link && router.history.push(u.link)} className="flex w-full items-start gap-2 text-left disabled:cursor-default">
-                          <meta.icon className="mt-0.5 size-3.5 shrink-0" style={{ color: u.color ?? meta.color }} />
+                        <button
+                          type="button"
+                          disabled={!u.link}
+                          onClick={() => u.link && router.history.push(u.link)}
+                          className="flex w-full items-start gap-2 text-left enabled:hover:opacity-80 disabled:cursor-default"
+                        >
+                          <meta.icon className="mt-0.5 size-4 shrink-0" style={{ color: u.color ?? meta.color }} />
                           <span className="min-w-0">
-                            <span className="block truncate text-[13px]">{u.title}</span>
-                            {u.detail ? <span className="block truncate text-[11.5px] text-tertiary">{u.detail}</span> : null}
+                            <span className="block truncate text-sm font-medium text-primary">{u.title}</span>
+                            <span className="block truncate text-xs text-tertiary">
+                              {d.toLocaleDateString("en-IN", { weekday: "long" })}
+                              {u.detail ? ` · ${u.detail}` : ""}
+                            </span>
                           </span>
                         </button>
                       </li>
@@ -378,9 +612,52 @@ function ComingUp({ data }: { data: HomeData }) {
           })}
         </ol>
       )}
-    </Panel>
+    </Card>
   );
 }
+
+/* ---------------- projects ---------------- */
+
+function Projects({ data }: { data: HomeData }) {
+  return (
+    <Card className="lg:col-span-6" title="Projects" description="Progress on what's in flight." action={<ViewAll to="/work/projects" />}>
+      {data.work.projects.length === 0 ? (
+        <p className="py-8 text-center text-sm text-tertiary">No active projects yet.</p>
+      ) : (
+        <ul className="space-y-5">
+          {data.work.projects.map((p) => {
+            const done = p.total ? Math.round((p.done / p.total) * 100) : 0;
+            return (
+              <li key={p.id}>
+                <Link to="/work/projects/$id" params={{ id: p.id }} className="group flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-white shadow-xs-skeuomorphic" style={{ background: p.color }}>
+                    {p.key.slice(0, 3)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="truncate text-sm font-semibold text-primary group-hover:underline">{p.name}</span>
+                      <span className="shrink-0 text-sm font-medium text-tertiary tabular-nums">{done}%</span>
+                    </span>
+                    <span className="mt-2 block h-2 overflow-hidden rounded-full bg-quaternary">
+                      <span className="block h-full rounded-full transition-[width] duration-500" style={{ width: `${done}%`, background: p.color }} />
+                    </span>
+                    <span className="mt-1.5 block text-xs text-tertiary">
+                      {p.done} of {p.total} tasks
+                      {p.overdue ? <span className="text-error-primary"> · {p.overdue} overdue</span> : null}
+                      {p.dueDate ? ` · due ${new Date(`${p.dueDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/* ---------------- activity ---------------- */
 
 function describe(a: HomeData["activity"][number]) {
   const m = a.metadata;
@@ -438,72 +715,97 @@ function describe(a: HomeData["activity"][number]) {
   }
 }
 
-function Activity({ data, wide }: { data: HomeData; wide: boolean }) {
+function Activity({ data }: { data: HomeData }) {
+  const items = data.activity.slice(0, 6);
   return (
-    <Panel title="What's been happening" icon={<Sparkles />} tone="var(--finance)" className={wide ? "lg:col-span-12" : "lg:col-span-7"}>
-      {data.activity.length === 0 ? (
-        <p className="text-sm text-tertiary">Activity from across the company shows up here.</p>
+    <Card className="lg:col-span-6" title="Recent activity" description="What's been happening across the company." action={<ViewAll to="/settings/audit" />}>
+      {items.length === 0 ? (
+        <p className="py-8 text-center text-sm text-tertiary">Activity from across the company shows up here.</p>
       ) : (
-        <ol className={cn("relative grid gap-x-8 gap-y-3.5", wide && "md:grid-cols-2")}>
-          {data.activity.map((a) => (
-            <li key={a.id} className="flex items-start gap-3">
-              <Avatar name={a.actorName ?? "Hephaestus"} src={a.actorImage} className="size-7 text-[10px]" />
-              <p className="min-w-0 flex-1 pt-1 text-[13px] text-tertiary">
-                <span className="font-medium text-primary">{a.actorName ?? "Hephaestus"}</span> {describe(a)}
-              </p>
-              <span className="shrink-0 pt-1 font-mono text-[11px] text-quaternary">{ago(a.createdAt)}</span>
+        <ol>
+          {items.map((a, i) => (
+            <li key={a.id} className="relative flex gap-3 pb-5 last:pb-0">
+              {i < items.length - 1 ? <span className="absolute top-11 bottom-1 left-5 w-px bg-border-secondary" aria-hidden /> : null}
+              <Avatar name={a.actorName ?? "Hephaestus"} src={a.actorImage} className="size-10" />
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="truncate text-sm font-semibold text-primary">{a.actorName ?? "Hephaestus"}</span>
+                  <span className="shrink-0 text-xs text-tertiary">{ago(a.createdAt)}</span>
+                </div>
+                <p className="text-sm text-tertiary">{describe(a)}</p>
+              </div>
             </li>
           ))}
         </ol>
       )}
-    </Panel>
+    </Card>
   );
 }
+
+/* ---------------- setup ---------------- */
 
 function setupSteps(data: HomeData) {
   return [
     { done: true, label: "Sign in with Webrizen", to: "/" },
-    { done: data.people.headcount > 1, label: "Add your team to the directory", to: "/people/directory" },
-    { done: data.work.projects.length > 0, label: "Start your first project", to: "/work/projects" },
-    ...(data.finance ? [{ done: data.finance.monthly.some((m) => m.amount > 0) || data.finance.outstanding > 0, label: "Send your first invoice", to: "/finance" }] : []),
+    { done: data.people.headcount > 1, label: "Add your team", to: "/people/directory" },
+    { done: data.work.projects.length > 0, label: "Start a project", to: "/work/projects" },
+    ...(data.finance ? [{ done: data.finance.monthly.some((m) => m.amount > 0) || data.finance.outstanding > 0, label: "Send an invoice", to: "/finance" }] : []),
   ];
 }
 
-function GettingStarted({ data, me }: { data: HomeData; me: Me }) {
+/** A slim Untitled UI progress banner while the workspace is being set up. */
+function SetupBanner({ data }: { data: HomeData }) {
   const steps = setupSteps(data);
   const done = steps.filter((s) => s.done).length;
+  if (done === steps.length) return null;
   return (
-    <Panel title="Get set up" icon={<Rocket />} tone="var(--color-brand-600)" meta={`${done}/${steps.length}`} className="lg:col-span-5">
-      <Meter value={done} max={steps.length} color="var(--color-brand-600)" label="Setup progress" />
-      <ul className="mt-4 space-y-1">
-        {steps.map((s) => (
-          <li key={s.label}>
-            <Link to={s.to} className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-secondary">
-              {s.done ? <CircleCheck className="size-[18px] text-success-primary" /> : <span className="size-[18px] rounded-full border-2 border-primary" />}
-              <span className={s.done ? "text-tertiary line-through" : ""}>{s.label}</span>
-              {!s.done ? <ArrowRight className="ml-auto size-3.5 text-tertiary" /> : null}
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-xs text-tertiary">Welcome to {me.org.name}'s workspace.</p>
-    </Panel>
+    <section className="flex flex-col gap-4 rounded-xl bg-primary p-4 shadow-xs ring-1 ring-secondary ring-inset sm:flex-row sm:items-center sm:p-5">
+      <FeaturedIcon color="brand" theme="light" size="md" icon={Rocket} />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-primary">Finish setting up your workspace</p>
+        <div className="mt-2 flex items-center gap-3">
+          <span className="h-2 max-w-60 flex-1 overflow-hidden rounded-full bg-quaternary">
+            <span className="block h-full rounded-full bg-brand-solid" style={{ width: `${(done / steps.length) * 100}%` }} />
+          </span>
+          <span className="text-sm font-medium text-tertiary">
+            {done} of {steps.length} done
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {steps
+          .filter((s) => !s.done)
+          .map((s) => (
+            <Button key={s.label} size="sm" variant="secondary" asChild>
+              <Link to={s.to}>
+                {s.label}
+                <ArrowRight />
+              </Link>
+            </Button>
+          ))}
+      </div>
+    </section>
   );
 }
+
+/* ---------------- page ---------------- */
 
 export function HomePage({ me }: { me: Me }) {
   const { data, isLoading } = useHome();
   const firstName = me.user.name.split(" ")[0];
   const date = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+  const p = me.org.permissions;
 
   if (isLoading || !data) {
     return (
-      <div className="mx-auto space-y-6 px-4 py-8 sm:px-8">
-        <Skeleton className="h-20 w-2/3" />
-        <div className="grid gap-4 lg:grid-cols-12">
-          <Skeleton className="h-80 lg:col-span-7" />
-          <Skeleton className="h-80 lg:col-span-5" />
+      <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-8">
+        <Skeleton className="h-16 w-1/2" />
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-44" />
+          ))}
         </div>
+        <Skeleton className="h-80" />
       </div>
     );
   }
@@ -514,48 +816,71 @@ export function HomePage({ me }: { me: Me }) {
     <>
       {dueNow ? (
         <>
-          You have <Em tone="var(--work)">{plural(dueNow, "task")}</Em> {b.overdue ? "due or overdue" : "due today"}
+          You have <Em tone="var(--color-text-brand-secondary)">{plural(dueNow, "task")}</Em> {b.overdue ? "due or overdue" : "due today"}
         </>
       ) : (
         <>Nothing is due today</>
       )}
       {data.counts.attention ? (
         <>
-          , and <Em tone="var(--color-brand-600)">{plural(data.counts.attention, "thing")}</Em> waiting for you
-        </>
-      ) : null}
-      {data.finance && data.finance.overdue ? (
-        <>
-          . <Em tone="var(--color-fg-error-primary)">{compactMoney(data.finance.overdue, data.finance.currency)}</Em> in invoices is overdue
+          {" "}
+          and <Em>{plural(data.counts.attention, "thing")}</Em> waiting for you
         </>
       ) : null}
       .
     </>
   );
-  const showSetup = setupSteps(data).some((s) => !s.done);
 
   return (
-    <div className="mx-auto space-y-6 px-4 py-6 sm:px-8 sm:py-8">
-      <PageHero eyebrow={date} title={`${greeting()}, ${firstName}`} summary={summary} />
+    <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-tertiary">{date}</p>
+          <h1 className="mt-1 text-display-xs font-semibold text-primary sm:text-display-sm">
+            {greeting()}, {firstName}
+          </h1>
+          <p className="mt-1 text-md text-tertiary">{summary}</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {can(p, "task", "create") ? (
+            <Button variant="secondary" asChild>
+              <Link to="/work">
+                <ListPlus /> New task
+              </Link>
+            </Button>
+          ) : null}
+          {me.settings.enabledPillars.includes("finance") && can(p, "invoice", "create") ? (
+            <Button variant="primary" asChild>
+              <Link to="/finance/new" search={{ kind: "invoice" }}>
+                <Plus /> New invoice
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      </header>
 
-      <div className="rise rise-1 grid gap-4 lg:grid-cols-12">
-        <YourDay data={data} />
+      <SetupBanner data={data} />
+
+      <Metrics data={data} me={me} />
+
+      <div className="grid gap-5 lg:grid-cols-12">
+        <MainChart data={data} me={me} />
         <Attention data={data} />
       </div>
 
-      <div className="rise rise-2">
-        <Pulse data={data} me={me} />
+      <div className="grid gap-5 lg:grid-cols-12">
+        <MyTasks data={data} />
+        <Upcoming data={data} />
       </div>
 
-      <div className="rise rise-3 grid gap-4 lg:grid-cols-12">
+      <div className="grid gap-5 lg:grid-cols-12">
         <Projects data={data} />
-        <ComingUp data={data} />
+        <Activity data={data} />
       </div>
 
-      <div className="rise rise-4 grid gap-4 lg:grid-cols-12">
-        <Activity data={data} wide={!showSetup} />
-        {showSetup ? <GettingStarted data={data} me={me} /> : null}
-      </div>
+      <p className="flex items-center justify-center gap-2 pb-2 text-xs text-quaternary">
+        <CalendarDays className="size-3.5" /> Updated live as your team works.
+      </p>
     </div>
   );
 }
