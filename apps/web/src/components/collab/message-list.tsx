@@ -25,6 +25,8 @@ function formatBytes(n: number) {
 
 function MessageItem({ m, meId, grouped, canModerate }: { m: Message; meId?: string; grouped: boolean; canModerate: boolean }) {
   const [editing, setEditing] = useState(false);
+  // The picker opens in a portal, outside the row: keep the toolbar shown while it's open.
+  const [picking, setPicking] = useState(false);
   const mine = m.author?.id === meId;
   const react = useApiMutation((emoji: string) => api(`collab/messages/${m.id}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) }), {
     invalidate: COLLAB_KEYS,
@@ -48,7 +50,7 @@ function MessageItem({ m, meId, grouped, canModerate }: { m: Message; meId?: str
   const editable = m.body.replace(MENTION_RE, (_, id: string) => `@${names[id] ?? "someone"}`);
 
   return (
-    <div className={cn("group relative flex gap-3 px-4 hover:bg-secondary/40", grouped ? "py-0.5" : "pt-3 pb-0.5", m.isDecision && "bg-finance/5")}>
+    <div className={cn("group relative flex gap-3 px-4 hover:bg-secondary/40", picking && "bg-secondary/40", grouped ? "py-0.5" : "pt-3 pb-0.5", m.isDecision && "bg-finance/5")}>
       <div className="w-8 shrink-0">
         {grouped ? (
           <span className="invisible block pt-0.5 text-right font-mono text-[10px] text-tertiary group-hover:visible">{time(m.createdAt)}</span>
@@ -127,8 +129,8 @@ function MessageItem({ m, meId, grouped, canModerate }: { m: Message; meId?: str
       </div>
 
       {!editing ? (
-        <div className="absolute -top-3 right-4 hidden items-center rounded-lg border border-secondary bg-primary shadow-sm group-hover:flex group-focus-within:flex">
-          <Popover>
+        <div className={cn("absolute -top-3 right-4 hidden items-center rounded-lg border border-secondary bg-primary shadow-sm group-hover:flex group-focus-within:flex", picking && "flex")}>
+          <Popover open={picking} onOpenChange={setPicking}>
             <PopoverTrigger asChild>
               <button type="button" aria-label="Add reaction" className="rounded-md p-1.5 text-tertiary hover:bg-secondary hover:text-primary">
                 <SmilePlus className="size-4" />
@@ -136,7 +138,16 @@ function MessageItem({ m, meId, grouped, canModerate }: { m: Message; meId?: str
             </PopoverTrigger>
             <PopoverContent className="flex w-auto gap-0.5 p-1" align="end">
               {QUICK_REACTIONS.map((e) => (
-                <button key={e} type="button" onClick={() => react.mutate(e)} className="rounded-md p-1.5 text-lg leading-none hover:bg-secondary" aria-label={`React with ${e}`}>
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => {
+                    react.mutate(e);
+                    setPicking(false);
+                  }}
+                  className="rounded-md p-1.5 text-lg leading-none hover:bg-secondary"
+                  aria-label={`React with ${e}`}
+                >
                   {e}
                 </button>
               ))}
