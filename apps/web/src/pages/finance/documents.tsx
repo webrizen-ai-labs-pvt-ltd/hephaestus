@@ -265,8 +265,9 @@ function Editor({ me, kind, initial }: { me: Me; kind: DocKind; initial?: DocDet
       if (id) await api(`finance/documents/${id}`, { method: "PATCH", body: JSON.stringify(body) });
       else id = (await api<{ document: { id: string } }>("finance/documents", { method: "POST", body: JSON.stringify({ ...body, kind }) })).document.id;
       if (andIssue) {
-        const r = await api<{ number: string; emailed: boolean }>(`finance/documents/${id}/issue`, { method: "POST", body: JSON.stringify({ email: true }) });
-        toast.success(`${KIND_LABEL[kind].one} ${r.number} issued${r.emailed ? " and emailed" : ""}`);
+        const r = await api<{ number: string; emailed: boolean; emailError: string | null }>(`finance/documents/${id}/issue`, { method: "POST", body: JSON.stringify({ email: true }) });
+        if (r.emailed || !r.emailError) toast.success(`${KIND_LABEL[kind].one} ${r.number} issued${r.emailed ? " and emailed to the client" : ""}`);
+        else toast.warning(`${KIND_LABEL[kind].one} ${r.number} issued, but not emailed`, { description: `${r.emailError}. You can copy the client link from the document instead.` });
       } else toast.success("Draft saved");
       return id;
     },

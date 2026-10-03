@@ -22,6 +22,7 @@ import type { AppEnv } from "../context.ts";
 import { forbid, hasPermission, notFound, orgWorkSettings } from "../helpers.ts";
 import { requirePermission } from "../middleware.ts";
 import { likePattern, validate } from "../validate.ts";
+import { MAIL_REASON } from "./email.ts";
 import {
   createPaymentLink,
   emailClient,
@@ -288,9 +289,11 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       }
 
       const [sent] = await deps.db.select().from(invoices).where(eq(invoices.id, inv.id));
-      const emailed = email ? await emailClient(deps, settings.legalName ?? org.name, sent!, token, "issued").catch(() => false) : false;
+      const mail = email ? await emailClient(deps, settings, org.name, sent!, token, "issued") : null;
+      const emailed = Boolean(mail?.sent);
       await audit(c, `${inv.kind}.issued`, { type: inv.kind, id: inv.id }, { number, emailed });
-      return c.json({ number, emailed, publicUrl: `/i/${token}` });
+      // Tell the user why it wasn't emailed, so a missing setup is never silent.
+      return c.json({ number, emailed, emailError: mail && !mail.sent ? MAIL_REASON[mail.reason] + (mail.error ? `: ${mail.error}` : "") : null, publicUrl: `/i/${token}` });
     },
   )
 
@@ -300,8 +303,8 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     const inv = await loadDoc(c, c.req.param("id"));
     if (inv.kind !== "invoice" || !["sent", "partially_paid"].includes(inv.status)) throw new HTTPException(409, { message: "Only unpaid invoices need reminders" });
     const settings = await loadSettings(deps.db, org.id);
-    const sent = await emailClient(deps, settings.legalName ?? org.name, inv, await linkToken(deps, inv.id), "reminder");
-    if (!sent) throw new HTTPException(422, { message: "Couldn't email: add the client's email address, and set up email for this workspace" });
+    const mail = await emailClient(deps, settings, org.name, inv, await linkToken(deps, inv.id), "reminder");
+    if (!mail.sent) throw new HTTPException(422, { message: `Couldn't send the reminder. ${MAIL_REASON[mail.reason]}${mail.error ? `: ${mail.error}` : "."}` });
     await deps.db.update(invoices).set({ lastReminderAt: new Date() }).where(eq(invoices.id, inv.id));
     await audit(c, "invoice.reminded", { type: "invoice", id: inv.id });
     return c.json({ ok: true });

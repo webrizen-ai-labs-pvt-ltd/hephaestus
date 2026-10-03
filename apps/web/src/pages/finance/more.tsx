@@ -1,7 +1,7 @@
 import { can, INDIAN_STATES, isValidGstin, stateOfGstin, supplyTypeFor } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, KpiTile, Select, Textarea, Toggle } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, FeaturedIcon, Field, Input, KpiTile, Select, Textarea, Toggle } from "@hephaestus/ui";
 import { Link } from "@tanstack/react-router";
-import { Check, Copy, CreditCard, Plus, Repeat, Trash2 } from "lucide-react";
+import { Check, Copy, CreditCard, Mail, Plus, Repeat, Send, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "../../components/app-shell.tsx";
@@ -300,6 +300,42 @@ export function RetainersPage({ me }: { me: Me }) {
 
 /* ---------------- Settings ---------------- */
 
+/** Whether invoice email works, where it comes from, where replies go, and a test send. */
+function EmailCard({ enabled, from, replyTo, canManage }: { enabled: boolean; from: string | null; replyTo: string | null; canManage: boolean }) {
+  const test = useApiMutation(() => api<{ to: string; sent: boolean; message: string | null }>("finance/settings/test-email", { method: "POST" }), {
+    invalidate: [],
+    onSuccess: (r) => (r.sent ? toast.success(`Test email sent to ${r.to}`, { description: "Check your inbox (and spam, the first time)." }) : toast.error("Test email not sent", { description: r.message ?? undefined })),
+  });
+  return (
+    <Card className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
+      <FeaturedIcon color={enabled ? "success" : "warning"} theme="light" size="lg" icon={Mail} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold">Invoice email</h2>
+          <Badge tone={enabled ? "success" : "warning"} dot pill>
+            {enabled ? "Connected" : "Not set up"}
+          </Badge>
+        </div>
+        <p className="mt-1 text-sm text-tertiary">
+          {enabled ? (
+            <>
+              Invoices, quotes and reminders are sent from <span className="font-medium text-secondary">{from}</span>. Client replies go to{" "}
+              <span className="font-medium text-secondary">{replyTo ?? "nowhere yet: add a billing email below"}</span>.
+            </>
+          ) : (
+            "Hephaestus can't email clients yet. Issued invoices still get a shareable link. Your administrator connects an email service (Resend) to turn this on."
+          )}
+        </p>
+      </div>
+      {canManage ? (
+        <Button onClick={() => test.mutate(undefined)} disabled={test.isPending}>
+          <Send /> {test.isPending ? "Sending…" : "Send test email"}
+        </Button>
+      ) : null}
+    </Card>
+  );
+}
+
 export function FinanceSettingsPage({ me }: { me: Me }) {
   const canManage = can(me.org.permissions, "settings", "manage");
   const { data } = useFinanceSettings();
@@ -387,6 +423,8 @@ export function FinanceSettingsPage({ me }: { me: Me }) {
   return (
     <FinanceBody className="max-w-4xl">
       <PageHeader title="Finance settings" description="Appears on every invoice. Only admins can change these." />
+
+      <EmailCard enabled={data.email.enabled} from={data.email.from} replyTo={s.email} canManage={canManage} />
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Your business</h2>

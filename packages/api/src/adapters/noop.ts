@@ -6,5 +6,6 @@ export const noopRealtime: Realtime = { publish: async () => {} };
 /** Mailer that logs instead of sending (local development). */
 export const consoleMailer: Mailer = {
   enabled: false,
-  send: async (m) => console.info(`[mail] to=${m.to} subject="${m.subject}"`),
+  send: async (m) => console.info(`[mail] not sent (email isn't set up) to=${m.to} subject="${m.subject}"
+${m.text ?? ""}`),
 };

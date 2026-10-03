@@ -23,6 +23,7 @@ import { HTTPException } from "hono/http-exception";
 import type { ApiDeps } from "../context.ts";
 import { nextSequence } from "../helpers.ts";
 import { sha256Hex } from "../secrets.ts";
+import { deliver, mailDate, type MailResult, renderEmail } from "./email.ts";
 
 export type Settings = typeof financeSettings.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
@@ -145,33 +146,38 @@ export async function refreshPaid(db: Db, invoiceId: string) {
 
 export const docLabel = (kind: Invoice["kind"]) => ({ quote: "Quote", invoice: "Invoice", credit_note: "Credit note" })[kind];
 
-/** Email the client a link to the document (when the edition can send email). */
-export async function emailClient(deps: ApiDeps, orgName: string, inv: Invoice, token: string, kind: "issued" | "reminder") {
-  if (!deps.mailer.enabled) return false;
+/**
+ * Email the client a link to the document. Replies go to the business's own address.
+ * Never throws: returns what happened so the caller can tell the user.
+ */
+export async function emailClient(deps: ApiDeps, settings: Settings, orgName: string, inv: Invoice, token: string, kind: "issued" | "reminder"): Promise<MailResult> {
   const [client] = await deps.db.select().from(clients).where(eq(clients.id, inv.clientId));
-  if (!client?.email) return false;
+  if (!client?.email) return { sent: false, reason: "no_email" };
+  const seller = settings.legalName ?? orgName;
   const link = `${deps.appUrl.replace(/\/$/, "")}/i/${token}`;
   const label = docLabel(inv.kind);
-  const amount = formatMoney(inv.total - inv.amountPaid, inv.currency);
-  const subject =
-    kind === "reminder"
-      ? `Reminder: ${label.toLowerCase()} ${inv.number} for ${amount} is due`
-      : `${label} ${inv.number} from ${orgName}`;
+  const balance = formatMoney(inv.total - inv.amountPaid, inv.currency);
+  const overdue = kind === "reminder" && inv.dueDate && inv.dueDate < new Date().toISOString().slice(0, 10);
+  const subject = kind === "reminder" ? `Reminder: ${label.toLowerCase()} ${inv.number} for ${balance} ${overdue ? "is overdue" : "is due"}` : `${label} ${inv.number} from ${seller}`;
   const lead =
     kind === "reminder"
-      ? `This is a friendly reminder that ${label.toLowerCase()} ${inv.number} (${amount}) was due on ${inv.dueDate}.`
-      : `${orgName} has sent you ${label.toLowerCase()} ${inv.number} for ${formatMoney(inv.total, inv.currency)}${inv.dueDate && inv.kind === "invoice" ? `, due ${inv.dueDate}` : ""}.`;
-  const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
-  await deps.mailer.send({
-    to: client.email,
-    subject,
-    text: `Hello ${client.name},\n\n${lead}\n\nView${inv.kind === "invoice" ? " and pay" : ""} online: ${link}\n\nThank you,\n${orgName}`,
-    html: `<div style="font-family:system-ui,sans-serif;max-width:540px;color:#1a1715">
-<p>Hello ${esc(client.name)},</p><p>${esc(lead)}</p>
-<p><a href="${esc(link)}" style="display:inline-block;background:#ff5a1f;color:#121110;padding:11px 18px;border-radius:8px;text-decoration:none;font-weight:600">View ${esc(label.toLowerCase())}${inv.kind === "invoice" ? " and pay" : ""}</a></p>
-<p>Thank you,<br>${esc(orgName)}</p><p style="color:#999;font-size:12px">Sent with Hephaestus by Webrizen</p></div>`,
+      ? `A friendly reminder that ${label.toLowerCase()} ${inv.number} ${overdue ? `was due on ${mailDate(inv.dueDate)}` : `is due on ${mailDate(inv.dueDate)}`}. If you've already paid, thank you, and please ignore this email.`
+      : `${seller} has sent you ${label.toLowerCase()} ${inv.number}.${inv.kind === "invoice" ? " You can view it and pay online using the button below." : ""}`;
+  const rows: [string, string][] = [
+    [label, inv.number ?? "Draft"],
+    ["Date", mailDate(inv.issueDate)],
+    ...(inv.dueDate && inv.kind !== "credit_note" ? [[inv.kind === "quote" ? "Valid until" : "Due", mailDate(inv.dueDate)] as [string, string]] : []),
+    [kind === "reminder" || inv.amountPaid ? "Balance due" : "Amount", kind === "reminder" || inv.amountPaid ? balance : formatMoney(inv.total, inv.currency)],
+  ];
+  const { html, text } = renderEmail({
+    greeting: `Hello ${client.name},`,
+    lead,
+    rows,
+    cta: { label: `View ${label.toLowerCase()}${inv.kind === "invoice" ? " and pay" : ""}`, href: link },
+    signOff: `Thank you,\n${seller}`,
+    footnote: settings.email ? `Questions? Just reply to this email to reach ${seller}.` : undefined,
   });
-  return true;
+  return deliver(deps.mailer, { to: client.email, subject, html, text, replyTo: settings.email });
 }
 
 /* ---------------- Razorpay ---------------- */
@@ -264,7 +270,8 @@ async function issueRetainerPeriod(deps: ApiDeps, orgId: string, r: typeof recur
     const { token } = await issue(deps, fresh!, settings);
     const [org] = await db.select({ name: orgs.name }).from(orgs).where(eq(orgs.id, orgId));
     const [sent] = await db.select().from(invoices).where(eq(invoices.id, inv!.id));
-    await emailClient(deps, settings.legalName ?? org!.name, sent!, token, "issued").catch((e) => console.error("Retainer email failed", e));
+    const mail = await emailClient(deps, settings, org!.name, sent!, token, "issued");
+    if (!mail.sent && mail.reason === "failed") console.error("Retainer email failed", mail.error);
   }
   return true;
 }
@@ -308,7 +315,7 @@ export async function sendDueReminders(deps: ApiDeps, orgId: string, today: stri
   let sent = 0;
   for (const inv of overdue) {
     const token = await linkToken(deps, inv.id);
-    if (await emailClient(deps, settings.legalName ?? org!.name, inv, token, "reminder").catch(() => false)) {
+    if ((await emailClient(deps, settings, org!.name, inv, token, "reminder")).sent) {
       await db.update(invoices).set({ lastReminderAt: new Date() }).where(eq(invoices.id, inv.id));
       sent++;
     }

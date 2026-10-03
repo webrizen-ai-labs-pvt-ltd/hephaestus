@@ -10,6 +10,7 @@ import { notFound } from "../helpers.ts";
 import { requirePermission } from "../middleware.ts";
 import { likePattern, validate } from "../validate.ts";
 import { loadSettings } from "./service.ts";
+import { deliver, MAIL_REASON, renderEmail } from "./email.ts";
 
 const text = (max: number) =>
   z
@@ -136,7 +137,27 @@ export const financeSetupRoutes = new Hono<AppEnv>()
     return c.json({
       settings: { ...safe, razorpayConnected: Boolean(s.razorpayKeyId && razorpayKeySecretEnc), webhookConfigured: Boolean(razorpayWebhookSecretEnc) },
       webhookUrl: `${c.get("deps").appUrl.replace(/\/$/, "")}/api/v1/public/razorpay/${c.get("org").id}/webhook`,
+      email: { enabled: c.get("deps").mailer.enabled, from: c.get("deps").mailer.from ?? null },
     });
+  })
+
+  /** Send a sample invoice email to yourself, to check email delivery end to end. */
+  .post("/finance/settings/test-email", requirePermission("settings", "manage"), async (c) => {
+    const deps = c.get("deps");
+    const viewer = c.get("viewer")!;
+    const s = await loadSettings(deps.db, c.get("org").id);
+    const seller = s.legalName ?? c.get("org").name;
+    const { html, text } = renderEmail({
+      greeting: `Hello ${viewer.name},`,
+      lead: `This is a test from Hephaestus. If you're reading it, invoice emails from ${seller} will reach your clients, and their replies will go to ${s.email ?? "the address in Finance settings (none set yet)"}.`,
+      rows: [
+        ["Sent from", deps.mailer.from ?? "(not configured)"],
+        ["Replies go to", s.email ?? "(not set)"],
+      ],
+      signOff: `Thank you,\n${seller}`,
+    });
+    const result = await deliver(deps.mailer, { to: viewer.email, subject: `Test email from ${seller}`, html, text, replyTo: s.email });
+    return c.json({ to: viewer.email, ...result, message: result.sent ? null : MAIL_REASON[result.reason] + (result.error ? `: ${result.error}` : "") });
   })
 
   .patch("/finance/settings", requirePermission("settings", "manage"), validate("json", settingsInput), async (c) => {

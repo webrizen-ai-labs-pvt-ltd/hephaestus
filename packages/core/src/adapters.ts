@@ -38,10 +38,14 @@ export interface MailMessage {
   subject: string;
   html: string;
   text?: string;
+  /** Where replies go (the business's own address), since mail is sent from a no-reply sender. */
+  replyTo?: string | null;
 }
 
 export interface Mailer {
   readonly enabled: boolean;
+  /** The sender address, shown in settings. */
+  readonly from?: string;
   send(message: MailMessage): Promise<void>;
 }
 

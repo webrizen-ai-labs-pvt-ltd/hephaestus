@@ -218,7 +218,7 @@ export const useClients = (q?: string) => useQuery({ queryKey: ["clients", q ?? 
 export const useClient = (id: string) =>
   useQuery({ queryKey: ["client", id], queryFn: () => api<{ client: ClientInfo & { id: string; email: string | null; phone: string | null }; contacts: { id: string; name: string; email: string | null; phone: string | null; designation: string | null; isPrimary: boolean }[] }>(`clients/${id}`) });
 export const useFinanceSettings = () =>
-  useQuery({ queryKey: ["finance-settings"], queryFn: () => api<{ settings: FinanceSettings; webhookUrl: string }>("finance/settings") });
+  useQuery({ queryKey: ["finance-settings"], queryFn: () => api<{ settings: FinanceSettings; webhookUrl: string; email: { enabled: boolean; from: string | null } }>("finance/settings") });
 export const useTaxRates = () => useQuery({ queryKey: ["finance-tax-rates"], queryFn: () => api<{ taxRates: TaxRate[] }>("finance/tax-rates") });
 export const useItems = () => useQuery({ queryKey: ["finance-items"], queryFn: () => api<{ items: Item[] }>("finance/items") });
 export const usePayments = () =>
