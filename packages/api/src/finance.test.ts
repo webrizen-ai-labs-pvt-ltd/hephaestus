@@ -248,3 +248,108 @@ describe("sellers without a GSTIN", () => {
     expect(Number(got.json.lines[0]!.taxRate)).toBe(0);
   });
 });
+
+describe("instalments", () => {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+  type Row = { id: string; seq: number; dueDate: string; principal: number; interest: number; interestTax: number; total: number; amountPaid: number; status: string; interestInvoice: { id: string; number: string } | null };
+  type Schedule = { plan: { emi: number; count: number; status: string }; installments: Row[] };
+  const schedule = async (id: string) => (await t.call<{ installments: Schedule | null; document: Doc & { dueDate: string } }>("fia", `/finance/documents/${id}`)).json;
+  let inv = "";
+
+  it("splits an issued invoice's balance into reducing-balance EMIs", async () => {
+    // ₹1,00,000 + 18% = ₹1,18,000
+    inv = await create(client.mumbai!, [line(100_000)], "invoice", today);
+    await t.call("ace", `/finance/documents/${inv}/issue`, {});
+    expect((await t.call("mo", `/finance/documents/${inv}/installments`, { count: 6, annualRate: 12, firstDueDate: today })).status).toBe(403);
+    expect((await t.call("fia", `/finance/documents/${inv}/installments`, { count: 6, annualRate: 12, firstDueDate: "2020-01-01" })).status).toBe(422);
+    const r = await t.call("fia", `/finance/documents/${inv}/installments`, { count: 6, annualRate: 12, interestTaxRate: 18, firstDueDate: today });
+    expect(r.status).toBe(201);
+    expect((await t.call("fia", `/finance/documents/${inv}/installments`, { count: 3, annualRate: 0, firstDueDate: today })).status).toBe(409);
+
+    const s = (await schedule(inv)).installments!;
+    expect(s.installments).toHaveLength(6);
+    expect(s.installments.reduce((a, r) => a + r.principal, 0)).toBe(11_800_000);
+    // 1% a month on ₹1,18,000.
+    expect(s.installments[0]!.interest).toBe(118_000);
+    expect(s.installments[5]!.interest).toBeLessThan(s.installments[0]!.interest);
+  });
+
+  it("bills an instalment due soon on its own GST invoice, and leaves the original alone", async () => {
+    const d = await schedule(inv);
+    const first = d.installments!.installments[0]!;
+    expect(first.status).toBe("billed");
+    expect(first.interestInvoice?.number).toMatch(/^INV\/\d\d-\d\d\/\d{4}$/);
+    expect(d.installments!.installments[1]!.status).toBe("scheduled");
+    // 18% GST on ₹1,180 interest, in-state: CGST + SGST.
+    const ii = (await detail(first.interestInvoice!.id)).document;
+    expect(ii).toMatchObject({ status: "sent", subtotal: 118_000, cgst: 10_620, sgst: 10_620 });
+    expect(first.total).toBe(first.principal + ii.total);
+    // The invoice itself is unchanged, due date included; lists show when the next instalment is due.
+    expect(d.document).toMatchObject({ total: 11_800_000, amountPaid: 0 });
+    expect(d.document.dueDate).not.toBe(first.dueDate);
+    const list = await t.call<{ documents: { id: string; dueDate: string }[] }>("fia", "/finance/documents?kind=invoice");
+    expect(list.json.documents.find((x) => x.id === inv)!.dueDate).toBe(first.dueDate);
+  });
+
+  it("routes invoice-level payments, links and reminders to the schedule", async () => {
+    expect((await t.call("ace", `/finance/documents/${inv}/payments`, { amount: 100, method: "upi", paidOn: today })).status).toBe(409);
+    expect((await t.call("ace", `/finance/documents/${inv}/payment-link`, {})).status).toBe(409);
+    const first = (await schedule(inv)).installments!.installments[0]!;
+    expect((await t.call("ace", `/finance/documents/${first.interestInvoice!.id}/payments`, { amount: 100, method: "upi", paidOn: today })).status).toBe(409);
+  });
+
+  it("splits an instalment payment between interest and principal", async () => {
+    const first = (await schedule(inv)).installments!.installments[0]!;
+    expect((await t.call("ace", `/finance/installments/${first.id}/payments`, { amount: first.total + 1, method: "upi", paidOn: today })).status).toBe(422);
+    expect((await t.call("ace", `/finance/installments/${first.id}/payments`, { amount: first.total, method: "bank_transfer", paidOn: today, reference: "UTR9" })).status).toBe(201);
+    const d = await schedule(inv);
+    expect(d.installments!.installments[0]).toMatchObject({ status: "paid", amountPaid: first.total });
+    expect(d.document).toMatchObject({ status: "partially_paid", amountPaid: first.principal });
+    expect((await detail(first.interestInvoice!.id)).document.status).toBe("paid");
+  });
+
+  it("voids both parts of an instalment payment together", async () => {
+    const pays = (await detail(inv)).payments;
+    await t.call("fia", `/finance/payments/${pays[0]!.id}/void`, {});
+    const d = await schedule(inv);
+    expect(d.installments!.installments[0]).toMatchObject({ status: "billed", amountPaid: 0 });
+    expect(d.document.amountPaid).toBe(0);
+    expect((await detail(d.installments!.installments[0]!.interestInvoice!.id)).document.amountPaid).toBe(0);
+  });
+
+  it("takes instalment payments through Razorpay links", async () => {
+    const first = (await schedule(inv)).installments!.installments[0]!;
+    const fetchMock = vi.fn(async () => Response.json({ id: "plink_I1", short_url: "https://rzp.io/i/i1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const r = await t.call<{ url: string }>("ace", `/finance/installments/${first.id}/payment-link`, {});
+    vi.unstubAllGlobals();
+    expect(r.json.url).toBe("https://rzp.io/i/i1");
+    expect(JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body))).toMatchObject({ amount: first.total, notes: { installment_id: first.id } });
+
+    const body = JSON.stringify({
+      event: "payment_link.paid",
+      payload: { payment_link: { entity: { id: "plink_I1" } }, payment: { entity: { id: "pay_I1", amount: first.total, method: "upi", created_at: 1_790_000_000 } } },
+    });
+    const post = async () => t.app.request(`/public/razorpay/${orgId}/webhook`, { method: "POST", body, headers: { "x-razorpay-signature": await hmacSha256Hex("whsec", body), "content-type": "application/json" } });
+    expect((await post()).status).toBe(204);
+    expect((await post()).status).toBe(204);
+    const d = await schedule(inv);
+    expect(d.installments!.installments[0]!.status).toBe("paid");
+    expect(d.document.amountPaid).toBe(first.principal);
+  });
+
+  it("ages only the instalments that are late", async () => {
+    const s = await t.call<{ outstanding: number; aging: Record<string, number> }>("ace", "/finance/summary");
+    expect(s.json.aging.current).toBeGreaterThanOrEqual(11_800_000 - (await schedule(inv)).document.amountPaid);
+  });
+
+  it("cancels a plan: the rest is owed on the invoice again, by its original due date", async () => {
+    const before = (await schedule(inv)).document.amountPaid;
+    expect((await t.call("ace", `/finance/documents/${inv}/installments/cancel`, {})).status).toBe(200);
+    const d = await schedule(inv);
+    expect(d.installments).toBeNull();
+    expect(d.document.amountPaid).toBe(before);
+    // Ordinary payments work again.
+    expect((await t.call("ace", `/finance/documents/${inv}/payments`, { amount: 100, method: "upi", paidOn: today })).status).toBe(201);
+  });
+});

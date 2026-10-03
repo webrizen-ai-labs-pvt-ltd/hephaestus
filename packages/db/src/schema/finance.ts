@@ -230,6 +230,8 @@ export const payments = pgTable(
     notes: text("notes"),
     /** Gateway payment id (e.g. Razorpay pay_…); unique so webhooks can't double-count. */
     gatewayPaymentId: text("gateway_payment_id"),
+    /** Set when the payment was for an instalment of a plan (see installments). */
+    installmentId: uuid("installment_id"),
     voidedAt: timestamp("voided_at", { withTimezone: true }),
     createdBy: text("created_by"),
     createdAt: createdAt(),
@@ -237,6 +239,7 @@ export const payments = pgTable(
   (t) => [
     index("payments_invoice_idx").on(t.invoiceId),
     index("payments_org_paid_idx").on(t.orgId, t.paidOn),
+    index("payments_installment_idx").on(t.installmentId),
     uniqueIndex("payments_gateway_key").on(t.orgId, t.gatewayPaymentId).where(sql`${t.gatewayPaymentId} is not null`),
   ],
 ).enableRLS();
@@ -278,4 +281,78 @@ export const recurringInvoices = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("recurring_invoices_due_idx").on(t.active, t.nextIssueDate)],
+).enableRLS();
+
+export const INSTALLMENT_FREQUENCIES = ["monthly", "quarterly"] as const;
+export const PLAN_STATUSES = ["active", "completed", "cancelled"] as const;
+export const INSTALLMENT_STATUSES = ["scheduled", "billed", "paid", "cancelled"] as const;
+
+/**
+ * An issued invoice's balance, repaid in instalments with reducing-balance interest.
+ * The invoice itself never changes; each instalment's interest is billed on its own
+ * GST invoice when the instalment falls due.
+ */
+export const installmentPlans = pgTable(
+  "installment_plans",
+  {
+    id: id(),
+    orgId: orgId(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    /** The invoice balance the plan repays. */
+    principal: money("principal"),
+    annualRate: numeric("annual_rate", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
+    count: integer("count").notNull(),
+    frequency: text("frequency", { enum: INSTALLMENT_FREQUENCIES }).notNull().default("monthly"),
+    firstDueDate: date("first_due_date").notNull(),
+    /** GST on the interest (interest on deferred payment is part of the value of supply). */
+    interestTaxRate: numeric("interest_tax_rate", { precision: 5, scale: 2, mode: "number" }).notNull().default(18),
+    /** The invoice's due date before the plan, restored if the plan is cancelled. */
+    originalDueDate: date("original_due_date"),
+    status: text("status", { enum: PLAN_STATUSES }).notNull().default("active"),
+    createdBy: text("created_by"),
+    createdAt: createdAt(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("installment_plans_invoice_idx").on(t.invoiceId),
+    uniqueIndex("installment_plans_active_key").on(t.invoiceId).where(sql`${t.status} = 'active'`),
+  ],
+).enableRLS();
+
+export const installments = pgTable(
+  "installments",
+  {
+    id: id(),
+    orgId: orgId(),
+    planId: uuid("plan_id")
+      .notNull()
+      .references(() => installmentPlans.id, { onDelete: "cascade" }),
+    /** The invoice being repaid (the plan's invoice). */
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    seq: integer("seq").notNull(),
+    dueDate: date("due_date").notNull(),
+    principal: money("principal"),
+    interest: money("interest"),
+    /** The GST invoice for this instalment's interest, issued when it's billed. */
+    interestInvoiceId: uuid("interest_invoice_id"),
+    status: text("status", { enum: INSTALLMENT_STATUSES }).notNull().default("scheduled"),
+    /** Received so far (interest invoice first, then principal), from payments. */
+    amountPaid: money("amount_paid"),
+    billedAt: timestamp("billed_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    paymentLinkId: text("payment_link_id"),
+    paymentLinkUrl: text("payment_link_url"),
+    lastReminderAt: timestamp("last_reminder_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("installments_plan_seq_key").on(t.planId, t.seq),
+    index("installments_org_due_idx").on(t.orgId, t.status, t.dueDate),
+    index("installments_invoice_idx").on(t.invoiceId),
+    index("installments_interest_invoice_idx").on(t.interestInvoiceId),
+    index("installments_link_idx").on(t.paymentLinkId),
+  ],
 ).enableRLS();

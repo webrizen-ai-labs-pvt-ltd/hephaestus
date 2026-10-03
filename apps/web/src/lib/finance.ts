@@ -112,6 +112,30 @@ export interface DocDetail {
   project: { id: string; name: string } | null;
   seller: Seller & { razorpayConnected: boolean };
   publicUrl: string | null;
+  installments: InstallmentSchedule | null;
+  /** Set when this invoice bills the interest for an instalment of another invoice. */
+  interestFor: { invoiceId: string; seq: number } | null;
+}
+
+export type InstallmentStatus = "scheduled" | "billed" | "paid" | "cancelled";
+
+export interface InstallmentRow {
+  id: string;
+  seq: number;
+  dueDate: string;
+  principal: number;
+  interest: number;
+  interestTax: number;
+  total: number;
+  amountPaid: number;
+  status: InstallmentStatus;
+  paymentLinkUrl: string | null;
+  interestInvoice: { id: string; number: string | null } | null;
+}
+
+export interface InstallmentSchedule {
+  plan: { id: string; principal: number; annualRate: number; count: number; frequency: "monthly" | "quarterly"; interestTaxRate: number; status: "active" | "completed"; emi: number };
+  installments: InstallmentRow[];
 }
 
 export interface FinanceSettings extends Omit<Seller, "name"> {

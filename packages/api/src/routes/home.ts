@@ -21,6 +21,7 @@ import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, ne, or, sql } from "
 import { Hono } from "hono";
 import type { AppEnv } from "../context.ts";
 import { orgWorkSettings, viewerEmployee } from "../helpers.ts";
+import { effectiveDueDate } from "../finance/installments.ts";
 
 /**
  * Everything the home screen needs in one round trip: the viewer's day,
@@ -120,7 +121,7 @@ export const homeRoutes = new Hono<AppEnv>().get("/home", async (c) => {
           eq(invoices.kind, "invoice"),
           eq(invoices.currency, cur?.currency ?? "INR"),
           inArray(invoices.status, ["sent", "partially_paid"]),
-          sql`${invoices.dueDate} < ${today}`,
+          sql`${effectiveDueDate} < ${today}`,
         ),
       );
     if (od?.n) attention.push({ kind: "overdue_invoices", count: od.n, title: `${od.n} invoice${od.n === 1 ? " is" : "s are"} overdue`, amount: od.amount, link: "/finance/invoices", detail: "Send a reminder or record a payment" });
@@ -217,7 +218,7 @@ export const homeRoutes = new Hono<AppEnv>().get("/home", async (c) => {
     const [o] = await db
       .select({
         outstanding: sql<number>`coalesce(sum(${invoices.total} - ${invoices.amountPaid}), 0)`.mapWith(Number),
-        overdue: sql<number>`coalesce(sum(${invoices.total} - ${invoices.amountPaid}) filter (where ${invoices.dueDate} < ${today}), 0)`.mapWith(Number),
+        overdue: sql<number>`coalesce(sum(${invoices.total} - ${invoices.amountPaid}) filter (where ${effectiveDueDate} < ${today}), 0)`.mapWith(Number),
       })
       .from(invoices)
       .where(and(eq(invoices.orgId, org.id), eq(invoices.kind, "invoice"), eq(invoices.currency, currency), inArray(invoices.status, ["sent", "partially_paid"])));

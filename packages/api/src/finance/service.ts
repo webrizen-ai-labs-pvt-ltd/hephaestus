@@ -24,6 +24,7 @@ import type { ApiDeps } from "../context.ts";
 import { nextSequence } from "../helpers.ts";
 import { sha256Hex } from "../secrets.ts";
 import { deliver, mailDate, type MailResult, renderEmail } from "./email.ts";
+import { runInstallmentJobs } from "./installments.ts";
 
 export type Settings = typeof financeSettings.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
@@ -306,6 +307,9 @@ export async function sendDueReminders(deps: ApiDeps, orgId: string, today: stri
         inArray(invoices.status, ["sent", "partially_paid"]),
         sql`${invoices.dueDate} < ${today}`,
         or(isNull(invoices.lastReminderAt), lte(invoices.lastReminderAt, weekAgo)),
+        // Instalment plans and their interest invoices have their own reminders.
+        sql`not exists (select 1 from installment_plans ip where ip.invoice_id = ${invoices.id} and ip.status = 'active')`,
+        sql`not exists (select 1 from installments i where i.interest_invoice_id = ${invoices.id} and i.status <> 'cancelled')`,
       ),
     )
     .orderBy(asc(invoices.dueDate))
@@ -332,6 +336,7 @@ export async function runFinanceJobs(deps: ApiDeps, now = new Date()) {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: o.tz ?? "Asia/Kolkata" }).format(now);
     created += await generateDueRecurring(deps, o.id, today);
     reminded += await sendDueReminders(deps, o.id, today);
+    reminded += await runInstallmentJobs(deps, o.id, today);
   }
   return { created, reminded };
 }

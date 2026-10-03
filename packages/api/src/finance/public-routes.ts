@@ -1,11 +1,18 @@
-import { clients, invoiceLines, invoices, notifications, orgs, payments } from "@hephaestus/db";
-import { and, asc, eq } from "drizzle-orm";
+import { todayIn } from "@hephaestus/core";
+import { clients, installments, invoiceLines, invoices, notifications, orgSettings, orgs, payments } from "@hephaestus/db";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { AppEnv } from "../context.ts";
 import { hmacSha256Hex, safeEqual, sha256Hex } from "../secrets.ts";
+import { activePlan, installmentPaymentLink, payInstallment, planView } from "./installments.ts";
 import { createPaymentLink, loadSettings, refreshPaid } from "./service.ts";
+
+async function orgToday(db: AppEnv["Variables"]["deps"]["db"], orgId: string) {
+  const [s] = await db.select({ tz: orgSettings.timezone }).from(orgSettings).where(eq(orgSettings.orgId, orgId));
+  return todayIn(s?.tz ?? "Asia/Kolkata");
+}
 
 /*
  * Unauthenticated routes. The client-facing invoice page is reached with an
@@ -28,6 +35,8 @@ export const financePublicRoutes = new Hono<AppEnv>()
     const [org] = await db.select({ name: orgs.name }).from(orgs).where(eq(orgs.id, inv.orgId));
     const [client] = await db.select().from(clients).where(eq(clients.id, inv.clientId));
     const lines = await db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, inv.id)).orderBy(asc(invoiceLines.position));
+    const schedule = inv.kind === "invoice" ? await planView(db, inv.id) : null;
+    const online = Boolean(settings.razorpayKeyId && settings.razorpayKeySecretEnc);
     c.header("cache-control", "no-store");
     c.header("x-robots-tag", "noindex");
     return c.json({
@@ -72,13 +81,34 @@ export const financePublicRoutes = new Hono<AppEnv>()
         phone: settings.phone,
         bank: settings.bank,
       },
-      canPayOnline: inv.kind === "invoice" && ["sent", "partially_paid"].includes(inv.status) && Boolean(settings.razorpayKeyId && settings.razorpayKeySecretEnc),
+      installments: schedule
+        ? {
+            count: schedule.plan.count,
+            annualRate: schedule.plan.annualRate,
+            frequency: schedule.plan.frequency,
+            rows: schedule.installments.map((r) => ({ id: r.id, seq: r.seq, dueDate: r.dueDate, principal: r.principal, interest: r.interest, interestTax: r.interestTax, total: r.total, amountPaid: r.amountPaid, status: r.status })),
+          }
+        : null,
+      // With a plan, the client pays instalment by instalment (only those already billed).
+      canPayOnline: online && inv.kind === "invoice" && ["sent", "partially_paid"].includes(inv.status) && (schedule?.plan.status === "active" ? schedule.installments.some((r) => r.status === "billed") : true),
     });
   })
 
   .post("/public/invoices/:token/pay", async (c) => {
     const deps = c.get("deps");
     const inv = await byToken(deps.db, c.req.param("token"));
+    const plan = await activePlan(deps.db, inv.id);
+    if (plan) {
+      // Pay the earliest billed instalment that's still open.
+      const [next] = await deps.db
+        .select()
+        .from(installments)
+        .where(and(eq(installments.planId, plan.id), inArray(installments.status, ["billed"])))
+        .orderBy(asc(installments.seq))
+        .limit(1);
+      if (!next) throw new HTTPException(409, { message: "Nothing is due yet. You'll get an email when the next instalment is due." });
+      return c.json({ url: await installmentPaymentLink(deps, next, await loadSettings(deps.db, inv.orgId), await orgToday(deps.db, inv.orgId)) });
+    }
     // Reuse a link created for the current balance; otherwise make a new one.
     const url = inv.paymentLinkUrl ?? (await createPaymentLink(deps, inv, await loadSettings(deps.db, inv.orgId)));
     return c.json({ url });
@@ -108,6 +138,20 @@ export const financePublicRoutes = new Hono<AppEnv>()
     const link = event.payload?.payment_link?.entity;
     const pay = event.payload?.payment?.entity;
     if (!link?.id || !pay?.id || !pay.amount) return c.body(null, 204);
+    const paidOnDate = new Date((pay.created_at ?? Date.now() / 1000) * 1000).toISOString().slice(0, 10);
+
+    // An instalment's link: split between its interest invoice and the original invoice.
+    const [inst] = await db.select().from(installments).where(and(eq(installments.orgId, orgId), eq(installments.paymentLinkId, link.id)));
+    if (inst) {
+      if (inst.status === "paid" || inst.status === "cancelled") return c.body(null, 204);
+      await payInstallment(
+        c.get("deps"),
+        inst,
+        { amount: pay.amount, method: "razorpay", paidOn: paidOnDate, reference: pay.id, notes: pay.method ? `Paid online by ${pay.method}` : "Paid online", gatewayPaymentId: pay.id, createdBy: "razorpay" },
+        await orgToday(db, orgId),
+      ).catch((e) => console.error("Instalment payment from Razorpay failed", e));
+      return c.body(null, 204);
+    }
     const [inv] = await db
       .select()
       .from(invoices)

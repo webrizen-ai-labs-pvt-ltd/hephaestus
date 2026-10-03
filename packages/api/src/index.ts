@@ -14,6 +14,7 @@ import { collabRoutes } from "./routes/collab.ts";
 import { eventRoutes } from "./routes/events.ts";
 import { homeRoutes } from "./routes/home.ts";
 import { financeDocumentRoutes } from "./finance/document-routes.ts";
+import { installmentRoutes } from "./finance/installment-routes.ts";
 import { financePublicRoutes } from "./finance/public-routes.ts";
 import { financeSetupRoutes } from "./finance/setup-routes.ts";
 
@@ -37,7 +38,8 @@ const pillars = new Hono<AppEnv>()
   .route("/", eventRoutes)
   // Finance
   .route("/", financeSetupRoutes)
-  .route("/", financeDocumentRoutes);
+  .route("/", financeDocumentRoutes)
+  .route("/", installmentRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
 export { audit } from "./audit.ts";

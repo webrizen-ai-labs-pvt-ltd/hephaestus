@@ -1,7 +1,7 @@
 import { can, supplyTypeFor } from "@hephaestus/core";
 import { Avatar, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { ArrowLeft, Ban, Banknote, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, Banknote, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Split, Trash2 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "../../components/app-shell.tsx";
@@ -29,6 +29,7 @@ import { formatDate, useApiMutation } from "../../lib/people.ts";
 import { useProjects } from "../../lib/work.ts";
 import { useCrumb } from "../../lib/breadcrumbs.ts";
 import { ClientDialog } from "./clients.tsx";
+import { InstallmentsCard, SplitDialog } from "./installments.tsx";
 import { InvoiceDocument } from "./invoice-document.tsx";
 import { FinanceBody, StatusPill } from "./layout.tsx";
 import { emptyLine, LineEditor } from "./line-editor.tsx";
@@ -431,12 +432,20 @@ function RecordPaymentDialog({ open, onOpenChange, detail }: { open: boolean; on
 function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
+  const [splitting, setSplitting] = useState(false);
   const d = detail.document;
   const today = todayLocal();
-  const status = displayStatus(d, today);
+  // With an instalment plan, what matters is when the next instalment is due.
+  const nextDue = detail.installments?.plan.status === "active" ? detail.installments.installments.find((r) => r.status === "scheduled" || r.status === "billed")?.dueDate : undefined;
+  const status = displayStatus({ ...d, dueDate: nextDue ?? d.dueDate }, today);
   const balance = d.total - d.amountPaid;
   const p = me.org.permissions;
-  const unpaid = d.kind === "invoice" && (d.status === "sent" || d.status === "partially_paid");
+  const onPlan = detail.installments?.plan.status === "active";
+  // Plans and their interest invoices are paid instalment by instalment, from the schedule.
+  const unpaid = d.kind === "invoice" && (d.status === "sent" || d.status === "partially_paid") && !onPlan && !detail.interestFor;
+  // A plan and its interest invoices can't be credited or voided until the plan is cancelled.
+  const locked = onPlan || Boolean(detail.interestFor);
+  const canSplit = d.kind === "invoice" && (d.status === "sent" || d.status === "partially_paid") && !detail.installments && !detail.interestFor && can(p, "invoice", "update");
   const go = (id: string) => navigate({ to: "/finance/invoices/$id", params: { id } });
 
   const remind = useApiMutation(() => api(`finance/documents/${d.id}/remind`, { method: "POST" }), { invalidate: FINANCE_KEYS, success: "Reminder sent" });
@@ -465,6 +474,7 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
           <div className="overflow-x-auto rounded-xl border border-secondary shadow-[0_24px_64px_-32px_rgb(0_0_0/0.5)]">
             <InvoiceDocument doc={d} lines={detail.lines} seller={detail.seller} client={detail.client} className="min-w-[640px]" />
           </div>
+          {detail.installments ? <InstallmentsCard me={me} detail={detail} /> : null}
           <Card className="p-4 sm:p-6 print:hidden">
             <h2 className="mb-3 font-bold">Internal notes</h2>
             <Thread type="invoice" id={d.id} placeholder="Notes for your team (the client never sees these)" />
@@ -479,7 +489,7 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
             </div>
             <div className="mt-3 font-display text-3xl font-bold">{money(d.kind === "invoice" && d.status !== "void" ? balance : d.total, d.currency)}</div>
             <div className="text-sm text-tertiary">
-              {d.kind === "invoice" ? (d.status === "paid" ? `Paid in full${d.paidAt ? ` on ${formatDate(d.paidAt.slice(0, 10))}` : ""}` : d.status === "void" ? "Void" : `due ${formatDate(d.dueDate)}`) : `${KIND_LABEL[d.kind].one} total`}
+              {d.kind === "invoice" ? (d.status === "paid" ? `Paid in full${d.paidAt ? ` on ${formatDate(d.paidAt.slice(0, 10))}` : ""}` : d.status === "void" ? "Void" : nextDue ? `next instalment due ${formatDate(nextDue)}` : `due ${formatDate(d.dueDate)}`) : `${KIND_LABEL[d.kind].one} total`}
             </div>
             <p className="mt-1 text-xs text-tertiary">
               {detail.client.name}
@@ -492,6 +502,19 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
                 </>
               ) : null}
             </p>
+
+            {onPlan ? (
+              <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-xs text-secondary">Being paid in instalments. Record payments, links and reminders from the schedule.</p>
+            ) : null}
+            {detail.interestFor ? (
+              <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-xs text-secondary">
+                Interest for instalment {detail.interestFor.seq} of{" "}
+                <Link to="/finance/invoices/$id" params={{ id: detail.interestFor.invoiceId }} className="font-medium text-brand-secondary hover:underline">
+                  the original invoice
+                </Link>
+                . It's paid with that instalment.
+              </p>
+            ) : null}
 
             <div className="mt-4 grid gap-2">
               {unpaid && can(p, "payment", "record") ? (
@@ -513,6 +536,11 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
               {unpaid && can(p, "invoice", "send") ? (
                 <Button onClick={() => remind.mutate(undefined)} disabled={remind.isPending}>
                   <BellRing /> Send reminder
+                </Button>
+              ) : null}
+              {canSplit ? (
+                <Button onClick={() => setSplitting(true)}>
+                  <Split /> Split into instalments
                 </Button>
               ) : null}
               {d.kind === "quote" && d.status === "sent" ? (
@@ -541,12 +569,12 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
                   <Copy /> Duplicate
                 </Button>
               ) : null}
-              {d.kind === "invoice" && d.status !== "void" && can(p, "invoice", "create") ? (
+              {d.kind === "invoice" && d.status !== "void" && !locked && can(p, "invoice", "create") ? (
                 <Button variant="ghost" onClick={() => copy.mutate("credit_note")}>
                   <FilePlus2 /> Issue a credit note
                 </Button>
               ) : null}
-              {d.status !== "void" && can(p, "invoice", "void") ? (
+              {d.status !== "void" && !locked && can(p, "invoice", "void") ? (
                 <Button variant="ghost" className="text-error-primary" onClick={() => confirm(`Void ${d.number}? The number stays used, and it no longer counts as owed.`) && voidDoc.mutate(undefined)}>
                   <Ban /> Void
                 </Button>
@@ -599,6 +627,7 @@ function DocumentView({ me, detail }: { me: Me; detail: DocDetail }) {
         </aside>
       </div>
       {paying ? <RecordPaymentDialog open onOpenChange={setPaying} detail={detail} /> : null}
+      {splitting ? <SplitDialog open onOpenChange={setSplitting} detail={detail} /> : null}
     </FinanceBody>
   );
 }

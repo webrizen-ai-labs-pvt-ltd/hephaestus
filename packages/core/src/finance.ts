@@ -212,3 +212,51 @@ export function agingBucket(daysOverdue: number): "current" | "1-30" | "31-60" |
   if (daysOverdue <= 90) return "61-90";
   return "90+";
 }
+
+/* ---------------- Instalments (EMI) ---------------- */
+
+export const INSTALLMENT_FREQUENCIES = ["monthly", "quarterly"] as const;
+export type InstallmentFrequency = (typeof INSTALLMENT_FREQUENCIES)[number];
+const PERIOD_MONTHS: Record<InstallmentFrequency, number> = { monthly: 1, quarterly: 3 };
+
+/** Same day n months later, clamped to the month's last day (31 Jan + 1 month = 28/29 Feb). */
+export function addMonths(date: string, months: number) {
+  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+  const t = new Date(Date.UTC(y, m - 1 + months, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  t.setUTCDate(Math.min(d, last));
+  return t.toISOString().slice(0, 10);
+}
+
+export interface InstallmentRow {
+  seq: number;
+  dueDate: string;
+  /** Part of the invoice balance repaid by this instalment (paise). */
+  principal: number;
+  /** Interest for the period on the balance still owed (paise), before GST. */
+  interest: number;
+  /** Principal still owed after this instalment. */
+  balanceAfter: number;
+}
+
+/**
+ * Reducing-balance EMI: every instalment is the same amount; interest is charged on the
+ * balance still owed, so early instalments carry more interest and less principal.
+ * Amounts are whole paise; the last instalment absorbs rounding so principals add up exactly.
+ */
+export function emiSchedule(opts: { principal: number; annualRatePct: number; count: number; frequency: InstallmentFrequency; firstDueDate: string }) {
+  const { principal, annualRatePct, count, frequency, firstDueDate } = opts;
+  const months = PERIOD_MONTHS[frequency];
+  const i = annualRatePct / 100 / (12 / months);
+  const emi = i === 0 ? principal / count : (principal * i * (1 + i) ** count) / ((1 + i) ** count - 1);
+  const rows: InstallmentRow[] = [];
+  let balance = principal;
+  for (let k = 0; k < count; k++) {
+    const interest = Math.round(balance * i);
+    const last = k === count - 1;
+    const part = last ? balance : Math.min(balance, Math.round(emi) - interest);
+    balance -= part;
+    rows.push({ seq: k + 1, dueDate: addMonths(firstDueDate, k * months), principal: part, interest, balanceAfter: balance });
+  }
+  return { emi: Math.round(emi), rows, totalInterest: rows.reduce((a, r) => a + r.interest, 0) };
+}

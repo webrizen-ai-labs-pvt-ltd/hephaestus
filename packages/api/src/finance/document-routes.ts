@@ -23,6 +23,7 @@ import { forbid, hasPermission, notFound, orgWorkSettings } from "../helpers.ts"
 import { requirePermission } from "../middleware.ts";
 import { likePattern, validate } from "../validate.ts";
 import { MAIL_REASON } from "./email.ts";
+import { assertNotOnPlan, effectiveDueDate, installmentForInterestInvoice, planPrincipalByDueDate, planView, voidInstallmentPayment } from "./installments.ts";
 import {
   createPaymentLink,
   emailClient,
@@ -95,7 +96,8 @@ function listQuery(db: AppEnv["Variables"]["deps"]["db"]) {
       clientName: clients.name,
       projectId: invoices.projectId,
       issueDate: invoices.issueDate,
-      dueDate: invoices.dueDate,
+      // For an invoice paid in instalments: when the next instalment is due.
+      dueDate: effectiveDueDate,
       currency: invoices.currency,
       total: invoices.total,
       amountPaid: invoices.amountPaid,
@@ -138,7 +140,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
             f.status === "open"
               ? inArray(invoices.status, ["sent", "partially_paid"])
               : f.status === "overdue"
-                ? and(inArray(invoices.status, ["sent", "partially_paid"]), sql`${invoices.dueDate} < ${today}`)
+                ? and(inArray(invoices.status, ["sent", "partially_paid"]), sql`${effectiveDueDate} < ${today}`)
                 : f.status
                   ? eq(invoices.status, f.status)
                   : undefined,
@@ -168,8 +170,11 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     const [org] = await db.select({ name: orgs.name }).from(orgs).where(eq(orgs.id, inv.orgId));
     const { razorpayKeySecretEnc, razorpayWebhookSecretEnc, ...seller } = settings;
     const { publicTokenHash, ...doc } = inv;
+    const interestFor = await installmentForInterestInvoice(db, inv.id);
     return c.json({
       document: doc,
+      installments: inv.kind === "invoice" && inv.status !== "draft" ? await planView(db, inv.id) : null,
+      interestFor: interestFor && interestFor.status !== "cancelled" ? { invoiceId: interestFor.invoiceId, seq: interestFor.seq } : null,
       lines,
       payments: pays,
       related,
@@ -302,6 +307,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     const org = c.get("org");
     const inv = await loadDoc(c, c.req.param("id"));
     if (inv.kind !== "invoice" || !["sent", "partially_paid"].includes(inv.status)) throw new HTTPException(409, { message: "Only unpaid invoices need reminders" });
+    await assertNotOnPlan(deps.db, inv, "Send reminders from the instalment schedule instead.");
     const settings = await loadSettings(deps.db, org.id);
     const mail = await emailClient(deps, settings, org.name, inv, await linkToken(deps, inv.id), "reminder");
     if (!mail.sent) throw new HTTPException(422, { message: `Couldn't send the reminder. ${MAIL_REASON[mail.reason]}${mail.error ? `: ${mail.error}` : "."}` });
@@ -319,6 +325,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       .from(payments)
       .where(and(eq(payments.invoiceId, inv.id), isNull(payments.voidedAt)));
     if ((paid?.n ?? 0) > 0) throw new HTTPException(409, { message: "Void its payments first" });
+    await assertNotOnPlan(db, inv, "Cancel the plan first.");
     await db.update(invoices).set({ status: "void", voidedAt: new Date() }).where(eq(invoices.id, inv.id));
     // A voided credit note no longer reduces its invoice.
     if (inv.kind === "credit_note" && inv.relatedId) {
@@ -343,6 +350,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       if (as === "credit_note" && (src.kind !== "invoice" || src.status === "draft" || src.status === "void")) {
         throw new HTTPException(422, { message: "Credit notes are issued against issued invoices" });
       }
+      if (as === "credit_note" && src.status !== "paid") await assertNotOnPlan(db, src, "Cancel the plan before issuing a credit note.");
       const settings = await loadSettings(db, org.id);
       const { timezone } = await orgWorkSettings(db, org.id);
       const today = todayIn(timezone);
@@ -391,6 +399,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
   .post("/finance/documents/:id/payment-link", requirePermission("invoice", "send"), async (c) => {
     const deps = c.get("deps");
     const inv = await loadDoc(c, c.req.param("id"));
+    await assertNotOnPlan(deps.db, inv, "Create payment links for each instalment instead.");
     const url = await createPaymentLink(deps, inv, await loadSettings(deps.db, inv.orgId));
     await audit(c, "invoice.payment_link", { type: "invoice", id: inv.id });
     return c.json({ url });
@@ -444,6 +453,7 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
       if (inv.kind !== "invoice" || !["sent", "partially_paid"].includes(inv.status)) {
         throw new HTTPException(409, { message: "Payments are recorded against issued, unpaid invoices" });
       }
+      await assertNotOnPlan(db, inv, "Record payments against an instalment instead.");
       const balance = inv.total - inv.amountPaid;
       if (input.amount > balance) throw new HTTPException(422, { message: "That's more than what's owed on this invoice" });
       const [row] = await db
@@ -461,8 +471,11 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     const [p] = await db.select().from(payments).where(and(eq(payments.orgId, c.get("org").id), eq(payments.id, c.req.param("id"))));
     if (!p || p.voidedAt) notFound("Payment not found");
     if (p.method === "credit_note") throw new HTTPException(409, { message: "Void the credit note instead" });
-    await db.update(payments).set({ voidedAt: new Date() }).where(eq(payments.id, p.id));
-    await refreshPaid(db, p.invoiceId);
+    if (p.installmentId) await voidInstallmentPayment(db, p);
+    else {
+      await db.update(payments).set({ voidedAt: new Date() }).where(eq(payments.id, p.id));
+      await refreshPaid(db, p.invoiceId);
+    }
     await audit(c, "payment.voided", { type: "invoice", id: p.invoiceId }, { amount: p.amount });
     return c.json({ ok: true });
   })
@@ -558,17 +571,23 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
     const aging = { current: 0, "1-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
     const byClient = new Map<string, { clientId: string; name: string; outstanding: number; overdue: number }>();
     const foreign = new Map<string, number>();
+    const planned = await planPrincipalByDueDate(db, org.id);
     for (const i of open) {
       if (i.currency !== currency) {
         foreign.set(i.currency, (foreign.get(i.currency) ?? 0) + i.total - i.paid);
         continue;
       }
       const balance = i.total - i.paid;
-      const days = i.dueDate ? Math.round((Date.parse(today) - Date.parse(i.dueDate)) / 86_400_000) : 0;
-      aging[agingBucket(days)] += balance;
       const row = byClient.get(i.clientId) ?? { clientId: i.clientId, name: i.clientName, outstanding: 0, overdue: 0 };
       row.outstanding += balance;
-      if (days > 0) row.overdue += balance;
+      // An invoice paid in instalments is only late for the instalments that are.
+      const parts = planned.get(i.id) ?? [{ dueDate: i.dueDate, amount: balance }];
+      const rest = balance - parts.reduce((a, p) => a + p.amount, 0);
+      for (const p of rest > 0 ? [...parts, { dueDate: i.dueDate, amount: rest }] : parts) {
+        const days = p.dueDate ? Math.round((Date.parse(today) - Date.parse(p.dueDate)) / 86_400_000) : 0;
+        aging[agingBucket(days)] += p.amount;
+        if (days > 0) row.overdue += p.amount;
+      }
       byClient.set(i.clientId, row);
     }
 

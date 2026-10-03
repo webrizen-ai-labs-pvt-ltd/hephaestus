@@ -3,6 +3,7 @@ import {
   agingBucket,
   amountInWords,
   computeTotals,
+  emiSchedule,
   documentNumber,
   financialYear,
   formatMoney,
@@ -84,5 +85,29 @@ describe("formatting", () => {
 
   it("buckets receivables", () => {
     expect([0, 5, 45, 75, 200].map(agingBucket)).toEqual(["current", "1-30", "31-60", "61-90", "90+"]);
+  });
+});
+
+describe("EMI schedule", () => {
+  it("matches the standard reducing-balance formula", () => {
+    // ₹1,00,000 over 12 months at 12% p.a. → EMI ₹8,884.88
+    const s = emiSchedule({ principal: 10_000_000, annualRatePct: 12, count: 12, frequency: "monthly", firstDueDate: "2026-01-31" });
+    expect(s.emi).toBe(888_488);
+    expect(s.rows[0]).toMatchObject({ interest: 100_000, principal: 788_488, dueDate: "2026-01-31" });
+    expect(s.rows[1]!.dueDate).toBe("2026-02-28");
+    expect(s.rows[2]!.dueDate).toBe("2026-03-31");
+    expect(s.rows.reduce((a, r) => a + r.principal, 0)).toBe(10_000_000);
+    expect(s.rows.at(-1)!.balanceAfter).toBe(0);
+    // Interest falls as the balance is repaid.
+    expect(s.rows[11]!.interest).toBeLessThan(s.rows[0]!.interest);
+    expect(s.totalInterest).toBeGreaterThan(600_000);
+    expect(s.totalInterest).toBeLessThan(700_000);
+  });
+
+  it("splits evenly with no interest, rounding into the last instalment", () => {
+    const s = emiSchedule({ principal: 1_000_001, annualRatePct: 0, count: 3, frequency: "quarterly", firstDueDate: "2026-05-15" });
+    expect(s.rows.map((r) => r.principal)).toEqual([333_334, 333_334, 333_333]);
+    expect(s.rows.map((r) => r.interest)).toEqual([0, 0, 0]);
+    expect(s.rows.map((r) => r.dueDate)).toEqual(["2026-05-15", "2026-08-15", "2026-11-15"]);
   });
 });
