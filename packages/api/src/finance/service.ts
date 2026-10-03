@@ -308,8 +308,8 @@ export async function sendDueReminders(deps: ApiDeps, orgId: string, today: stri
         sql`${invoices.dueDate} < ${today}`,
         or(isNull(invoices.lastReminderAt), lte(invoices.lastReminderAt, weekAgo)),
         // Instalment plans and their interest invoices have their own reminders.
-        sql`not exists (select 1 from installment_plans ip where ip.invoice_id = ${invoices.id} and ip.status = 'active')`,
-        sql`not exists (select 1 from installments i where i.interest_invoice_id = ${invoices.id} and i.status <> 'cancelled')`,
+        sql`not exists (select 1 from installment_plans ip where ip.invoice_id = "invoices"."id" and ip.status = 'active')`,
+        sql`not exists (select 1 from installments i where i.interest_invoice_id = "invoices"."id" and i.status <> 'cancelled')`,
       ),
     )
     .orderBy(asc(invoices.dueDate))

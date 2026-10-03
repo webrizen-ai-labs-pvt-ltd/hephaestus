@@ -24,6 +24,8 @@ import { WorkLayout } from "./pages/work/layout.tsx";
 import { MyWorkPage } from "./pages/work/my-work.tsx";
 import { ProjectPage } from "./pages/work/project.tsx";
 import { ProjectsPage } from "./pages/work/projects.tsx";
+import { RequestsPage, ServiceRequestPage } from "./pages/work/requests.tsx";
+import { ServicesPage } from "./pages/work/services.tsx";
 import { WorkloadPage } from "./pages/work/workload.tsx";
 import { AuditPage, OrgSettingsPage, PreferencesPage } from "./pages/settings.tsx";
 import { SignInPage } from "./pages/sign-in.tsx";
@@ -145,6 +147,9 @@ const routeTree = rootRoute.addChildren([
     workPage("/", () => <MyWorkPage />),
     workPage("projects", () => <ProjectsPage me={useViewer()} />),
     workPage("projects/$id", () => <ProjectPage me={useViewer()} />, (s) => (typeof s.view === "string" ? { view: s.view } : {})),
+    workPage("requests", () => <RequestsPage me={useViewer()} />),
+    workPage("requests/$id", () => <ServiceRequestPage me={useViewer()} />),
+    workPage("services", () => <ServicesPage me={useViewer()} />),
     workPage("goals", () => <GoalsPage me={useViewer()} />),
     workPage("workload", () => <WorkloadPage />),
   ]),

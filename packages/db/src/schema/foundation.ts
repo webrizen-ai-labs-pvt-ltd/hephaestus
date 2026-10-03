@@ -56,6 +56,10 @@ export const orgSettings = pgTable("org_settings", {
   currency: text("currency").notNull().default("INR"),
   /** Working days, ISO numbering (1 = Monday … 7 = Sunday). */
   workWeek: integer("work_week").array().notNull().default(sql`array[1,2,3,4,5]::int[]`),
+  /** Show this organization in the client portal's public directory. */
+  portalListed: boolean("portal_listed").notNull().default(false),
+  /** One line about the organization for the directory and its portal home. */
+  portalTagline: text("portal_tagline"),
   updatedAt: updatedAt(),
 }).enableRLS();
 

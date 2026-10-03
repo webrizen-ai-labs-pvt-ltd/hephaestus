@@ -1,5 +1,5 @@
 import { uuidv7 } from "@hephaestus/core";
-import { attachments } from "@hephaestus/db";
+import { attachments, portalMessages } from "@hephaestus/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -26,6 +26,15 @@ async function assertOwnerAccess(c: Context<AppEnv>, ownerType: string, ownerId:
     if (write && msg.authorId !== me.id) forbid("Only the author can attach files to a message");
     return;
   }
+  if (ownerType === "portal_message") {
+    // Files on the client conversation: only on your own message.
+    const me = await viewerMember(c);
+    const [m] = await c.get("deps").db.select({ memberId: portalMessages.memberId }).from(portalMessages).where(and(eq(portalMessages.orgId, c.get("org").id), eq(portalMessages.id, ownerId)));
+    if (!m) throw new HTTPException(404, { message: "Message not found" });
+    if (write && m.memberId !== me.id) forbid("Only the author can attach files to a message");
+    return;
+  }
+  if (ownerType === "client_document" && write) forbid("Clients upload these documents from the portal");
   if (ownerType !== "employee") return;
   if (hasPermission(c, "employee", "update")) return;
   const me = await viewerEmployee(c);

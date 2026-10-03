@@ -84,6 +84,7 @@ export async function createCloudApp(env: Env) {
     realtime,
     secrets: createSecretBox(env.ENCRYPTION_KEY ?? env.SESSION_SECRET),
     appUrl: env.APP_URL,
+    portalUrl: env.PORTAL_URL,
     mailer: env.RESEND_API_KEY ? new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) : consoleMailer,
     resolveViewer: async (req) => viewers.get(req) ?? null,
   };
@@ -110,7 +111,8 @@ export async function createCloudApp(env: Env) {
   );
 
   // Rejects cross-site form/multipart posts (JSON requests are covered by CORS).
-  app.use(csrf({ origin: env.APP_URL }));
+  // The client portal is its own site and uploads files too.
+  app.use(csrf({ origin: [env.APP_URL, env.PORTAL_URL] }));
 
   // Resolve (and silently refresh) the session for every request.
   app.use(async (c, next) => {

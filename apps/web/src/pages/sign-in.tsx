@@ -41,14 +41,13 @@ export function SignInPage({ variant = "sign-in" }: { variant?: "sign-in" | "sig
             </div>
           ) : null}
 
-          <div className="relative mt-8 flex flex-col gap-3">
-            <Button variant="primary" size="lg" className="w-full" onClick={() => signIn("/")}>
-              <Logo className="size-5" />
+          <div className="relative mt-8 flex flex-row gap-2">
+            <Button variant="primary" className="w-full rounded-none rounded-l-full px-5" onClick={() => signIn("/")}>
+              <img src="https://webrizen.com/icon.png" alt="Webrizen SSO" className="size-5 mr-1" />
               {config?.sso === false && config.devAuth ? "Continue with demo account" : "Sign in with Webrizen"}
-              <ArrowRight className="ml-auto" />
             </Button>
             {config?.sso !== false ? (
-              <Button variant="secondary" size="lg" className="w-full" onClick={() => signIn("/", "create")}>
+              <Button variant="secondary" className="w-full rounded-none rounded-r-full px-5" onClick={() => signIn("/", "create")}>
                 Create a Webrizen account
               </Button>
             ) : (

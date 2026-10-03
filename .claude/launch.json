@@ -4,14 +4,32 @@
     {
       "name": "api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@hephaestus/cloud", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@hephaestus/cloud",
+        "dev"
+      ],
       "port": 8787
     },
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@hephaestus/web", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@hephaestus/web",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "portal",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@hephaestus/portal",
+        "dev"
+      ],
+      "port": 5175
     }
   ]
 }

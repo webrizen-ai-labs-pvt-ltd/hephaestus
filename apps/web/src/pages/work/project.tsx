@@ -1,7 +1,8 @@
 import { can } from "@hephaestus/core";
 import { Badge, Button, Card, cn, DateInput, EmptyState, Input, ProgressRing, Segmented, Select, Skeleton } from "@hephaestus/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Kanban, List, MessagesSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Handshake, Kanban, List, MessagesSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { ProjectClientTab } from "./requests.tsx";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, type Me } from "../../lib/api.ts";
@@ -26,7 +27,7 @@ import { useOpenTask, WorkBody } from "./layout.tsx";
 import { ProjectDialog } from "./projects.tsx";
 import { QuickAdd, StatusDot, TaskRow, todayLocal } from "./task-bits.tsx";
 
-type View = "board" | "list" | "calendar" | "milestones" | "discussion" | "settings";
+type View = "board" | "list" | "calendar" | "milestones" | "discussion" | "client" | "settings";
 
 function Filters({
   q,
@@ -502,6 +503,7 @@ export function ProjectPage({ me }: { me: Me }) {
     { key: "calendar", label: "Calendar", icon: CalendarDays },
     { key: "milestones", label: "Milestones", icon: Flag },
     { key: "discussion", label: "Discussion", icon: MessagesSquare },
+    ...(detail.project.clientId ? [{ key: "client", label: "Client", icon: Handshake }] : []),
     ...(canEdit ? [{ key: "settings", label: "Settings", icon: Settings }] : []),
   ] as const;
 
@@ -564,6 +566,7 @@ export function ProjectPage({ me }: { me: Me }) {
           <Thread type="project" id={id} placeholder={`Discuss ${detail.project.name}, or @mention someone`} />
         </Card>
       ) : null}
+      {view === "client" && detail.project.clientId ? <ProjectClientTab me={me} projectId={id} clientName={detail.project.clientName ?? "the client"} /> : null}
       {view === "settings" && canEdit ? <SettingsView detail={detail} me={me} /> : null}
     </WorkBody>
   );

@@ -105,7 +105,8 @@ export async function planView(db: Db, invoiceId: string) {
  * When an invoice's money is next due: its next unpaid instalment while a plan is active,
  * otherwise its own due date. The invoice itself keeps the due date it was issued with.
  */
-export const effectiveDueDate = sql<string | null>`coalesce((select min(i.due_date) from installments i join installment_plans ip on ip.id = i.plan_id where i.invoice_id = ${invoices.id} and ip.status = 'active' and i.status in ('scheduled', 'billed')), ${invoices.dueDate})`;
+// Qualified by hand: Drizzle leaves columns unqualified in single-table selects, which the subquery would misread.
+export const effectiveDueDate = sql<string | null>`coalesce((select min(i.due_date) from installments i join installment_plans ip on ip.id = i.plan_id where i.invoice_id = "invoices"."id" and ip.status = 'active' and i.status in ('scheduled', 'billed')), "invoices"."due_date")`;
 
 export async function createPlan(
   deps: ApiDeps,

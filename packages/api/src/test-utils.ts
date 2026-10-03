@@ -1,4 +1,4 @@
-import type { PermissionSet, Viewer } from "@hephaestus/core";
+import type { Mailer, MailMessage, PermissionSet, Viewer } from "@hephaestus/core";
 import { connectPglite, type Db, migrationsFolder } from "@hephaestus/db";
 import { consoleMailer, createApi, noopRealtime } from "./index.ts";
 import { createSecretBox } from "./secrets.ts";
@@ -14,7 +14,7 @@ export function viewer(userId: string, orgId: string, roles: string[], permissio
 }
 
 /** The real API on an in-memory Postgres; pick the viewer per request by name. */
-export async function createTestApi(viewers: Record<string, Viewer>) {
+export async function createTestApi(viewers: Record<string, Viewer>, opts: { mailer?: Mailer } = {}) {
   const conn = await connectPglite(undefined, migrationsFolder);
   const app = createApi({
     edition: "cloud",
@@ -25,7 +25,7 @@ export async function createTestApi(viewers: Record<string, Viewer>) {
       delete: async () => {},
     },
     realtime: noopRealtime,
-    mailer: consoleMailer,
+    mailer: opts.mailer ?? consoleMailer,
     secrets: createSecretBox("test-secret"),
     appUrl: "http://localhost:5173",
     resolveViewer: async (req) => viewers[req.headers.get("x-test-viewer") ?? ""] ?? null,
@@ -42,4 +42,11 @@ export async function createTestApi(viewers: Record<string, Viewer>) {
   }
 
   return { app, db: conn.db as Db, call, close: conn.close };
+}
+
+/** A mailer that keeps what it sends, for tests that read emailed codes and links. */
+export function captureMailer() {
+  const sent: MailMessage[] = [];
+  const mailer: Mailer = { enabled: true, from: "test@example.com", send: async (m) => void sent.push(m) };
+  return { mailer, sent };
 }

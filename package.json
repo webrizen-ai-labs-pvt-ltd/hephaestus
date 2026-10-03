@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev --parallel --filter=@hephaestus/web --filter=@hephaestus/cloud",
+    "dev": "turbo run dev --parallel --filter=@hephaestus/web --filter=@hephaestus/portal --filter=@hephaestus/cloud",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

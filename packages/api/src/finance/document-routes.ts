@@ -12,6 +12,7 @@ import {
   projects,
   RECURRING_FREQUENCIES,
   recurringInvoices,
+  serviceRequests,
 } from "@hephaestus/db";
 import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
@@ -291,6 +292,14 @@ export const financeDocumentRoutes = new Hono<AppEnv>()
           createdBy: c.get("viewer")!.userId,
         });
         await refreshPaid(deps.db, inv.relatedId);
+      }
+
+      // A quote for a portal request: the client can now accept it there.
+      if (inv.kind === "quote") {
+        await deps.db
+          .update(serviceRequests)
+          .set({ status: "quoted" })
+          .where(and(eq(serviceRequests.quoteId, inv.id), inArray(serviceRequests.status, ["new", "in_discussion", "accepted"])));
       }
 
       const [sent] = await deps.db.select().from(invoices).where(eq(invoices.id, inv.id));

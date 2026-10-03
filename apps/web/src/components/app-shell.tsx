@@ -42,6 +42,7 @@ import { type Me, signIn, signOut } from "../lib/api.ts";
 import { useDetailCrumb } from "../lib/breadcrumbs.ts";
 import { useChannels } from "../lib/collab.ts";
 import { useHome } from "../lib/home.ts";
+import { useRequestsSummary } from "../lib/portal.ts";
 import { isChildActive, isItemActive, MAIN_NAV, type NavItem, SETTINGS_NAV } from "../lib/nav.ts";
 import { useLiveEvents } from "../lib/realtime.ts";
 import { useTheme } from "../lib/theme.ts";
@@ -155,7 +156,7 @@ function AccountMenu({ me }: { me: Me }) {
         >
           <span className="relative">
             <Avatar name={me.user.name} src={me.user.image} className="size-10" />
-            <span className="absolute right-0 bottom-0 size-2.5 rounded-full bg-fg-success-secondary ring-[1.5px] ring-bg-primary" />
+            <span className="absolute right-1 bottom-1 size-2.5 rounded-full bg-fg-success-secondary ring-[1.5px] ring-bg-primary" />
           </span>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block truncate text-sm font-semibold text-primary">{me.user.name}</span>
@@ -225,6 +226,8 @@ function Sidebar({ me, onNavigate, onSearch }: { me: Me; onNavigate?: () => void
   const { data: home } = useHome();
   const { data: chats } = useChannels();
   const unreadChats = (chats?.channels ?? []).reduce((n, c) => n + c.unread, 0);
+  // New client requests and unread client messages from the portal.
+  const { data: requests } = useRequestsSummary(can(me.org.permissions, "client", "read") || can(me.org.permissions, "project", "create"));
   const attention = (kind: string) => home?.attention.find((a) => a.kind === kind)?.count;
   const counts: Record<string, { n?: number; tone?: "brand" }> = {
     "/": { n: home?.counts.attention, tone: "brand" },
@@ -233,6 +236,7 @@ function Sidebar({ me, onNavigate, onSearch }: { me: Me; onNavigate?: () => void
     "/people/leave": { n: attention("leave") },
     "/people/onboarding": { n: attention("onboarding") },
     "/finance/invoices": { n: (attention("overdue_invoices") ?? 0) + (attention("draft_invoices") ?? 0) },
+    "/work/requests": { n: requests ? requests.new + requests.unread : undefined, tone: "brand" },
   };
 
   return (

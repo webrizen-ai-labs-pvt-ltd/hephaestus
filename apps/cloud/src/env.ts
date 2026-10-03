@@ -5,6 +5,8 @@ const optional = z.string().trim().optional().transform((v) => (v ? v : undefine
 const schema = z.object({
   NODE_ENV: z.string().default("development"),
   APP_URL: z.url().default("http://localhost:5173"),
+  /** The client portal app (its own site). */
+  PORTAL_URL: z.url().default("http://localhost:5175"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
   /** Encrypts stored gateway secrets. Defaults to SESSION_SECRET; set separately so sessions can rotate. */
   ENCRYPTION_KEY: optional.pipe(z.string().min(32, "ENCRYPTION_KEY must be at least 32 characters").optional()),

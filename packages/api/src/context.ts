@@ -13,6 +13,8 @@ export interface ApiDeps {
   secrets: SecretBox;
   /** Public base URL of the app, for links in emails (e.g. https://hephaestus.webrizen.com). */
   appUrl: string;
+  /** Public base URL of the client portal app, for links in client emails. */
+  portalUrl?: string;
   /** Resolve the signed-in viewer from the request (cookie session), or null. */
   resolveViewer(req: Request): Promise<Viewer | null>;
 }
@@ -29,5 +31,15 @@ export type AppEnv = {
     deps: ApiDeps;
     viewer: Viewer | null;
     org: ActiveOrg;
+    /** Set on client portal routes: the signed-in client person. */
+    portalUser: PortalViewer;
   };
 };
+
+export interface PortalViewer {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  clientId: string | null;
+}

@@ -17,6 +17,8 @@ import { financeDocumentRoutes } from "./finance/document-routes.ts";
 import { installmentRoutes } from "./finance/installment-routes.ts";
 import { financePublicRoutes } from "./finance/public-routes.ts";
 import { financeSetupRoutes } from "./finance/setup-routes.ts";
+import { portalClientRoutes } from "./portal/client-routes.ts";
+import { portalStaffRoutes } from "./portal/staff-routes.ts";
 
 /**
  * Pillar routes. One group so the organization check runs once per request
@@ -39,7 +41,9 @@ const pillars = new Hono<AppEnv>()
   // Finance
   .route("/", financeSetupRoutes)
   .route("/", financeDocumentRoutes)
-  .route("/", installmentRoutes);
+  .route("/", installmentRoutes)
+  // Client portal (the team's side)
+  .route("/", portalStaffRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
 export { audit } from "./audit.ts";
@@ -68,6 +72,8 @@ export function createApi(deps: ApiDeps) {
     .route("/", fileRoutes)
     // No sign-in: client invoice links and payment webhooks (each verifies its own token/signature).
     .route("/", financePublicRoutes)
+    // The client portal: its own email-code sign-in, scoped to one organization.
+    .route("/", portalClientRoutes)
     .route("/", pillars);
 
   app.onError((err, c) => {

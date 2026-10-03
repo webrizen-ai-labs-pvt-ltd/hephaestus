@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@hephaestus/ui/theme.css";
+
+@plugin "tailwindcss-react-aria-components";
+@plugin "tailwindcss-animate";
+
+@source "../../../packages/ui/src";

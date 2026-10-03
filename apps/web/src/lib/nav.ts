@@ -65,6 +65,7 @@ export const MAIN_NAV: NavItem[] = [
     children: [
       { to: "/work", label: "My work", exact: true },
       { to: "/work/projects", label: "Projects" },
+      { to: "/work/requests", label: "Client requests", also: (p) => p.startsWith("/work/services") },
       { to: "/work/goals", label: "Goals" },
       { to: "/work/workload", label: "Workload" },
     ],
