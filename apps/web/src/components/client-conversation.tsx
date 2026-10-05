@@ -28,7 +28,10 @@ export function ClientConversation({ messages, postPath, clientName, canReply, c
   const [files, setFiles] = useState<File[]>([]);
   const input = useRef<HTMLInputElement>(null);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [messages.length]);
+  useEffect(() => {
+    // A block body: newer browsers return a Promise from scrollIntoView, which React would take as the cleanup.
+    end.current?.scrollIntoView({ block: "nearest" });
+  }, [messages.length]);
 
   const send = useApiMutation(
     async () => {
