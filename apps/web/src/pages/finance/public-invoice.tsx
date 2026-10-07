@@ -1,4 +1,4 @@
-import { Button, Logo, Skeleton } from "@hephaestus/ui";
+import { Button, Logo, Skeleton } from "@operant/ui";
 import { useQuery } from "@tanstack/react-query";
 import { CreditCard, Printer } from "lucide-react";
 import { useState } from "react";
@@ -134,7 +134,7 @@ export function PublicInvoicePage() {
           </section>
         ) : null}
         <p className="mt-6 flex items-center justify-center gap-2 text-xs text-tertiary print:hidden">
-          <Logo className="size-4" /> Sent with Hephaestus by Webrizen
+          <Logo className="size-4" /> Sent with Operant by Webrizen
         </p>
       </main>
     </div>

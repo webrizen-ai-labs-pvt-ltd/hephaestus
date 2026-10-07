@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, EmptyState, Input, Segmented, Select } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Badge, Button, Card, cn, EmptyState, Input, Segmented, Select } from "@operant/ui";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Download, LayoutGrid, List, Search, UserPlus, Users } from "lucide-react";
 import { useDeferredValue, useState } from "react";

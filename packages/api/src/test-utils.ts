@@ -1,5 +1,5 @@
-import type { Mailer, MailMessage, PermissionSet, Viewer } from "@hephaestus/core";
-import { connectPglite, type Db, migrationsFolder } from "@hephaestus/db";
+import type { Mailer, MailMessage, PermissionSet, Viewer } from "@operant/core";
+import { connectPglite, type Db, migrationsFolder } from "@operant/db";
 import { consoleMailer, createApi, noopRealtime } from "./index.ts";
 import { createSecretBox } from "./secrets.ts";
 

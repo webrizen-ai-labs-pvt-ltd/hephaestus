@@ -1,4 +1,4 @@
-# Hephaestus
+# Operant
 
 Webrizen's operations platform: **People**, **Work**, **Collaboration** and **Finance** in one place.
 One codebase ships two editions: a multi-tenant **cloud SaaS** and a standalone **offline edition** for office networks.

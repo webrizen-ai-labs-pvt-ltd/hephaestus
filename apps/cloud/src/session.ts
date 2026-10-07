@@ -1,4 +1,4 @@
-import type { ViewerOrg } from "@hephaestus/core";
+import type { ViewerOrg } from "@operant/core";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { EncryptJWT, jwtDecrypt } from "jose";

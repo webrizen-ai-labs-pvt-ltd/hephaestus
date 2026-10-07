@@ -1,5 +1,5 @@
-import { DEFAULT_TERMS, PILLARS, type Terms } from "@hephaestus/core";
-import { auditEvents, members, notifications, orgSettings } from "@hephaestus/db";
+import { DEFAULT_TERMS, PILLARS, type Terms } from "@operant/core";
+import { auditEvents, members, notifications, orgSettings } from "@operant/db";
 import { and, desc, eq, ilike, isNull, lt, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

@@ -1,5 +1,5 @@
-import { addDays, emiSchedule, formatMoney, type InstallmentFrequency } from "@hephaestus/core";
-import { clients, type Db, installmentPlans, installments, invoiceLines, invoices, orgs, payments } from "@hephaestus/db";
+import { addDays, emiSchedule, formatMoney, type InstallmentFrequency } from "@operant/core";
+import { clients, type Db, installmentPlans, installments, invoiceLines, invoices, orgs, payments } from "@operant/db";
 import { and, asc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type { ApiDeps } from "../context.ts";

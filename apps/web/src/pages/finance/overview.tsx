@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Button, cn, Em, EmptyState, KpiTile, Meter, PageHero, Panel, Sparkline } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Button, cn, Em, EmptyState, KpiTile, Meter, PageHero, Panel, Sparkline } from "@operant/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, BarChart3, FilePlus2, FileText, Hourglass, Landmark, PieChart, Receipt, Table2, TrendingUp, Users, Wallet } from "lucide-react";
 import { type ReactNode, useState } from "react";

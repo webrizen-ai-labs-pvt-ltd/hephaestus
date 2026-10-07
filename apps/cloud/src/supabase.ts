@@ -1,4 +1,4 @@
-import type { FileStore, Realtime } from "@hephaestus/core";
+import type { FileStore, Realtime } from "@operant/core";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { SignJWT } from "jose";
 import type { Env } from "./env.ts";

@@ -1,5 +1,5 @@
-import { INDIAN_STATES, isValidGstin, stateOfGstin } from "@hephaestus/core";
-import { clientContacts, clients, financeSettings, invoices, items, taxRates } from "@hephaestus/db";
+import { INDIAN_STATES, isValidGstin, stateOfGstin } from "@operant/core";
+import { clientContacts, clients, financeSettings, invoices, items, taxRates } from "@operant/db";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -149,7 +149,7 @@ export const financeSetupRoutes = new Hono<AppEnv>()
     const seller = s.legalName ?? c.get("org").name;
     const { html, text } = renderEmail({
       greeting: `Hello ${viewer.name},`,
-      lead: `This is a test from Hephaestus. If you're reading it, invoice emails from ${seller} will reach your clients, and their replies will go to ${s.email ?? "the address in Finance settings (none set yet)"}.`,
+      lead: `This is a test from Operant. If you're reading it, invoice emails from ${seller} will reach your clients, and their replies will go to ${s.email ?? "the address in Finance settings (none set yet)"}.`,
       rows: [
         ["Sent from", deps.mailer.from ?? "(not configured)"],
         ["Replies go to", s.email ?? "(not set)"],

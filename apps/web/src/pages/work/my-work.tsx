@@ -1,5 +1,5 @@
-import { addDays, isoWeekday } from "@hephaestus/core";
-import { Card, Em, EmptyState, PageHero, Panel, ProgressRing, Skeleton, Sparkline } from "@hephaestus/ui";
+import { addDays, isoWeekday } from "@operant/core";
+import { Card, Em, EmptyState, PageHero, Panel, ProgressRing, Skeleton, Sparkline } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { CalendarDays, CheckCircle2, Flag, FolderKanban, ListTodo, TrendingUp } from "lucide-react";
 import { useHome } from "../../lib/home.ts";

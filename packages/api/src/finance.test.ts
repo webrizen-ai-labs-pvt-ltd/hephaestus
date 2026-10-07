@@ -1,5 +1,5 @@
-import { allPermissions, ROLE_PRESETS } from "@hephaestus/core";
-import { invoices } from "@hephaestus/db";
+import { allPermissions, ROLE_PRESETS } from "@operant/core";
+import { invoices } from "@operant/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { hmacSha256Hex } from "./secrets.ts";

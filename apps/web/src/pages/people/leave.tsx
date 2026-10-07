@@ -1,5 +1,5 @@
-import { can, countLeaveDays } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Segmented, Select, Textarea } from "@hephaestus/ui";
+import { can, countLeaveDays } from "@operant/core";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, ProgressRing, Segmented, Select, Textarea } from "@operant/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { CalendarCheck, CalendarPlus, CalendarX2, ChevronLeft, ChevronRight, Palmtree, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";

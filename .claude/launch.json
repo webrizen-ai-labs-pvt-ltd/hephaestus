@@ -6,7 +6,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@hephaestus/cloud",
+        "@operant/cloud",
         "dev"
       ],
       "port": 8787
@@ -16,7 +16,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@hephaestus/web",
+        "@operant/web",
         "dev"
       ],
       "port": 5173
@@ -26,7 +26,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@hephaestus/portal",
+        "@operant/portal",
         "dev"
       ],
       "port": 5175

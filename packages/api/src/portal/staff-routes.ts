@@ -1,4 +1,4 @@
-import { addDays, can, todayIn } from "@hephaestus/core";
+import { addDays, can, todayIn } from "@operant/core";
 import {
   clientDocuments,
   clients,
@@ -13,7 +13,7 @@ import {
   SERVICE_BILLING,
   serviceRequests,
   services,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

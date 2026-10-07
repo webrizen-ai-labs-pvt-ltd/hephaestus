@@ -1,5 +1,5 @@
-import type { Edition, FileStore, Mailer, Realtime, Viewer } from "@hephaestus/core";
-import type { Db } from "@hephaestus/db";
+import type { Edition, FileStore, Mailer, Realtime, Viewer } from "@operant/core";
+import type { Db } from "@operant/db";
 import type { SecretBox } from "./secrets.ts";
 
 /** Everything an edition must provide to run the API. */
@@ -11,7 +11,7 @@ export interface ApiDeps {
   mailer: Mailer;
   /** Encrypts secrets stored in the database (payment gateway keys). */
   secrets: SecretBox;
-  /** Public base URL of the app, for links in emails (e.g. https://hephaestus.webrizen.com). */
+  /** Public base URL of the app, for links in emails (e.g. https://operant.webrizen.com). */
   appUrl: string;
   /** Public base URL of the client portal app, for links in client emails. */
   portalUrl?: string;
@@ -20,7 +20,7 @@ export interface ApiDeps {
 }
 
 export interface ActiveOrg {
-  /** Hephaestus org row id (always use this for org_id columns). */
+  /** Operant org row id (always use this for org_id columns). */
   id: string;
   name: string;
   slug: string;

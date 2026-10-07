@@ -1,4 +1,4 @@
-import { addDays, isIsoDate, isoWeekday, nextOccurrence, positionBetween, todayIn } from "@hephaestus/core";
+import { addDays, isIsoDate, isoWeekday, nextOccurrence, positionBetween, todayIn } from "@operant/core";
 import {
   employees,
   labels,
@@ -14,7 +14,7 @@ import {
   taskLabels,
   tasks,
   workflowStages,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { type Context, Hono } from "hono";

@@ -1,4 +1,4 @@
-import type { PermissionSet, Pillar, Terms } from "@hephaestus/core";
+import type { PermissionSet, Pillar, Terms } from "@operant/core";
 import { useQuery } from "@tanstack/react-query";
 
 export class ApiError extends Error {

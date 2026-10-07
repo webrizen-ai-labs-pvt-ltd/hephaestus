@@ -1,4 +1,4 @@
-import { Avatar, Card, cn, Em, EmptyState } from "@hephaestus/ui";
+import { Avatar, Card, cn, Em, EmptyState } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, Network } from "lucide-react";
 import { useMemo, useState } from "react";

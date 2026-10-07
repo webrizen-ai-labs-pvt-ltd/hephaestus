@@ -1,5 +1,5 @@
-import { countLeaveDays, isIsoDate, todayIn } from "@hephaestus/core";
-import { employees, HALF_DAY, holidays, LEAVE_STATUSES, leaveRequests, leaveTypes, members } from "@hephaestus/db";
+import { countLeaveDays, isIsoDate, todayIn } from "@operant/core";
+import { employees, HALF_DAY, holidays, LEAVE_STATUSES, leaveRequests, leaveTypes, members } from "@operant/db";
 import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Context } from "hono";

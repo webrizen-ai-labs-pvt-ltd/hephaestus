@@ -13,7 +13,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { cn } from "@hephaestus/ui";
+import { cn } from "@operant/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { GitBranch, Link2, Repeat } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

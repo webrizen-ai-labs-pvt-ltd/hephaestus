@@ -14,7 +14,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { uuidv7 } from "@hephaestus/core";
+import { uuidv7 } from "@operant/core";
 import { members, orgs } from "./foundation.ts";
 
 const id = () => uuid("id").primaryKey().$defaultFn(uuidv7);

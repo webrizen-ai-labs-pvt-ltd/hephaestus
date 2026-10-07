@@ -1,13 +1,13 @@
 {
-  "name": "@hephaestus/api",
+  "name": "@operant/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
   "scripts": { "typecheck": "tsc -p .", "test": "vitest run" },
   "dependencies": {
-    "@hephaestus/core": "workspace:*",
-    "@hephaestus/db": "workspace:*",
+    "@operant/core": "workspace:*",
+    "@operant/db": "workspace:*",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.12",
     "zod": "^4.6.5"

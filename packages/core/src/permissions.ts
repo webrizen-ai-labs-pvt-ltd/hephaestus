@@ -1,5 +1,5 @@
 /**
- * Hephaestus permission catalogue.
+ * Operant permission catalogue.
  *
  * The same list is registered in Webrizen SSO as this app's resources (cloud) and
  * used by the built-in role editor (offline). Code always checks permissions,

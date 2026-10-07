@@ -128,12 +128,12 @@ export function Skeleton({ className }: { className?: string }) {
   return <div className={cn("animate-pulse rounded-md bg-tertiary", className)} />;
 }
 
-/** The Hephaestus mark, tinted with the current text color. */
+/** The Operant mark, tinted with the current text color. */
 export function Logo({ className, src = "/logo.png" }: { className?: string; src?: string }) {
   return (
     <span
       role="img"
-      aria-label="Hephaestus"
+      aria-label="Operant"
       className={cn("inline-block size-7 bg-current", className)}
       style={{
         maskImage: `url(${src})`,

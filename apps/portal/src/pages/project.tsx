@@ -1,4 +1,4 @@
-import { Avatar, Badge, Meter, Skeleton } from "@hephaestus/ui";
+import { Avatar, Badge, Meter, Skeleton } from "@operant/ui";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Circle } from "lucide-react";
 import { Checklist, Conversation, FileChip } from "../components/conversation.tsx";

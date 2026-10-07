@@ -1,4 +1,4 @@
-import type { Pillar } from "@hephaestus/core";
+import type { Pillar } from "@operant/core";
 import {
   Banknote,
   Building2,

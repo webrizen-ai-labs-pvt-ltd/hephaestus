@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, cn, Input, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, cn, Input, Textarea } from "@operant/ui";
 import { CheckCircle2, FileText, Paperclip, Plus, Send, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api.ts";

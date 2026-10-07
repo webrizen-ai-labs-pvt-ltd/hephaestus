@@ -1,4 +1,4 @@
-import { Button, Field, Input } from "@hephaestus/ui";
+import { Button, Field, Input } from "@operant/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Mail } from "lucide-react";

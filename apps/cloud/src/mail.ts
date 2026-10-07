@@ -1,4 +1,4 @@
-import type { Mailer, MailMessage } from "@hephaestus/core";
+import type { Mailer, MailMessage } from "@operant/core";
 
 /** Transactional email through Resend's HTTP API. */
 export class ResendMailer implements Mailer {

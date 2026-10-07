@@ -1,5 +1,5 @@
-import { can, INDIAN_STATES, isValidGstin, stateOfGstin } from "@hephaestus/core";
-import { Avatar, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { can, INDIAN_STATES, isValidGstin, stateOfGstin } from "@operant/core";
+import { Avatar, Button, Card, cn, Dialog, DialogContent, EmptyState, Field, Input, Select, Skeleton, Textarea } from "@operant/ui";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Building2, FilePlus2, Mail, Pencil, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { useDeferredValue, useState } from "react";

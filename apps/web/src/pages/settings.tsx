@@ -1,5 +1,5 @@
-import { can, PILLARS, type Pillar, type TermKey } from "@hephaestus/core";
-import { Avatar, Badge, Button, ButtonGroup, ButtonGroupItem, Card, cn, Input, Label, ToggleBase } from "@hephaestus/ui";
+import { can, PILLARS, type Pillar, type TermKey } from "@operant/core";
+import { Avatar, Badge, Button, ButtonGroup, ButtonGroupItem, Card, cn, Input, Label, ToggleBase } from "@operant/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, SunMoon } from "lucide-react";
 import { useState } from "react";
@@ -50,7 +50,7 @@ export function OrgSettingsPage({ me }: { me: Me }) {
 
       <Card className="p-6">
         <h2 className="text-lg font-bold">Pillars</h2>
-        <p className="mt-1 text-sm text-tertiary">Turn off the parts of Hephaestus your team doesn't use.</p>
+        <p className="mt-1 text-sm text-tertiary">Turn off the parts of Operant your team doesn't use.</p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {PILLARS.map((p) => {
             const nav = MAIN_NAV.find((n) => n.pillar === p)!;
@@ -211,7 +211,7 @@ export function AuditPage({ me }: { me: Me }) {
       {isLoading ? <p className="text-sm text-tertiary">Loading…</p> : null}
       {data && events.length === 0 ? (
         <Card>
-          <p className="p-6 text-sm text-tertiary">Nothing here yet. Changes across Hephaestus show up as they happen.</p>
+          <p className="p-6 text-sm text-tertiary">Nothing here yet. Changes across Operant show up as they happen.</p>
         </Card>
       ) : null}
       {[...days].map(([day, list]) => (
@@ -224,11 +224,11 @@ export function AuditPage({ me }: { me: Me }) {
                 return (
                   <li key={e.id} className="flex items-center gap-3 px-4 py-3 text-sm">
                     <span className="relative">
-                      <Avatar name={e.actorName ?? "Hephaestus"} src={e.actorImage} className="size-8 text-[10px]" />
+                      <Avatar name={e.actorName ?? "Operant"} src={e.actorImage} className="size-8 text-[10px]" />
                       <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-bg-primary" style={{ background: color }} />
                     </span>
                     <p className="min-w-0 flex-1 text-tertiary">
-                      <span className="font-medium text-primary">{e.actorName ?? (e.actorId ? "Someone" : "Hephaestus")}</span> {sentence(e)}
+                      <span className="font-medium text-primary">{e.actorName ?? (e.actorId ? "Someone" : "Operant")}</span> {sentence(e)}
                     </p>
                     <code className="hidden rounded bg-secondary px-1.5 py-0.5 font-mono text-[10.5px] text-quaternary md:inline">{e.action}</code>
                     <span className="w-16 shrink-0 text-right font-mono text-[11px] text-tertiary">

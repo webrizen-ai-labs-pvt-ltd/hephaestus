@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { uuidv7 } from "@hephaestus/core";
+import { uuidv7 } from "@operant/core";
 import { members, orgs } from "./foundation.ts";
 
 const id = () => uuid("id").primaryKey().$defaultFn(uuidv7);

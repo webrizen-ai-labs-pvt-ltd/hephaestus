@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Badge, Button, Card, cn, DateInput, EmptyState, Input, ProgressRing, Segmented, Select, Skeleton } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Badge, Button, Card, cn, DateInput, EmptyState, Input, ProgressRing, Segmented, Select, Skeleton } from "@operant/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Handshake, Kanban, List, MessagesSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 import { ProjectClientTab } from "./requests.tsx";

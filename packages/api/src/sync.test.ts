@@ -1,5 +1,5 @@
-import type { Viewer } from "@hephaestus/core";
-import { connectPglite, type Db, members, migrationsFolder } from "@hephaestus/db";
+import type { Viewer } from "@operant/core";
+import { connectPglite, type Db, members, migrationsFolder } from "@operant/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { reconcileMembers, syncViewer } from "./sync.ts";

@@ -1,4 +1,4 @@
-import { Button, DateInput, Dialog, DialogContent, Field, Input, Select } from "@hephaestus/ui";
+import { Button, DateInput, Dialog, DialogContent, Field, Input, Select } from "@operant/ui";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../lib/api.ts";

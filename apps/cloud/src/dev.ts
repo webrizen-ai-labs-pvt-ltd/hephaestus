@@ -13,6 +13,6 @@ const app = await createCloudApp(env);
 const port = Number(process.env.PORT ?? 8787);
 
 serve({ fetch: app.fetch, port }, () => {
-  console.info(`Hephaestus cloud API on http://localhost:${port}`);
+  console.info(`Operant cloud API on http://localhost:${port}`);
   console.info(env.ssoConfigured ? "Sign-in: Webrizen SSO" : "Sign-in: local demo account (SSO not configured)");
 });

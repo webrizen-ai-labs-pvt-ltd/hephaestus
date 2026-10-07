@@ -15,7 +15,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { uuidv7 } from "@hephaestus/core";
+import { uuidv7 } from "@operant/core";
 import { orgs } from "./foundation.ts";
 import { clients } from "./finance.ts";
 import { employees } from "./people.ts";

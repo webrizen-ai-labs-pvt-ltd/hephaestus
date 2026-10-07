@@ -1,17 +1,17 @@
 {
-  "name": "hephaestus",
+  "name": "operant",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev --parallel --filter=@hephaestus/web --filter=@hephaestus/portal --filter=@hephaestus/cloud",
+    "dev": "turbo run dev --parallel --filter=@operant/web --filter=@operant/portal --filter=@operant/cloud",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "db:generate": "pnpm --filter @hephaestus/db generate",
-    "db:migrate": "pnpm --filter @hephaestus/db migrate",
+    "db:generate": "pnpm --filter @operant/db generate",
+    "db:migrate": "pnpm --filter @operant/db migrate",
     "build:vercel": "node scripts/build-vercel.mjs"
   },
   "devDependencies": {

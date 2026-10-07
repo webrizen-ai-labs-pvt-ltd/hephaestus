@@ -1,4 +1,4 @@
-import { Avatar, Button, Em, EmptyState, KpiTile, PageHero, Panel, ProgressRing } from "@hephaestus/ui";
+import { Avatar, Button, Em, EmptyState, KpiTile, PageHero, Panel, ProgressRing } from "@operant/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, CalendarOff, CheckSquare, ClipboardCheck, PieChart, Plus, Sparkles, UserPlus, Users } from "lucide-react";
 import { formatDate, plural, useBalances, useMyOnboardingItems, usePeopleSummary } from "../../lib/people.ts";

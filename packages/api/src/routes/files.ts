@@ -1,5 +1,5 @@
-import { uuidv7 } from "@hephaestus/core";
-import { attachments, portalMessages } from "@hephaestus/db";
+import { uuidv7 } from "@operant/core";
+import { attachments, portalMessages } from "@operant/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

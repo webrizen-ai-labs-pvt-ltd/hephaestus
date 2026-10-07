@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Field, Input, Skeleton } from "@hephaestus/ui";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Field, Input, Skeleton } from "@operant/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Briefcase, Cake, FileText, Mail, MapPin, Paperclip, Pencil, Phone, Trash2, UserMinus } from "lucide-react";

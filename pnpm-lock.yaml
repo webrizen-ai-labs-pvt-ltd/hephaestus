@@ -20,13 +20,13 @@ importers:
 
   apps/cloud:
     dependencies:
-      '@hephaestus/api':
+      '@operant/api':
         specifier: workspace:*
         version: link:../../packages/api
-      '@hephaestus/core':
+      '@operant/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@hephaestus/db':
+      '@operant/db':
         specifier: workspace:*
         version: link:../../packages/db
       '@hono/node-server':
@@ -72,10 +72,10 @@ importers:
       '@fontsource-variable/geist-mono':
         specifier: ^5.3.0
         version: 5.3.0
-      '@hephaestus/core':
+      '@operant/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@hephaestus/ui':
+      '@operant/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tanstack/react-query':
@@ -139,10 +139,10 @@ importers:
       '@fontsource-variable/geist-mono':
         specifier: ^5.3.0
         version: 5.3.0
-      '@hephaestus/core':
+      '@operant/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@hephaestus/ui':
+      '@operant/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@supabase/supabase-js':
@@ -197,10 +197,10 @@ importers:
 
   packages/api:
     dependencies:
-      '@hephaestus/core':
+      '@operant/core':
         specifier: workspace:*
         version: link:../core
-      '@hephaestus/db':
+      '@operant/db':
         specifier: workspace:*
         version: link:../db
       drizzle-orm:
@@ -235,7 +235,7 @@ importers:
       '@electric-sql/pglite':
         specifier: ^0.5.8
         version: 0.5.8
-      '@hephaestus/core':
+      '@operant/core':
         specifier: workspace:*
         version: link:../core
       drizzle-orm:

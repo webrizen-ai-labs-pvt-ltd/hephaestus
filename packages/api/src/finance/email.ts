@@ -1,4 +1,4 @@
-import type { Mailer, MailMessage } from "@hephaestus/core";
+import type { Mailer, MailMessage } from "@operant/core";
 
 /** What happened when we tried to email someone. */
 export type MailResult = { sent: true } | { sent: false; reason: "not_configured" | "no_email" | "failed"; error?: string };
@@ -54,7 +54,7 @@ ${
 }
 <p style="margin:0 0 24px;font-size:15px;line-height:1.5">${esc(opts.signOff).replace(/\n/g, "<br>")}</p>
 </div>
-<div style="padding:14px 28px;border-top:1px solid #e9eaeb;color:#717680;font-size:12px">${esc(opts.footnote ?? "Sent with Hephaestus by Webrizen")}</div>
+<div style="padding:14px 28px;border-top:1px solid #e9eaeb;color:#717680;font-size:12px">${esc(opts.footnote ?? "Sent with Operant by Webrizen")}</div>
 </div></div>`;
   const text = [
     opts.greeting,

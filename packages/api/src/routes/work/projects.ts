@@ -1,4 +1,4 @@
-import { addDays, DEFAULT_STAGES, isIsoDate, projectKeyFrom, todayIn } from "@hephaestus/core";
+import { addDays, DEFAULT_STAGES, isIsoDate, projectKeyFrom, todayIn } from "@operant/core";
 import {
   employees,
   GOAL_STATUSES,
@@ -13,7 +13,7 @@ import {
   taxRates,
   tasks,
   workflowStages,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, count, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

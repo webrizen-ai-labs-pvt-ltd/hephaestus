@@ -1,5 +1,5 @@
-import { INSTALLMENT_FREQUENCIES, isIsoDate, todayIn } from "@hephaestus/core";
-import { installments, invoices, orgs, PAYMENT_METHODS } from "@hephaestus/db";
+import { INSTALLMENT_FREQUENCIES, isIsoDate, todayIn } from "@operant/core";
+import { installments, invoices, orgs, PAYMENT_METHODS } from "@operant/db";
 import { and, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

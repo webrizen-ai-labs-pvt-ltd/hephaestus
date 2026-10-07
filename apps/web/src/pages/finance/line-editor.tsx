@@ -1,5 +1,5 @@
-import { computeTotals, type SupplyType } from "@hephaestus/core";
-import { Button, Input, Select } from "@hephaestus/ui";
+import { computeTotals, type SupplyType } from "@operant/core";
+import { Button, Input, Select } from "@operant/ui";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { type Line, money, toPaise, toRupees, useItems, useTaxRates } from "../../lib/finance.ts";
 

@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Badge, Button, Card, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea, Toggle } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Badge, Button, Card, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea, Toggle } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Copy, ExternalLink, FileText, Plus, Store, Trash2, X } from "lucide-react";
 import { useState } from "react";

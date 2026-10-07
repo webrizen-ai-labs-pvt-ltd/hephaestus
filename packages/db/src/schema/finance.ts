@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { bigint, boolean, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { uuidv7 } from "@hephaestus/core";
+import { uuidv7 } from "@operant/core";
 import { orgs } from "./foundation.ts";
 
 /*

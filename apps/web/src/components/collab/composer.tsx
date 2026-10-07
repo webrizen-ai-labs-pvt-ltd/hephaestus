@@ -1,5 +1,5 @@
-import { mentionToken } from "@hephaestus/core";
-import { Avatar, Button, cn } from "@hephaestus/ui";
+import { mentionToken } from "@operant/core";
+import { Avatar, Button, cn } from "@operant/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Paperclip, SendHorizontal, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";

@@ -1,4 +1,4 @@
-import { formatMoney } from "@hephaestus/core";
+import { formatMoney } from "@operant/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 

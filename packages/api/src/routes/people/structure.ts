@@ -1,4 +1,4 @@
-import { departments, employees, members, teamMembers, teams } from "@hephaestus/db";
+import { departments, employees, members, teamMembers, teams } from "@operant/db";
 import { and, asc, count, eq, inArray, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

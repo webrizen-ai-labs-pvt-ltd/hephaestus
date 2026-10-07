@@ -1,5 +1,5 @@
-import type { Viewer } from "@hephaestus/core";
-import { type Db, members, orgSettings, orgs } from "@hephaestus/db";
+import type { Viewer } from "@operant/core";
+import { type Db, members, orgSettings, orgs } from "@operant/db";
 import { and, eq, sql } from "drizzle-orm";
 import type { ActiveOrg } from "./context.ts";
 import { seedOrgDefaults } from "./defaults.ts";

@@ -1,4 +1,4 @@
-import { Button, cn, EmptyState, Popover, PopoverContent, PopoverTrigger } from "@hephaestus/ui";
+import { Button, cn, EmptyState, Popover, PopoverContent, PopoverTrigger } from "@operant/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AtSign, Bell, CalendarCheck, CheckCheck, ListTodo, MessageSquare, Sparkles } from "lucide-react";
@@ -11,7 +11,10 @@ function iconFor(type: string) {
   if (type.startsWith("message") || type.startsWith("comment")) return <MessageSquare className="size-4 text-collab" />;
   if (type.startsWith("leave")) return <CalendarCheck className="size-4 text-people" />;
   if (type.startsWith("task")) return <ListTodo className="size-4 text-work" />;
-  return <Sparkles className="size-4 text-finance" />;
+  return <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 mt-1">
+  <path strokeLinecap="round" strokeLinejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+</svg>
+;
 }
 
 function ago(iso: string) {
@@ -47,16 +50,31 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className="relative p-0! size-9">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-14">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+        <button
+          aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+          className="relative p-0! size-9 cursor-pointer rounded-xl hover:bg-tertiary/30 flex justify-center items-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="size-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+            />
           </svg>
+
           {unread ? (
             <span className="absolute right-0.5 top-0.5 flex min-w-2 min-h-2 items-center justify-center rounded-full bg-brand-solid px-1 font-mono text-[8px] leading-4 text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           ) : null}
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(380px,calc(100vw-24px))] p-0">
         <div className="flex items-center justify-between border-b border-secondary px-4 py-3">

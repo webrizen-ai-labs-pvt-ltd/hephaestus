@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Button, Card, EmptyState, Skeleton } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Button, Card, EmptyState, Skeleton } from "@operant/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, AtSign, Gavel, Hash, Lock, LogOut, MessagesSquare } from "lucide-react";

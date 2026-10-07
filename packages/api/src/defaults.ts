@@ -1,4 +1,4 @@
-import { type Db, holidays, labels, leaveTypes, type OnboardingTemplateItem, onboardingTemplates } from "@hephaestus/db";
+import { type Db, holidays, labels, leaveTypes, type OnboardingTemplateItem, onboardingTemplates } from "@operant/db";
 
 /** Starting data for a brand-new organization. Everything is editable afterwards. */
 export async function seedOrgDefaults(db: Db, orgId: string, now = new Date()) {

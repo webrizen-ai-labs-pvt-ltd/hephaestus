@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, cn, Skeleton } from "@hephaestus/ui";
+import { Avatar, Badge, Button, cn, Skeleton } from "@operant/ui";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";

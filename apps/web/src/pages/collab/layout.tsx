@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Button, CheckboxBase, cn, Dialog, DialogContent, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Button, CheckboxBase, cn, Dialog, DialogContent, Field, Input, Select, Textarea } from "@operant/ui";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { AtSign, Gavel, Hash, Lock, MessageSquarePlus, Plus, Search } from "lucide-react";
 import { useState } from "react";

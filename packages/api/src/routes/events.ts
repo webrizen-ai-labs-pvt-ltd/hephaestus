@@ -1,5 +1,5 @@
-import type { RealtimeEvent } from "@hephaestus/core";
-import { channelMembers, channels } from "@hephaestus/db";
+import type { RealtimeEvent } from "@operant/core";
+import { channelMembers, channels } from "@operant/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";

@@ -1,5 +1,5 @@
-import { type Action, can, type Resource } from "@hephaestus/core";
-import { type Db, employees, members, notifications, orgSettings, sequences } from "@hephaestus/db";
+import { type Action, can, type Resource } from "@operant/core";
+import { type Db, employees, members, notifications, orgSettings, sequences } from "@operant/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -126,12 +126,12 @@ export async function notify(
     const html = `<div style="font-family:system-ui,sans-serif;max-width:520px">
 <p style="font-size:16px;font-weight:600">${escapeHtml(n.title)}</p>
 ${n.body ? `<p style="color:#555">${escapeHtml(n.body)}</p>` : ""}
-<p><a href="${escapeHtml(href)}" style="display:inline-block;background:#ff5a1f;color:#121110;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Open in Hephaestus</a></p>
+<p><a href="${escapeHtml(href)}" style="display:inline-block;background:#ff5a1f;color:#121110;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Open in Operant</a></p>
 <p style="color:#999;font-size:12px">Webrizen AI Labs Pvt Ltd</p></div>`;
     await Promise.all(
       rows.map((r) =>
         mailer
-          .send({ to: r.email, subject: n.title, text: `${n.title}\n\n${n.body ?? ""}\n\nOpen in Hephaestus: ${href}`, html })
+          .send({ to: r.email, subject: n.title, text: `${n.title}\n\n${n.body ?? ""}\n\nOpen in Operant: ${href}`, html })
           .catch((err) => console.error("Email failed", err)),
       ),
     );

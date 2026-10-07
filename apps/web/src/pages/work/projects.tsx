@@ -1,5 +1,5 @@
-import { can, projectKeyFrom } from "@hephaestus/core";
-import { Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Segmented, Select, Textarea } from "@hephaestus/ui";
+import { can, projectKeyFrom } from "@operant/core";
+import { Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, Field, Input, PageHero, ProgressRing, Segmented, Select, Textarea } from "@operant/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { FolderKanban, Plus } from "lucide-react";

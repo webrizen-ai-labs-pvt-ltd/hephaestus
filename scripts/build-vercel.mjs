@@ -9,7 +9,7 @@ import { build } from "esbuild";
 const out = ".vercel/output";
 rmSync(out, { recursive: true, force: true });
 
-execSync("pnpm --filter @hephaestus/web build", { stdio: "inherit" });
+execSync("pnpm --filter @operant/web build", { stdio: "inherit" });
 cpSync("apps/web/dist", `${out}/static`, { recursive: true });
 
 const fn = `${out}/functions/api.func`;

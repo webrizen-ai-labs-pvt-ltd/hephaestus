@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Button, Card, CheckboxBase, Dialog, DialogContent, Em, EmptyState, Field, Input, Select, Textarea } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Button, Card, CheckboxBase, Dialog, DialogContent, Em, EmptyState, Field, Input, Select, Textarea } from "@operant/ui";
 import { Building2, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/app-shell.tsx";

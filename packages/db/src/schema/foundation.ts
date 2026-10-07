@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { uuidv7 } from "@hephaestus/core";
+import { uuidv7 } from "@operant/core";
 
 /*
  * Conventions: UUID v7 ids generated in the app, org_id on every tenant table,

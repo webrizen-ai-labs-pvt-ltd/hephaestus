@@ -1,4 +1,4 @@
-import { INDIAN_STATES, isValidGstin, stateOfGstin, uuidv7 } from "@hephaestus/core";
+import { INDIAN_STATES, isValidGstin, stateOfGstin, uuidv7 } from "@operant/core";
 import {
   attachments,
   clientContacts,
@@ -20,7 +20,7 @@ import {
   serviceRequests,
   services,
   tasks,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, count, desc, eq, gt, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";

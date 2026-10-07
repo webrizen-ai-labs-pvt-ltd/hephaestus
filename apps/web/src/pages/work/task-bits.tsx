@@ -1,4 +1,4 @@
-import { Avatar, cn } from "@hephaestus/ui";
+import { Avatar, cn } from "@operant/ui";
 import { CircleCheck, GitBranch, Link2, Repeat } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../lib/api.ts";

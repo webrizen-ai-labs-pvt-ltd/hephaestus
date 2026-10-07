@@ -1,5 +1,5 @@
-import { INDIAN_STATES, isValidGstin, stateOfGstin } from "@hephaestus/core";
-import { Badge, Button, Dialog, DialogContent, Field, Input, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { INDIAN_STATES, isValidGstin, stateOfGstin } from "@operant/core";
+import { Badge, Button, Dialog, DialogContent, Field, Input, Select, Skeleton, Textarea } from "@operant/ui";
 import { ExternalLink, ReceiptText } from "lucide-react";
 import { useState } from "react";
 import { PageTitle, Section, SignedIn, useSlug } from "../components/shell.tsx";

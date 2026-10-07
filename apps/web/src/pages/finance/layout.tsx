@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Badge, Card, cn, EmptyState } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Badge, Card, cn, EmptyState } from "@operant/ui";
 import { Outlet } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { STATUS_META } from "../../lib/finance.ts";

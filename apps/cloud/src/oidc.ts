@@ -1,4 +1,4 @@
-import { allPermissions, type ViewerOrg } from "@hephaestus/core";
+import { allPermissions, type ViewerOrg } from "@operant/core";
 import * as client from "openid-client";
 import { z } from "zod";
 import type { Env } from "./env.ts";

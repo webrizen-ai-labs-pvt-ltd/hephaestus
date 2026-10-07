@@ -1,4 +1,4 @@
-import { Badge, Button, Field, Input, Skeleton, Textarea } from "@hephaestus/ui";
+import { Badge, Button, Field, Input, Skeleton, Textarea } from "@operant/ui";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Clock, FileText, Send } from "lucide-react";
 import { useState } from "react";

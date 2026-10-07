@@ -1,4 +1,4 @@
-import { Button, Logo } from "@hephaestus/ui";
+import { Button, Logo } from "@operant/ui";
 import { createRootRoute, createRoute, createRouter, Link } from "@tanstack/react-router";
 import { MeContext, useViewer } from "./lib/viewer.ts";
 import { AppShell } from "./components/app-shell.tsx";
@@ -50,7 +50,7 @@ function NoOrganization({ reason }: { reason: string }) {
         <p className="mt-2 text-sm text-tertiary">
           {removed
             ? "An admin removed you from this organization in Webrizen. Ask them to add you back, or sign in to another organization."
-            : "Hephaestus works inside an organization. Create one in your Webrizen account, or ask your admin for an invite."}
+            : "Operant works inside an organization. Create one in your Webrizen account, or ask your admin for an invite."}
         </p>
         <p className="mt-3 font-mono text-xs text-quaternary">{reason}</p>
         <div className="mt-6 flex flex-col gap-2">
@@ -75,7 +75,7 @@ function Root() {
     return (
       <div className="flex min-h-dvh items-center justify-center p-6 text-center">
         <div>
-          <h1 className="text-2xl font-bold">We can't reach Hephaestus</h1>
+          <h1 className="text-2xl font-bold">We can't reach Operant</h1>
           <p className="mt-2 text-sm text-tertiary">Check your connection, then try again.</p>
           <Button className="mt-6" onClick={() => window.location.reload()}>
             Try again

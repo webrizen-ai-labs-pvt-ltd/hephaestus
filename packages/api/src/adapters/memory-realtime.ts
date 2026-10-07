@@ -1,4 +1,4 @@
-import type { Realtime, RealtimeEvent } from "@hephaestus/core";
+import type { Realtime, RealtimeEvent } from "@operant/core";
 
 /**
  * In-process event bus: one server process (local development, the offline

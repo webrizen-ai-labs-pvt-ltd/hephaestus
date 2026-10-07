@@ -14,11 +14,11 @@ const unb64 = (s: string) => new Uint8Array(Buffer.from(s, "base64url"));
 
 export function createSecretBox(secret: string): SecretBox {
   const keyPromise = crypto.subtle
-    .digest("SHA-256", new TextEncoder().encode(`hephaestus-secrets:${secret}`))
+    .digest("SHA-256", new TextEncoder().encode(`operant-secrets:${secret}`))
     .then((raw) => crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]));
 
   const macKey = crypto.subtle
-    .digest("SHA-256", new TextEncoder().encode(`hephaestus-links:${secret}`))
+    .digest("SHA-256", new TextEncoder().encode(`operant-links:${secret}`))
     .then((raw) => crypto.subtle.importKey("raw", raw, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]));
 
   return {

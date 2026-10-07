@@ -1,5 +1,5 @@
 {
-  "name": "@hephaestus/cloud",
+  "name": "@operant/cloud",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hephaestus/api": "workspace:*",
-    "@hephaestus/core": "workspace:*",
-    "@hephaestus/db": "workspace:*",
+    "@operant/api": "workspace:*",
+    "@operant/core": "workspace:*",
+    "@operant/db": "workspace:*",
     "@hono/node-server": "^2.1.3",
     "@supabase/supabase-js": "^2.117.2",
     "drizzle-orm": "^0.45.3",

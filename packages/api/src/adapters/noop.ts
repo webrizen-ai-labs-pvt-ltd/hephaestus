@@ -1,4 +1,4 @@
-import type { Mailer, Realtime } from "@hephaestus/core";
+import type { Mailer, Realtime } from "@operant/core";
 
 /** Realtime that drops events (used until a realtime backend is configured). */
 export const noopRealtime: Realtime = { publish: async () => {} };

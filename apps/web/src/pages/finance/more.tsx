@@ -1,5 +1,5 @@
-import { can, INDIAN_STATES, isValidGstin, stateOfGstin, supplyTypeFor } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, FeaturedIcon, Field, Input, KpiTile, Select, Textarea, Toggle } from "@hephaestus/ui";
+import { can, INDIAN_STATES, isValidGstin, stateOfGstin, supplyTypeFor } from "@operant/core";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Em, EmptyState, FeaturedIcon, Field, Input, KpiTile, Select, Textarea, Toggle } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { Check, Copy, CreditCard, Mail, Plus, Repeat, Send, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -323,7 +323,7 @@ function EmailCard({ enabled, from, replyTo, canManage }: { enabled: boolean; fr
               <span className="font-medium text-secondary">{replyTo ?? "nowhere yet: add a billing email below"}</span>.
             </>
           ) : (
-            "Hephaestus can't email clients yet. Issued invoices still get a shareable link. Your administrator connects an email service (Resend) to turn this on."
+            "Operant can't email clients yet. Issued invoices still get a shareable link. Your administrator connects an email service (Resend) to turn this on."
           )}
         </p>
       </div>

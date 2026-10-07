@@ -1,4 +1,4 @@
-import type { MemberSnapshot } from "@hephaestus/api";
+import type { MemberSnapshot } from "@operant/api";
 import * as client from "openid-client";
 import { z } from "zod";
 import type { Env } from "./env.ts";

@@ -1,4 +1,4 @@
-import { can } from "@hephaestus/core";
+import { can } from "@operant/core";
 import {
   Avatar,
   Badge,
@@ -13,7 +13,7 @@ import {
   Kbd,
   Logo,
   PageHero,
-} from "@hephaestus/ui";
+} from "@operant/ui";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeftRight,
@@ -242,10 +242,13 @@ function Sidebar({ me, onNavigate, onSearch }: { me: Me; onNavigate?: () => void
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-solid text-white shadow-xs-skeuomorphic">
-          <Logo className="size-6" />
+        <span className="flex size-9 items-center justify-center rounded-lg bg-brand-solid text-white shadow-xs-skeuomorphic">
+          <Logo className="size-7" />
         </span>
-        <span className="text-lg font-bold tracking-tight text-primary">Hephaestus</span>
+        <div className="flex flex-col -space-y-1">
+          <span className="font-bold tracking-tight text-primary">Operant</span>
+        <span className="text-xs text-fg-tertiary">By Webrizen AI Labs.</span>
+        </div>
       </div>
 
       <div className="px-4 pb-2">
@@ -367,14 +370,14 @@ export function AppShell({ me }: { me: Me }) {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-secondary">
-      <aside className="hidden w-[280px] shrink-0 border-r border-secondary bg-primary lg:block">
+      <aside className="hidden w-70 shrink-0 border-r border-secondary bg-primary lg:block">
         <Sidebar me={me} onSearch={() => setPaletteOpen(true)} />
       </aside>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
           <button type="button" aria-label="Close menu" className="absolute inset-0 bg-overlay/70 backdrop-blur-[6px]" onClick={() => setMobileOpen(false)} />
-          <aside className="relative h-full w-[296px] max-w-[85vw] bg-primary shadow-xl">
+          <aside className="relative h-full w-74 max-w-[85vw] bg-primary shadow-xl">
             <button
               type="button"
               aria-label="Close menu"

@@ -1,5 +1,5 @@
-import { MENTION_RE, QUICK_REACTIONS } from "@hephaestus/core";
-import { Avatar, cn, Popover, PopoverContent, PopoverTrigger } from "@hephaestus/ui";
+import { MENTION_RE, QUICK_REACTIONS } from "@operant/core";
+import { Avatar, cn, Popover, PopoverContent, PopoverTrigger } from "@operant/ui";
 import { FileText, Gavel, Pencil, SmilePlus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../lib/api.ts";

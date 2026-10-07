@@ -1,5 +1,5 @@
-import { amountInWords, INDIAN_STATES } from "@hephaestus/core";
-import { cn } from "@hephaestus/ui";
+import { amountInWords, INDIAN_STATES } from "@operant/core";
+import { cn } from "@operant/ui";
 import { type ClientInfo, type Doc, type DocKind, type Line, money, type Seller } from "../../lib/finance.ts";
 
 /*

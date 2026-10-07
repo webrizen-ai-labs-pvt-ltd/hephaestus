@@ -5,7 +5,7 @@ import {
   formatMoney,
   supplyTypeFor,
   type SupplyType,
-} from "@hephaestus/core";
+} from "@operant/core";
 import {
   clients,
   type Db,
@@ -17,7 +17,7 @@ import {
   payments,
   recurringInvoices,
   type RecurringLine,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type { ApiDeps } from "../context.ts";

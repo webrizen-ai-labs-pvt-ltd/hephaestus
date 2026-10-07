@@ -1,5 +1,5 @@
 {
-  "name": "@hephaestus/db",
+  "name": "@operant/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
-    "@hephaestus/core": "workspace:*",
+    "@operant/core": "workspace:*",
     "@electric-sql/pglite": "^0.5.8",
     "drizzle-orm": "^0.45.3",
     "postgres": "^3.4.9"

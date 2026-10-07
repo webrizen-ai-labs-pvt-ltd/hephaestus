@@ -1,5 +1,5 @@
-import { type Action, can, type Resource } from "@hephaestus/core";
-import { members, orgs } from "@hephaestus/db";
+import { type Action, can, type Resource } from "@operant/core";
+import { members, orgs } from "@operant/db";
 import { and, eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";

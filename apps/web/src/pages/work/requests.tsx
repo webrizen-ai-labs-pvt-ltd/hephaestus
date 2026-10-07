@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Badge, Button, Card, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "@operant/ui";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Ban, Copy, FileText, FolderKanban, Inbox, Mail, Phone, Rocket } from "lucide-react";
 import { useState } from "react";

@@ -11,9 +11,9 @@ import {
   runFinanceJobs,
   type ApiDeps,
   syncViewer,
-} from "@hephaestus/api";
-import { allPermissions, type FileStore, type Realtime, type Viewer } from "@hephaestus/core";
-import { connectPglite, connectPostgres, type Db, members, migrationsFolder, webhookReceipts } from "@hephaestus/db";
+} from "@operant/api";
+import { allPermissions, type FileStore, type Realtime, type Viewer } from "@operant/core";
+import { connectPglite, connectPostgres, type Db, members, migrationsFolder, webhookReceipts } from "@operant/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { csrf } from "hono/csrf";
@@ -263,7 +263,7 @@ export async function createCloudApp(env: Env) {
     if (inserted.length === 0) return c.body(null, 204); // duplicate delivery
 
     const org = await findOrg(db, event.data.organization.id);
-    if (!org) return c.body(null, 204); // an org that hasn't used Hephaestus yet
+    if (!org) return c.body(null, 204); // an org that hasn't used Operant yet
 
     const member = event.data.member;
     switch (event.type) {

@@ -1,4 +1,4 @@
-import { addDays, can, isoWeekday, todayIn } from "@hephaestus/core";
+import { addDays, can, isoWeekday, todayIn } from "@operant/core";
 import {
   auditEvents,
   channelMembers,
@@ -16,7 +16,7 @@ import {
   projects,
   taskAssignees,
   tasks,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../context.ts";

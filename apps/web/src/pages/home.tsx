@@ -1,5 +1,5 @@
-import { can, formatMoney } from "@hephaestus/core";
-import { Avatar, Badge, Button, CheckboxBase, cn, Em, FeaturedIcon, Segmented, Skeleton } from "@hephaestus/ui";
+import { can, formatMoney } from "@operant/core";
+import { Avatar, Badge, Button, CheckboxBase, cn, Em, FeaturedIcon, Segmented, Skeleton } from "@operant/ui";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   ArrowDown,
@@ -728,10 +728,10 @@ function Activity({ data }: { data: HomeData }) {
           {items.map((a, i) => (
             <li key={a.id} className="relative flex gap-3 pb-5 last:pb-0">
               {i < items.length - 1 ? <span className="absolute top-11 bottom-1 left-5 w-px bg-border-secondary" aria-hidden /> : null}
-              <Avatar name={a.actorName ?? "Hephaestus"} src={a.actorImage} className="size-10" />
+              <Avatar name={a.actorName ?? "Operant"} src={a.actorImage} className="size-10" />
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-baseline gap-2">
-                  <span className="truncate text-sm font-semibold text-primary">{a.actorName ?? "Hephaestus"}</span>
+                  <span className="truncate text-sm font-semibold text-primary">{a.actorName ?? "Operant"}</span>
                   <span className="shrink-0 text-xs text-tertiary">{ago(a.createdAt)}</span>
                 </div>
                 <p className="text-sm text-tertiary">{describe(a)}</p>

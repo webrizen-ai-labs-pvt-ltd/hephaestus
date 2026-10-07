@@ -1,5 +1,5 @@
-import { can, supplyTypeFor } from "@hephaestus/core";
-import { Avatar, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "@hephaestus/ui";
+import { can, supplyTypeFor } from "@operant/core";
+import { Avatar, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "@operant/ui";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Ban, Banknote, BellRing, Copy, ExternalLink, FilePlus2, FileText, Link2, Printer, ReceiptIndianRupee, Search, Send, Split, Trash2 } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";

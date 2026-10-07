@@ -1,5 +1,5 @@
-import { can } from "@hephaestus/core";
-import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@hephaestus/ui";
+import { can } from "@operant/core";
+import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, EmptyState, Field, Input, ProgressRing, Select, Textarea } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { Check, ClipboardList, GripVertical, Pencil, Plus, Rocket, Trash2 } from "lucide-react";
 import { useState } from "react";

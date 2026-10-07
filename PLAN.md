@@ -1,9 +1,9 @@
-# Hephaestus — Build Plan
+# Operant — Build Plan
 
 > **Status:** Draft for approval · **Owner:** Webrizen AI Labs Pvt Ltd · **Date:** 2026-09-30
 > No code is written until this plan is approved.
 
-Hephaestus is Webrizen's operations platform. It brings four pillars into one product:
+Operant is Webrizen's operations platform. It brings four pillars into one product:
 **People** (employee management), **Work** (projects and tasks), **Collaboration** (contextual chat), and **Finance** (invoicing and payment collection).
 
 It ships as **two editions from one codebase**:
@@ -23,9 +23,9 @@ It ships as **two editions from one codebase**:
 
 | # | Decision |
 |---|---|
-| D1 | Hephaestus is a multi-tenant SaaS **and** a standalone offline edition. |
+| D1 | Operant is a multi-tenant SaaS **and** a standalone offline edition. |
 | D2 | Cloud identity comes from **Webrizen SSO** (OpenID Connect, issuer `https://accounts.webrizen.com/api/auth`). It has an org claim with roles and permissions, a "list org members" endpoint (client credentials), and member-change webhooks. |
-| D3 | There's no SSO SDK for Hephaestus, so we integrate with the standard **`openid-client`** library. |
+| D3 | There's no SSO SDK for Operant, so we integrate with the standard **`openid-client`** library. |
 | D4 | Cloud data lives in **Supabase**: Postgres, Storage and Realtime. |
 | D5 | The offline edition is **standalone**. One host PC acts as the server and other PCs on the office network connect to it. |
 | D6 | One codebase in a **monorepo**, because two editions share the UI, API and database schema. |
@@ -53,12 +53,12 @@ Next.js pages need a Next.js server. The offline edition must serve the exact sa
  │ Supabase                                      │   │  · Files   (local folder)                     │
  │  · Postgres  (via connection pooler)          │   │  · Realtime (built-in WebSocket)              │
  │  · Storage   (files)                          │   │  · Backups (daily, rotating)                  │
- │  · Realtime  (chat, live updates)             │   │  · mDNS broadcast "hephaestus.local"          │
+ │  · Realtime  (chat, live updates)             │   │  · mDNS broadcast "operant.local"          │
  │  · pg_cron → calls /api/cron (reminders, …)   │   └───────────────────────┬──────────────────────┘
  │ Webrizen SSO (login, orgs, members)           │                           │ office network
  │ Razorpay · Resend (email)                     │     ┌─────────────────────┴───────────────────┐
- └──────────────────────────────────────────────┘     │ Other PCs: Hephaestus app ("Connect")     │
-                                                      │ or any browser → http://hephaestus.local │
+ └──────────────────────────────────────────────┘     │ Other PCs: Operant app ("Connect")     │
+                                                      │ or any browser → http://operant.local │
                                                       └──────────────────────────────────────────┘
 ```
 
@@ -105,7 +105,7 @@ Next.js pages need a Next.js server. The offline edition must serve the exact sa
 ## 4. Repository layout
 
 ```
-hephaestus/
+operant/
 ├─ apps/
 │  ├─ web/            React SPA (the whole product UI, used by both editions)
 │  ├─ cloud/          Vercel entry: mounts the API with cloud adapters; SSO routes; webhooks; cron
@@ -128,7 +128,7 @@ hephaestus/
 ### 5.1 Cloud login (Webrizen SSO)
 
 ```
-1. User opens app.hephaestus… → no session → /api/auth/login
+1. User opens app.operant… → no session → /api/auth/login
 2. Redirect to accounts.webrizen.com (Authorization Code + PKCE, scopes: openid profile email organization offline_access)
 3. Callback → exchange code → verify ID token (JWKS) → read sub + org {id, roles, permissions}
 4. Store an encrypted, HTTP-only session cookie (A256GCM via jose)
@@ -156,7 +156,7 @@ The browser talks to Supabase directly only for **Realtime** and **file uploads/
 
 ### 5.4 Permissions
 
-Checks are always by **permission**, never by role name, so roles can change without code changes. The Hephaestus permission catalogue (registered in Webrizen SSO as this app's resources):
+Checks are always by **permission**, never by role name, so roles can change without code changes. The Operant permission catalogue (registered in Webrizen SSO as this app's resources):
 
 | Resource | Actions |
 |---|---|
@@ -281,11 +281,11 @@ Conventions for all tables:
 ## 8. Offline edition details
 
 **Setup experience, aimed at non-technical users:**
-1. Download and run `Hephaestus-Setup.exe` (Windows is the priority; macOS and Linux later).
+1. Download and run `Operant-Setup.exe` (Windows is the priority; macOS and Linux later).
 2. The first-run wizard asks: **"Is this the main (server) PC?"**
    - **Yes:** create the organization and owner account, choose the data folder, and enter the license key. Windows then asks to allow network access once.
    - **No:** the app finds the server on the network automatically (mDNS). If it can't, the user types the address shown on the server PC.
-3. Done. Other staff can also use any browser at `http://hephaestus.local:4780`.
+3. Done. Other staff can also use any browser at `http://operant.local:4780`.
 
 **Host behaviour:**
 - It runs in the system tray and starts with Windows.
@@ -294,7 +294,7 @@ Conventions for all tables:
 **Backups:**
 - Daily automatic snapshot to a chosen folder, keeping the last 14.
 - One-click **Backup now** and **Restore** in settings.
-- Export to a `.hephaestus` file to move to a new PC.
+- Export to a `.operant` file to move to a new PC.
 
 **Updates:** `electron-updater` from GitHub Releases, checked when the PC is online. The database migrates automatically, with a backup taken before every migration.
 
@@ -332,13 +332,13 @@ Each phase ends with a demo for your review before the next begins.
 
 | Phase | Scope | Result you can try |
 |---|---|---|
-| **0. Foundation** | Monorepo, Forge design system, adapter interfaces, Drizzle and first migrations, Hono API skeleton, cloud SSO login and session, Supabase token bridge, org/member sync (list endpoint + webhooks), app shell (sidebar, org header, command palette, dark/light), audit log, file uploads, CI, deploy to Vercel + Supabase | Log in with a Webrizen account and see the empty Hephaestus shell |
+| **0. Foundation** | Monorepo, Forge design system, adapter interfaces, Drizzle and first migrations, Hono API skeleton, cloud SSO login and session, Supabase token bridge, org/member sync (list endpoint + webhooks), app shell (sidebar, org header, command palette, dark/light), audit log, file uploads, CI, deploy to Vercel + Supabase | Log in with a Webrizen account and see the empty Operant shell |
 | **1. People** | Employees, departments, teams, org chart, profiles, onboarding checklists, leave and holidays, permissions enforcement | Build your company structure |
 | **2. Work** | Goals, projects, custom stages, milestones, tasks and subtasks, Kanban, list, calendar, My work, workload, templates | Run real projects |
 | **3. Collaboration** | Threads on everything, mentions, reactions, decisions, channels and DMs, realtime, notifications (in-app and email) | Talk inside the work |
 | **4. Finance** | Clients, GST settings, quotes, invoices and PDF, milestone billing, retainers, Razorpay links and webhooks, manual payments, reminders, dashboards | Bill and collect |
 | **5. Offline edition** | Electron app, host/client modes, PGlite, local files and WebSocket, local accounts and role editor, backups and restore, license activation, Windows installer, auto-update | Install on 2 office PCs and work without internet |
-| **6. SaaS layer** | Plans and per-pillar add-ons, PhonePe billing, trials, usage limits, internal admin view | Sell Hephaestus |
+| **6. SaaS layer** | Plans and per-pillar add-ons, PhonePe billing, trials, usage limits, internal admin view | Sell Operant |
 | **7. Platform** | Public REST API + API keys, outgoing webhooks, custom fields UI, industry templates, automations ("when X then Y"), CSV import/export | Integrate with other software |
 | **Later** | Time tracking, Gantt, client portal, mobile app, cloud ↔ offline sync | — |
 
@@ -380,8 +380,8 @@ Each phase ends with a demo for your review before the next begins.
 
 | When | Item |
 |---|---|
-| Before Phase 0 | Create a **Supabase** project (Hephaestus) and a **Vercel** project; decide the cloud domain (for example `hephaestus.webrizen.com`) |
-| Before Phase 0 | Register Hephaestus in **Webrizen SSO**: redirect URI, client id and secret, permission catalogue (§5.4), webhook URL and signing secret |
+| Before Phase 0 | Create a **Supabase** project (Operant) and a **Vercel** project; decide the cloud domain (for example `operant.webrizen.com`) |
+| Before Phase 0 | Register Operant in **Webrizen SSO**: redirect URI, client id and secret, permission catalogue (§5.4), webhook URL and signing secret |
 | Before Phase 0 | Create a private GitHub repo |
 | Phase 3 | A **Resend** account and domain DNS (SPF/DKIM) for email |
 | Phase 4 | A **Razorpay** test-mode account for development |

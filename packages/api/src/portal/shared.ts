@@ -1,4 +1,4 @@
-import { formatMoney } from "@hephaestus/core";
+import { formatMoney } from "@operant/core";
 import {
   attachments,
   clientDocuments,
@@ -11,7 +11,7 @@ import {
   portalMessages,
   portalUsers,
   type services,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { ApiDeps } from "../context.ts";
 import { deliver, renderEmail } from "../finance/email.ts";
@@ -58,7 +58,7 @@ export async function notifyStaff(
     .where(and(eq(members.orgId, orgId), inArray(members.userId, userIds), eq(members.status, "active")));
   const href = `${deps.appUrl.replace(/\/$/, "")}${n.link}`;
   for (const r of rows) {
-    const { html, text } = renderEmail({ greeting: `Hi ${r.name.split(" ")[0]},`, lead: `${n.title}${n.body ? `: ${n.body}` : ""}`, cta: { label: "Open in Hephaestus", href }, signOff: "Hephaestus" });
+    const { html, text } = renderEmail({ greeting: `Hi ${r.name.split(" ")[0]},`, lead: `${n.title}${n.body ? `: ${n.body}` : ""}`, cta: { label: "Open in Operant", href }, signOff: "Operant" });
     await deliver(deps.mailer, { to: r.email, subject: n.title, html, text });
   }
 }

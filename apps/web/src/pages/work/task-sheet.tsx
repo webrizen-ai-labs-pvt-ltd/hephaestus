@@ -1,4 +1,4 @@
-import { Avatar, Button, cn, DateInput, Dialog, Input, Popover, PopoverContent, PopoverTrigger, Select, SheetContent, Skeleton } from "@hephaestus/ui";
+import { Avatar, Button, cn, DateInput, Dialog, Input, Popover, PopoverContent, PopoverTrigger, Select, SheetContent, Skeleton } from "@operant/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Check, Copy, Link2, Plus, Repeat, Tag, Trash2, Users, X } from "lucide-react";

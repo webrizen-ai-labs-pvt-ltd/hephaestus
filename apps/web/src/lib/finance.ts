@@ -1,4 +1,4 @@
-import { formatMoney } from "@hephaestus/core";
+import { formatMoney } from "@operant/core";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api.ts";
 

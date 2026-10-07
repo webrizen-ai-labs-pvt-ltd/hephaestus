@@ -1,4 +1,4 @@
-import { addMonths, can, emiSchedule, type InstallmentFrequency } from "@hephaestus/core";
+import { addMonths, can, emiSchedule, type InstallmentFrequency } from "@operant/core";
 import {
   Badge,
   type BadgeTone,
@@ -18,7 +18,7 @@ import {
   Meter,
   Segmented,
   Select,
-} from "@hephaestus/ui";
+} from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { Banknote, BellRing, CalendarClock, FileText, Link2, MoreHorizontal, ReceiptIndianRupee, Split, X } from "lucide-react";
 import { useState } from "react";

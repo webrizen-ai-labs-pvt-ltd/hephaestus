@@ -1,4 +1,4 @@
-import { type Db, employees, onboardingItems, onboardingRuns, tasks } from "@hephaestus/db";
+import { type Db, employees, onboardingItems, onboardingRuns, tasks } from "@operant/db";
 import { and, count, eq, isNull, sql } from "drizzle-orm";
 
 /**

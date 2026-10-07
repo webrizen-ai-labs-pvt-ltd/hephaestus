@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, cn, Textarea } from "@hephaestus/ui";
+import { Avatar, Badge, Button, cn, Textarea } from "@operant/ui";
 import { CheckCircle2, FileText, Paperclip, Send, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, type ChecklistItem, type FileRef, fileUrl, type Message, uploadFile, useAction, when } from "../lib/api.ts";

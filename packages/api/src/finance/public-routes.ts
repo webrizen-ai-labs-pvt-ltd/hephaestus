@@ -1,5 +1,5 @@
-import { todayIn } from "@hephaestus/core";
-import { clients, installments, invoiceLines, invoices, notifications, orgSettings, orgs, payments } from "@hephaestus/db";
+import { todayIn } from "@operant/core";
+import { clients, installments, invoiceLines, invoices, notifications, orgSettings, orgs, payments } from "@operant/db";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

@@ -1,5 +1,5 @@
-import { addDays } from "@hephaestus/core";
-import { Avatar, Card, cn, EmptyState, KpiTile, Select } from "@hephaestus/ui";
+import { addDays } from "@operant/core";
+import { Avatar, Card, cn, EmptyState, KpiTile, Select } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CalendarClock, Coffee, Flame, Gauge } from "lucide-react";
 import { useState } from "react";

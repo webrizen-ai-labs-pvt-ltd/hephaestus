@@ -1,4 +1,4 @@
-import { allPermissions, ROLE_PRESETS } from "@hephaestus/core";
+import { allPermissions, ROLE_PRESETS } from "@operant/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, viewer } from "./test-utils.ts";
 

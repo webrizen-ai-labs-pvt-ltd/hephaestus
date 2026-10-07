@@ -1,4 +1,4 @@
-import { cn } from "@hephaestus/ui";
+import { cn } from "@operant/ui";
 import { Outlet, useNavigate, useSearch } from "@tanstack/react-router";
 import { TaskSheet } from "./task-sheet.tsx";
 

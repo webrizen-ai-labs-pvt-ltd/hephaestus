@@ -1,4 +1,4 @@
-import { auditEvents } from "@hephaestus/db";
+import { auditEvents } from "@operant/db";
 import type { Context } from "hono";
 import type { AppEnv } from "./context.ts";
 

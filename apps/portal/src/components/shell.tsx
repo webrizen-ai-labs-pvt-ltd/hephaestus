@@ -1,4 +1,4 @@
-import { Avatar, Button, cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, Logo, Skeleton } from "@hephaestus/ui";
+import { Avatar, Button, cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, Logo, Skeleton } from "@operant/ui";
 import { Link, Outlet, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
@@ -119,7 +119,7 @@ export function OrgShell() {
           {page?.org.email ? <a href={`mailto:${page.org.email}`}>{page.org.email}</a> : null}
           {page?.org.phone ? <span>{page.org.phone}</span> : null}
           <Link to="/" className="ml-auto flex items-center gap-1.5 hover:text-secondary">
-            <Logo className="size-3.5" /> Client portal by Hephaestus
+            <Logo className="size-3.5" /> Client portal by Operant
           </Link>
         </div>
       </footer>

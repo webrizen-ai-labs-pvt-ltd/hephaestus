@@ -1,4 +1,4 @@
-import { extractMentions, previewText, QUICK_REACTIONS } from "@hephaestus/core";
+import { extractMentions, previewText, QUICK_REACTIONS } from "@operant/core";
 import {
   attachments,
   channelMembers,
@@ -12,7 +12,7 @@ import {
   taskAssignees,
   tasks,
   threads,
-} from "@hephaestus/db";
+} from "@operant/db";
 import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { type Context, Hono } from "hono";

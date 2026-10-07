@@ -1,4 +1,4 @@
-import { cn } from "@hephaestus/ui";
+import { cn } from "@operant/ui";
 import { Outlet } from "@tanstack/react-router";
 
 export function PeopleLayout() {

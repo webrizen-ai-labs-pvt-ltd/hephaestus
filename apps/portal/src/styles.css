@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@hephaestus/ui/theme.css";
+@import "@operant/ui/theme.css";
 
 @plugin "tailwindcss-react-aria-components";
 @plugin "tailwindcss-animate";

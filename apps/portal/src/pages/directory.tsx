@@ -1,4 +1,4 @@
-import { Badge, Input, Logo, Skeleton } from "@hephaestus/ui";
+import { Badge, Input, Logo, Skeleton } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Search } from "lucide-react";
 import { useDeferredValue, useState } from "react";
@@ -16,7 +16,10 @@ export function DirectoryPage() {
       <header className="border-b border-secondary bg-primary">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:px-6">
           <Logo className="size-7 text-brand-secondary" />
-          <span className="font-semibold">Client portal</span>
+          <div className="flex flex-col -space-y-1">
+            <span className="font-semibold">Operant</span>
+            <span className="text-xs text-tertiary">for communication</span>
+          </div>
         </div>
       </header>
       <section className="border-b border-secondary bg-primary">

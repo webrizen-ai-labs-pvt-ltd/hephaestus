@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { FileStore } from "@hephaestus/core";
+import type { FileStore } from "@operant/core";
 import { Hono } from "hono";
 
 /**

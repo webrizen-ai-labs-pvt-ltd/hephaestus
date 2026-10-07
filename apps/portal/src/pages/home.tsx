@@ -1,4 +1,4 @@
-import { Badge, Button, FeaturedIcon, Meter, Skeleton } from "@hephaestus/ui";
+import { Badge, Button, FeaturedIcon, Meter, Skeleton } from "@operant/ui";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, FileText, FolderKanban, MessageSquare, ReceiptText, Send, Upload } from "lucide-react";
 import { OrgMark, PageTitle, Section, useSlug } from "../components/shell.tsx";
