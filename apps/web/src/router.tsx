@@ -29,6 +29,7 @@ import { ServicesPage } from "./pages/work/services.tsx";
 import { WorkloadPage } from "./pages/work/workload.tsx";
 import { AuditPage, OrgSettingsPage, PreferencesPage } from "./pages/settings.tsx";
 import { SignInPage } from "./pages/sign-in.tsx";
+import { HelpArticlePage, HelpPage } from "./pages/help/help.tsx";
 
 export { useViewer };
 
@@ -178,6 +179,8 @@ const routeTree = rootRoute.addChildren([
   page("/settings", () => <OrgSettingsPage me={useViewer()} />),
   page("/settings/audit", () => <AuditPage me={useViewer()} />),
   page("/settings/preferences", () => <PreferencesPage />),
+  page("/help", () => <HelpPage me={useViewer()} />),
+  page("/help/$slug", () => <HelpArticlePage me={useViewer()} />),
 ]);
 
 export const router = createRouter({ routeTree, defaultPreload: "intent" });

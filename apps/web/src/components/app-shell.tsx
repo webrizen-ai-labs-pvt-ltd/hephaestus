@@ -17,6 +17,7 @@ import {
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeftRight,
+  BookOpen,
   CalendarPlus,
   Check,
   ChevronDown,
@@ -43,7 +44,7 @@ import { useDetailCrumb } from "../lib/breadcrumbs.ts";
 import { useChannels } from "../lib/collab.ts";
 import { useHome } from "../lib/home.ts";
 import { useRequestsSummary } from "../lib/portal.ts";
-import { isChildActive, isItemActive, MAIN_NAV, type NavItem, SETTINGS_NAV } from "../lib/nav.ts";
+import { HELP_NAV, isChildActive, isItemActive, MAIN_NAV, type NavItem, SETTINGS_NAV } from "../lib/nav.ts";
 import { useLiveEvents } from "../lib/realtime.ts";
 import { useTheme } from "../lib/theme.ts";
 import { CommandPalette, useCommandPalette } from "./command-palette.tsx";
@@ -207,6 +208,12 @@ function AccountMenu({ me }: { me: Me }) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/help">
+            <BookOpen />
+            Help and guides
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/settings/preferences">
             <Settings />
             Preferences
@@ -270,6 +277,7 @@ function Sidebar({ me, onNavigate, onSearch }: { me: Me; onNavigate?: () => void
       </nav>
 
       <div className="space-y-2 px-4 pb-4">
+        <SidebarItem item={HELP_NAV} counts={counts} onNavigate={onNavigate} />
         <SidebarItem item={SETTINGS_NAV} counts={counts} onNavigate={onNavigate} />
         <div className="border-t border-secondary pt-3">
           <AccountMenu me={me} />
@@ -286,7 +294,7 @@ function Breadcrumbs() {
   const detail = useDetailCrumb();
   const crumbs: { label: string; to?: string }[] = [];
 
-  const item = [...MAIN_NAV.slice(1), SETTINGS_NAV].find((n) => isItemActive(pathname, n));
+  const item = [...MAIN_NAV.slice(1), SETTINGS_NAV, HELP_NAV].find((n) => isItemActive(pathname, n));
   if (item) {
     crumbs.push({ label: item.label, to: item.to });
     const child = item.children?.find((c) => isChildActive(pathname, c));

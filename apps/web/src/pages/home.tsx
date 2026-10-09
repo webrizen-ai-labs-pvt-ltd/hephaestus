@@ -6,6 +6,7 @@ import {
   ArrowRight,
   ArrowUp,
   AtSign,
+  BookOpen,
   Banknote,
   CalendarDays,
   ChevronRight,
@@ -18,6 +19,7 @@ import {
   Rocket,
   Sparkles,
   CircleCheckBig,
+  X,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { api, type Me } from "../lib/api.ts";
@@ -790,6 +792,53 @@ function SetupBanner({ data }: { data: HomeData }) {
   );
 }
 
+const WELCOME_KEY = "operant-welcome-dismissed";
+
+/** For people new to Operant: points to the user manual until they close it. */
+function WelcomeCard({ me }: { me: Me }) {
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem(WELCOME_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (hidden) return null;
+  const admin = can(me.org.permissions, "settings", "manage");
+  const dismiss = () => {
+    try {
+      localStorage.setItem(WELCOME_KEY, "1");
+    } catch {
+      // Storage unavailable: it stays closed for this visit only.
+    }
+    setHidden(true);
+  };
+  return (
+    <section className="relative flex flex-col gap-4 rounded-xl bg-primary p-4 shadow-xs ring-1 ring-secondary ring-inset sm:flex-row sm:items-center sm:p-5">
+      <FeaturedIcon color="brand" theme="light" size="md" icon={BookOpen} />
+      <div className="min-w-0 flex-1 pr-8 sm:pr-0">
+        <p className="text-sm font-semibold text-primary">New to Operant?</p>
+        <p className="mt-0.5 text-sm text-tertiary">
+          {admin ? "The user manual walks you through setting up your organization, step by step." : "The user manual shows where everything is and what to do on your first day."}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="primary" asChild>
+          <Link to="/help/$slug" params={{ slug: "start-here" }} hash={admin ? "first-steps-admin" : "first-steps-member"}>
+            Start here <ArrowRight />
+          </Link>
+        </Button>
+        <Button size="sm" variant="secondary" asChild>
+          <Link to="/help">All guides</Link>
+        </Button>
+      </div>
+      <button type="button" onClick={dismiss} aria-label="Close" className="absolute top-3 right-3 rounded-md p-1 text-fg-quaternary hover:bg-secondary hover:text-fg-quaternary_hover sm:static">
+        <X className="size-4" />
+      </button>
+    </section>
+  );
+}
+
 /* ---------------- page ---------------- */
 
 export function HomePage({ me }: { me: Me }) {
@@ -861,6 +910,7 @@ export function HomePage({ me }: { me: Me }) {
         </div>
       </header>
 
+      <WelcomeCard me={me} />
       <SetupBanner data={data} />
 
       <Metrics data={data} me={me} />

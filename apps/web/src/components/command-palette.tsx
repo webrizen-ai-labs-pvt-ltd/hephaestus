@@ -3,7 +3,7 @@ import { Command } from "cmdk";
 import { LogOut, Moon, Sun, SunMoon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from "../lib/api.ts";
-import { ADMIN_NAV, MAIN_NAV } from "../lib/nav.ts";
+import { ADMIN_NAV, HELP_NAV, MAIN_NAV } from "../lib/nav.ts";
 import { setTheme } from "../lib/theme.ts";
 
 export function useCommandPalette() {
@@ -45,7 +45,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       <Command.List className="max-h-[50vh] overflow-y-auto p-2">
         <Command.Empty className="px-2 py-6 text-center text-sm text-tertiary">Nothing found.</Command.Empty>
         <Command.Group heading="Go to">
-          {[...MAIN_NAV, ...ADMIN_NAV].map((n) => (
+          {[...MAIN_NAV, ...ADMIN_NAV, HELP_NAV].map((n) => (
             <Command.Item key={n.to} value={`${n.label} ${n.hint ?? ""}`} className={item} onSelect={() => run(() => navigate({ to: n.to }))}>
               <n.icon className={n.tone} />
               {n.label}

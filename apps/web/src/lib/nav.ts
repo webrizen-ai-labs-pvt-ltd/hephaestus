@@ -1,6 +1,7 @@
 import type { Pillar } from "@operant/core";
 import {
   Banknote,
+  BookOpen,
   Building2,
   FolderKanban,
   LayoutDashboard,
@@ -96,6 +97,9 @@ export const ADMIN_NAV: NavItem[] = [
   { to: "/settings/audit", label: "Audit log", icon: ScrollText, color: "var(--color-fg-quaternary)" },
   { to: "/settings/preferences", label: "Preferences", icon: Settings, color: "var(--color-fg-quaternary)" },
 ];
+
+/** The user manual. */
+export const HELP_NAV: NavItem = { to: "/help", label: "Help and guides", icon: BookOpen, color: "var(--color-fg-quaternary)", hint: "How to use Operant" };
 
 /** The admin pages grouped under one expandable "Settings" item in the sidebar. */
 export const SETTINGS_NAV: NavItem = {
