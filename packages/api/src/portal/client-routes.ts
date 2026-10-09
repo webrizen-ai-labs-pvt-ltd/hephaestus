@@ -27,8 +27,9 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { sendAsOrg } from "../email/org-mail.ts";
 import type { AppEnv, PortalViewer } from "../context.ts";
-import { deliver, renderEmail } from "../finance/email.ts";
+import { renderEmail } from "../finance/email.ts";
 import { effectiveDueDate } from "../finance/installments.ts";
 import { linkToken } from "../finance/service.ts";
 import { MAX_UPLOAD_BYTES } from "../routes/files.ts";
@@ -267,7 +268,7 @@ export const portalClientRoutes = new Hono<AppEnv>()
       rows: [["Code", code]],
       signOff: seller,
     });
-    const mail = await deliver(deps.mailer, { to, subject: `${code} is your sign-in code for ${seller}`, html, text });
+    const mail = await sendAsOrg(deps, org.id, { to, subject: `${code} is your sign-in code for ${seller}`, html, text });
     // In development without an email service, the code is printed in the API's console.
     if (!mail.sent && mail.reason === "failed") throw new HTTPException(502, { message: "We couldn't send the email. Try again in a moment." });
     return c.json({ sent: true, emailConfigured: deps.mailer.enabled });

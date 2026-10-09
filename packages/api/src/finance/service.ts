@@ -23,7 +23,8 @@ import { HTTPException } from "hono/http-exception";
 import type { ApiDeps } from "../context.ts";
 import { nextSequence } from "../helpers.ts";
 import { sha256Hex } from "../secrets.ts";
-import { deliver, mailDate, type MailResult, renderEmail } from "./email.ts";
+import { sendAsOrg } from "../email/org-mail.ts";
+import { mailDate, type MailResult, renderEmail } from "./email.ts";
 import { runInstallmentJobs } from "./installments.ts";
 
 export type Settings = typeof financeSettings.$inferSelect;
@@ -178,7 +179,7 @@ export async function emailClient(deps: ApiDeps, settings: Settings, orgName: st
     signOff: `Thank you,\n${seller}`,
     footnote: settings.email ? `Questions? Just reply to this email to reach ${seller}.` : undefined,
   });
-  return deliver(deps.mailer, { to: client.email, subject, html, text, replyTo: settings.email });
+  return sendAsOrg(deps, inv.orgId, { to: client.email, subject, html, text, replyTo: settings.email });
 }
 
 /* ---------------- Razorpay ---------------- */

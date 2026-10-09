@@ -4,3 +4,4 @@ export * from "./work.ts";
 export * from "./collab.ts";
 export * from "./finance.ts";
 export * from "./portal.ts";
+export * from "./email.ts";

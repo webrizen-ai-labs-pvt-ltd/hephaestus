@@ -13,6 +13,7 @@ import {
   type services,
 } from "@operant/db";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { sendAsOrg } from "../email/org-mail.ts";
 import type { ApiDeps } from "../context.ts";
 import { deliver, renderEmail } from "../finance/email.ts";
 
@@ -92,7 +93,7 @@ export async function emailClientPeople(
       signOff: `Thank you,\n${seller}`,
       footnote: `You're receiving this because you use ${seller}'s client portal.`,
     });
-    await deliver(deps.mailer, { to: p.email, subject: msg.subject, html, text, replyTo: fs?.email ?? null });
+    await sendAsOrg(deps, orgId, { to: p.email, subject: msg.subject, html, text, replyTo: fs?.email ?? null });
   }
 }
 

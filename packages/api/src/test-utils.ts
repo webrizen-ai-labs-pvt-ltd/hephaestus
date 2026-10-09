@@ -1,4 +1,4 @@
-import type { Mailer, MailMessage, PermissionSet, Viewer } from "@operant/core";
+import type { EmailDomains, Mailer, MailMessage, PermissionSet, SmtpConfig, Viewer } from "@operant/core";
 import { connectPglite, type Db, migrationsFolder } from "@operant/db";
 import type { DirectoryInviter } from "./context.ts";
 import { consoleMailer, createApi, noopRealtime } from "./index.ts";
@@ -15,7 +15,10 @@ export function viewer(userId: string, orgId: string, roles: string[], permissio
 }
 
 /** The real API on an in-memory Postgres; pick the viewer per request by name. */
-export async function createTestApi(viewers: Record<string, Viewer>, opts: { mailer?: Mailer; directory?: DirectoryInviter } = {}) {
+export async function createTestApi(
+  viewers: Record<string, Viewer>,
+  opts: { mailer?: Mailer; directory?: DirectoryInviter; emailDomains?: EmailDomains; smtp?: (c: SmtpConfig) => Mailer } = {},
+) {
   const conn = await connectPglite(undefined, migrationsFolder);
   const app = createApi({
     edition: "cloud",
@@ -28,6 +31,8 @@ export async function createTestApi(viewers: Record<string, Viewer>, opts: { mai
     realtime: noopRealtime,
     mailer: opts.mailer ?? consoleMailer,
     directory: opts.directory,
+    emailDomains: opts.emailDomains,
+    smtp: opts.smtp,
     secrets: createSecretBox("test-secret"),
     appUrl: "http://localhost:5173",
     resolveViewer: async (req) => viewers[req.headers.get("x-test-viewer") ?? ""] ?? null,

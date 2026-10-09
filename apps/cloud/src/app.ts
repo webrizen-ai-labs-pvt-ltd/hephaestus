@@ -33,7 +33,7 @@ import {
   writeSession,
   writeTx,
 } from "./session.ts";
-import { ResendMailer } from "./mail.ts";
+import { ResendDomains, ResendMailer, smtpMailer } from "./mail.ts";
 import { mintSupabaseToken, SupabaseFileStore, SupabaseRealtime } from "./supabase.ts";
 
 interface LoginTx {
@@ -87,6 +87,9 @@ export async function createCloudApp(env: Env) {
     portalUrl: env.PORTAL_URL,
     mailer: env.RESEND_API_KEY ? new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) : consoleMailer,
     directory: env.ssoConfigured ? webrizenInviter(env) : undefined,
+    // Organizations' own email: verified domains on our Resend account, or their mail server.
+    emailDomains: env.RESEND_API_KEY ? new ResendDomains(env.RESEND_API_KEY) : undefined,
+    smtp: smtpMailer,
     resolveViewer: async (req) => viewers.get(req) ?? null,
   };
   const api = createApi(apiDeps);

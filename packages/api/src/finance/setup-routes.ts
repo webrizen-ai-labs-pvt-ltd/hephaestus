@@ -4,13 +4,14 @@ import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { orgSender, sendAsOrg } from "../email/org-mail.ts";
 import { audit } from "../audit.ts";
 import type { AppEnv } from "../context.ts";
 import { notFound } from "../helpers.ts";
 import { requirePermission } from "../middleware.ts";
 import { likePattern, validate } from "../validate.ts";
 import { loadSettings } from "./service.ts";
-import { deliver, MAIL_REASON, renderEmail } from "./email.ts";
+import { MAIL_REASON, renderEmail } from "./email.ts";
 
 const text = (max: number) =>
   z
@@ -137,7 +138,11 @@ export const financeSetupRoutes = new Hono<AppEnv>()
     return c.json({
       settings: { ...safe, razorpayConnected: Boolean(s.razorpayKeyId && razorpayKeySecretEnc), webhookConfigured: Boolean(razorpayWebhookSecretEnc) },
       webhookUrl: `${c.get("deps").appUrl.replace(/\/$/, "")}/api/v1/public/razorpay/${c.get("org").id}/webhook`,
-      email: { enabled: c.get("deps").mailer.enabled, from: c.get("deps").mailer.from ?? null },
+      // The organization's sender (Settings → Email): their own address, or theirs on Operant's.
+      email: await (async () => {
+        const sender = await orgSender(c.get("deps"), c.get("org").id);
+        return { enabled: Boolean(sender.own) || c.get("deps").mailer.enabled, from: sender.own?.from ?? sender.platform.from, own: Boolean(sender.own) };
+      })(),
     });
   })
 
@@ -156,7 +161,7 @@ export const financeSetupRoutes = new Hono<AppEnv>()
       ],
       signOff: `Thank you,\n${seller}`,
     });
-    const result = await deliver(deps.mailer, { to: viewer.email, subject: `Test email from ${seller}`, html, text, replyTo: s.email });
+    const result = await sendAsOrg(deps, c.get("org").id, { to: viewer.email, subject: `Test email from ${seller}`, html, text, replyTo: s.email });
     return c.json({ to: viewer.email, ...result, message: result.sent ? null : MAIL_REASON[result.reason] + (result.error ? `: ${result.error}` : "") });
   })
 

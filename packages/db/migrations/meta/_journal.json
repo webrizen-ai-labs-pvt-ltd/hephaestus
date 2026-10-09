@@ -64,6 +64,13 @@
       "when": 1791529999363,
       "tag": "0008_employee_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791531815861,
+      "tag": "0009_org_email",
+      "breakpoints": true
     }
   ]
 }

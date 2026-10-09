@@ -1,4 +1,4 @@
-import type { Edition, FileStore, Mailer, Realtime, Viewer } from "@operant/core";
+import type { Edition, EmailDomains, FileStore, Mailer, Realtime, SmtpConfig, Viewer } from "@operant/core";
 import type { Db } from "@operant/db";
 import type { SecretBox } from "./secrets.ts";
 
@@ -15,6 +15,10 @@ export interface ApiDeps {
   appUrl: string;
   /** Public base URL of the client portal app, for links in client emails. */
   portalUrl?: string;
+  /** Sending domains for organizations' own addresses. Missing where the email service can't. */
+  emailDomains?: EmailDomains;
+  /** A mailer that sends through an organization's own SMTP server. */
+  smtp?: (config: SmtpConfig) => Mailer;
   /** Invites people to sign in, through the identity provider. Missing where that isn't possible. */
   directory?: DirectoryInviter;
   /** Resolve the signed-in viewer from the request (cookie session), or null. */

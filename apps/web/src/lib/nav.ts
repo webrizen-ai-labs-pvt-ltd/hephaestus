@@ -5,6 +5,7 @@ import {
   Building2,
   FolderKanban,
   LayoutDashboard,
+  Mail,
   type LucideIcon,
   MessagesSquare,
   ScrollText,
@@ -94,6 +95,7 @@ export const MAIN_NAV: NavItem[] = [
 
 export const ADMIN_NAV: NavItem[] = [
   { to: "/settings", label: "Organization", icon: Building2, color: "var(--color-fg-quaternary)" },
+  { to: "/settings/email", label: "Email", icon: Mail, color: "var(--color-fg-quaternary)" },
   { to: "/settings/audit", label: "Audit log", icon: ScrollText, color: "var(--color-fg-quaternary)" },
   { to: "/settings/preferences", label: "Preferences", icon: Settings, color: "var(--color-fg-quaternary)" },
 ];
@@ -109,6 +111,7 @@ export const SETTINGS_NAV: NavItem = {
   color: "var(--color-fg-quaternary)",
   children: [
     { to: "/settings", label: "Organization", exact: true },
+    { to: "/settings/email", label: "Email" },
     { to: "/settings/audit", label: "Audit log" },
     { to: "/settings/preferences", label: "Preferences" },
   ],

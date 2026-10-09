@@ -40,6 +40,46 @@ export interface MailMessage {
   text?: string;
   /** Where replies go (the business's own address), since mail is sent from a no-reply sender. */
   replyTo?: string | null;
+  /** Sender, e.g. "Sharma & Co <accounts@sharmaco.in>". Defaults to the mailer's own. */
+  from?: string;
+}
+
+/** An organization's own mail server. */
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  /** "ssl": TLS from the start (usually port 465); "starttls": upgrade after connecting (587). */
+  security: "ssl" | "starttls";
+  username: string;
+  password: string;
+}
+
+export interface EmailDomainRecord {
+  /** What the record is for, e.g. "SPF", "DKIM", "MX". */
+  purpose: string;
+  type: string;
+  name: string;
+  value: string;
+  priority?: number;
+  ttl?: string;
+  status?: string;
+}
+
+export interface EmailDomain {
+  id: string;
+  name: string;
+  /** "pending" until the DNS records are found, then "verified" (or "failed"). */
+  status: "pending" | "verified" | "failed";
+  records: EmailDomainRecord[];
+}
+
+/** Sending domains: an organization proves it owns a domain with DNS records, then mail goes out as it. */
+export interface EmailDomains {
+  create(name: string): Promise<EmailDomain>;
+  get(id: string): Promise<EmailDomain>;
+  /** Ask the provider to look for the DNS records again. */
+  verify(id: string): Promise<EmailDomain>;
+  remove(id: string): Promise<void>;
 }
 
 export interface Mailer {

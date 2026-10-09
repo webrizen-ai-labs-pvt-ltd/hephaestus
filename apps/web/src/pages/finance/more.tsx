@@ -320,10 +320,20 @@ function EmailCard({ enabled, from, replyTo, canManage }: { enabled: boolean; fr
           {enabled ? (
             <>
               Invoices, quotes and reminders are sent from <span className="font-medium text-secondary">{from}</span>. Client replies go to{" "}
-              <span className="font-medium text-secondary">{replyTo ?? "nowhere yet: add a billing email below"}</span>.
+              <span className="font-medium text-secondary">{replyTo ?? "nowhere yet: add a billing email below"}</span>. To send from your own address, use{" "}
+              <Link to="/settings/email" className="font-semibold text-brand-secondary hover:underline">
+                Settings → Email
+              </Link>
+              .
             </>
           ) : (
-            "Operant can't email clients yet. Issued invoices still get a shareable link. Your administrator connects an email service (Resend) to turn this on."
+            <>
+              Operant can't email clients yet. Issued invoices still get a shareable link. Connect your own mail server in{" "}
+              <Link to="/settings/email" className="font-semibold text-brand-secondary hover:underline">
+                Settings → Email
+              </Link>
+              , or ask your administrator to connect Operant's email service.
+            </>
           )}
         </p>
       </div>

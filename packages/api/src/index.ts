@@ -15,6 +15,7 @@ import { eventRoutes } from "./routes/events.ts";
 import { homeRoutes } from "./routes/home.ts";
 import { financeDocumentRoutes } from "./finance/document-routes.ts";
 import { installmentRoutes } from "./finance/installment-routes.ts";
+import { emailRoutes } from "./email/email-routes.ts";
 import { financePublicRoutes } from "./finance/public-routes.ts";
 import { financeSetupRoutes } from "./finance/setup-routes.ts";
 import { portalClientRoutes } from "./portal/client-routes.ts";
@@ -43,7 +44,9 @@ const pillars = new Hono<AppEnv>()
   .route("/", financeDocumentRoutes)
   .route("/", installmentRoutes)
   // Client portal (the team's side)
-  .route("/", portalStaffRoutes);
+  .route("/", portalStaffRoutes)
+  // Settings → Email
+  .route("/", emailRoutes);
 
 export type { ActiveOrg, ApiDeps, AppEnv, DirectoryInviter } from "./context.ts";
 export { audit } from "./audit.ts";

@@ -510,6 +510,9 @@ export const ARTICLES: HelpArticle[] = [
             <P>
               The <Ui>Invoice email</Ui> card shows whether email is set up. When it is, issued invoices, quotes and reminders are emailed to clients, and replies go to your billing email. Use <Ui>Send test email</Ui> to check it reaches you.
             </P>
+            <P>
+              To send from your own address instead, see <See slug="settings">Sending from your own email</See>.
+            </P>
             <Tip tone="note">If email isn't set up yet, every issued invoice still has a client link you can copy and send yourself.</Tip>
           </>
         ),
@@ -749,7 +752,7 @@ export const ARTICLES: HelpArticle[] = [
   {
     slug: "settings",
     title: "Organization settings",
-    summary: "Switching areas on and off, renaming terms, working days, and your own preferences.",
+    summary: "Switching areas on and off, renaming terms, working days, sending from your own email, and your preferences.",
     icon: Building2,
     color: "var(--color-fg-quaternary)",
     group: "For admins",
@@ -768,6 +771,28 @@ export const ARTICLES: HelpArticle[] = [
               <li>rename terms to match how your business talks, for example Project → Engagement;</li>
               <li>set your working days, which leave and due dates follow.</li>
             </List>
+          </>
+        ),
+      },
+      {
+        id: "email",
+        title: "Sending from your own email",
+        keywords: "email from address domain dns spf dkim smtp gmail outlook zoho sender reply",
+        body: (
+          <>
+            <P>
+              Invoices, quotes, reminders and client portal emails go out in your organization's name. Out of the box they come from Operant's address with your business name, and replies come to your billing email. In{" "}
+              <Go to="/settings/email">Settings → Email</Go> you can send from your own address instead, in one of two ways:
+            </P>
+            <List>
+              <li>
+                <span className="font-semibold text-primary">Your own domain</span> (recommended): enter your domain and the address to send from, then add the DNS records shown at your domain provider. Click <Ui>Check now</Ui>; once they're found, emails come from your address automatically. This gets into inboxes best.
+              </li>
+              <li>
+                <span className="font-semibold text-primary">Your mail server</span>: pick Gmail, Microsoft 365, Zoho or Other, and enter the SMTP login (use an app password where your provider offers one). Operant sends you a test through it first and only switches over if it arrives. If the password changes, update it here.
+              </li>
+            </List>
+            <P>You can also set the name clients see and where replies go. If sending your way ever fails, the email still goes out from Operant's address, and the Email page tells you what went wrong.</P>
           </>
         ),
       },

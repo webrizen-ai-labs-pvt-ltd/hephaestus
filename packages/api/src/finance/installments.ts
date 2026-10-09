@@ -2,8 +2,9 @@ import { addDays, emiSchedule, formatMoney, type InstallmentFrequency } from "@o
 import { clients, type Db, installmentPlans, installments, invoiceLines, invoices, orgs, payments } from "@operant/db";
 import { and, asc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
+import { sendAsOrg } from "../email/org-mail.ts";
 import type { ApiDeps } from "../context.ts";
-import { deliver, mailDate, type MailResult, renderEmail } from "./email.ts";
+import { mailDate, type MailResult, renderEmail } from "./email.ts";
 import { type Invoice, issue, linkToken, loadSettings, refreshPaid, type Settings, writeLines } from "./service.ts";
 
 /*
@@ -369,7 +370,7 @@ export async function emailInstallment(deps: ApiDeps, settings: Settings, orgNam
     signOff: `Thank you,\n${seller}`,
     footnote: settings.email ? `Questions? Just reply to this email to reach ${seller}.` : undefined,
   });
-  const result = await deliver(deps.mailer, {
+  const result = await sendAsOrg(deps, inst!.orgId, {
     to: client.email,
     subject: overdue ? `Reminder: ${label.toLowerCase()} for ${orig!.number} is overdue` : `${label} for ${orig!.number}: ${formatMoney(a.due, orig!.currency)} due ${mailDate(inst!.dueDate)}`,
     html,
