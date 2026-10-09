@@ -45,7 +45,7 @@ const pillars = new Hono<AppEnv>()
   // Client portal (the team's side)
   .route("/", portalStaffRoutes);
 
-export type { ActiveOrg, ApiDeps, AppEnv } from "./context.ts";
+export type { ActiveOrg, ApiDeps, AppEnv, DirectoryInviter } from "./context.ts";
 export { audit } from "./audit.ts";
 export { requireOrg, requirePermission } from "./middleware.ts";
 export { findOrg, type MemberSnapshot, reconcileMembers, syncViewer } from "./sync.ts";

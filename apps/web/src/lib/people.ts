@@ -31,6 +31,9 @@ export interface Employee {
   memberId: string | null;
   image: string | null;
   userId: string | null;
+  invitedAt: string | null;
+  /** Can they sign in: yes, invited (open for 48 hours), the invite expired, or never invited. */
+  signIn: "active" | "invited" | "expired" | "none";
 }
 
 export interface EmployeeDetail {

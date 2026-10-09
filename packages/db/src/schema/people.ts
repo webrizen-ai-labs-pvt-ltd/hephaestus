@@ -68,6 +68,9 @@ export const employees = pgTable(
     exitDate: date("exit_date"),
     location: text("location"),
     birthday: date("birthday"),
+    /** When they were last invited to sign in (Webrizen invitation), and with which role. */
+    invitedAt: timestamp("invited_at", { withTimezone: true }),
+    invitedRole: text("invited_role"),
     createdBy: text("created_by"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

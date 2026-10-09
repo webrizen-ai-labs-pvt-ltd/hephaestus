@@ -171,7 +171,7 @@ export const ARTICLES: HelpArticle[] = [
                 In <Go to="/settings">Settings → Organization</Go>, turn off any areas you don't need, set your working days, and rename terms if your business uses different words (for example "Engagement" instead of "Project").
               </Step>
               <Step title="Bring in your team">
-                Open <Go to="/people/directory">People → Directory</Go> and click <Ui>Import from Webrizen</Ui> to add everyone in your organization, or <Ui>Add employee</Ui> for people who don't sign in. Then set each person's manager and department.
+                Open <Go to="/people/directory">People → Directory</Go>. <Ui>Import from Webrizen</Ui> adds everyone already in your organization. For anyone new, use <Ui>Add employee</Ui> with their work email, then <Ui>Invite to Operant</Ui> on their profile so they can sign in. Set each person's manager and department.
               </Step>
               <Step title="Set up leave">
                 In <Go to="/people/leave">People → Leave</Go>, open <Ui>Types and holidays</Ui> to add your leave types and this year's holidays.
@@ -226,7 +226,7 @@ export const ARTICLES: HelpArticle[] = [
       {
         id: "directory",
         title: "The directory",
-        keywords: "employee add import profile staff",
+        keywords: "employee add import profile staff invite sign in login access password",
         body: (
           <>
             <P>
@@ -237,7 +237,10 @@ export const ARTICLES: HelpArticle[] = [
                 <Ui>Import from Webrizen</Ui> adds everyone who is a member of your Webrizen organization.
               </li>
               <li>
-                <Ui>Add employee</Ui> adds someone by hand, for example a contractor who won't sign in. If you enter their work email, their profile links to their account when they sign in later.
+                <Ui>Add employee</Ui> adds someone's record. On its own, that doesn't let them sign in.
+              </li>
+              <li>
+                <Ui>Invite to Operant</Ui> on their profile emails them an invitation from Webrizen to their work email. They accept it, set up their Webrizen account, and can sign in; their profile links to them automatically. The directory shows who's <Ui>Invited</Ui>, whose invite expired (after 48 hours), and who isn't invited yet.
               </li>
               <li>
                 <Ui>Offboard</Ui> on a profile marks someone as having left. Their history stays.
@@ -700,7 +703,7 @@ export const ARTICLES: HelpArticle[] = [
         keywords: "invite member remove user add webrizen",
         body: (
           <P>
-            People join your organization in your Webrizen account (accounts.webrizen.com), where you invite them and give them a role. They can then sign in to Operant. When you remove someone there, they lose access to Operant straight away.
+            The easiest way: add them in the Directory with their work email, then click <Ui>Invite to Operant</Ui> on their profile and pick a role. Webrizen emails them; once they accept, they can sign in. You can also invite people from your Webrizen account (accounts.webrizen.com). Either way there's no Operant password: they sign in with their Webrizen account. When you remove someone in Webrizen, they lose access to Operant straight away.
           </P>
         ),
       },

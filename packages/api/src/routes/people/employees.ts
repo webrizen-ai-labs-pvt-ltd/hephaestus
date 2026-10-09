@@ -7,6 +7,7 @@ import {
   leaveRequests,
   members,
   onboardingRuns,
+  orgs,
   teamMembers,
   teams,
 } from "@operant/db";
@@ -73,6 +74,18 @@ const baseColumns = {
   memberId: employees.memberId,
   image: members.image,
   userId: members.userId,
+  invitedAt: employees.invitedAt,
+  /**
+   * Can they sign in? "active" while they're an active member (linked, or with the same email and
+   * not signed in yet; someone removed in Webrizen can't), "invited" while an invitation is open
+   * (48 hours), "expired" after.
+   */
+  signIn: sql<"active" | "invited" | "expired" | "none">`case
+    when exists (select 1 from members m where m.org_id = "employees"."org_id" and m.status = 'active'
+      and (m.id = "employees"."member_id" or lower(m.email) = lower("employees"."work_email"))) then 'active'
+    when "employees"."invited_at" > now() - interval '48 hours' then 'invited'
+    when "employees"."invited_at" is not null then 'expired'
+    else 'none' end`,
 };
 
 function listQuery(db: AppEnv["Variables"]["deps"]["db"]) {
@@ -225,6 +238,17 @@ export const employeeRoutes = new Hono<AppEnv>()
     return c.json({ employee: me ? { id: me.id, fullName: me.fullName, managerId: me.managerId } : null });
   })
 
+  /** Roles someone can be invited with: the organization's roles in use, never owner. */
+  .get("/employees/invite-roles", requirePermission("employee", "create"), async (c) => {
+    const { db } = c.get("deps");
+    const rows = await db
+      .selectDistinct({ role: sql<string>`unnest(${members.roles})` })
+      .from(members)
+      .where(and(eq(members.orgId, c.get("org").id), eq(members.status, "active")));
+    const roles = [...new Set(["member", "admin", ...rows.map((r) => r.role)])].filter((r) => r !== "owner");
+    return c.json({ roles, available: Boolean(c.get("deps").directory) });
+  })
+
   .get("/org-chart", requirePermission("employee", "read"), async (c) => {
     const { db } = c.get("deps");
     const rows = await db
@@ -355,6 +379,45 @@ export const employeeRoutes = new Hono<AppEnv>()
         where org_id = ${org.id} and manager_id = ${id}`);
       await audit(c, "employee.offboarded", { type: "employee", id }, { exitDate });
       return c.json({ ok: true });
+    },
+  )
+
+  /** Ask Webrizen to email them an invitation to the organization, so they can sign in. */
+  .post(
+    "/employees/:id/invite",
+    requirePermission("employee", "create"),
+    validate("json", z.object({ role: z.string().trim().min(1).max(64).default("member") })),
+    async (c) => {
+      const { db, directory } = c.get("deps");
+      const org = c.get("org");
+      const { role } = c.req.valid("json");
+      const [e] = await listQuery(db)
+        .where(and(eq(employees.orgId, org.id), eq(employees.id, c.req.param("id"))))
+        .limit(1);
+      if (!e) notFound("Employee not found");
+      if (!e.workEmail) throw new HTTPException(422, { message: "Add their work email first. The invitation goes there." });
+      if (e.signIn === "active") throw new HTTPException(409, { message: `${e.fullName} can already sign in.` });
+      if (e.status === "offboarded") throw new HTTPException(409, { message: "This person has been offboarded." });
+      if (!directory) throw new HTTPException(501, { message: "Invitations need Webrizen sign-in, which isn't set up here." });
+
+      const [o] = await db.select({ externalId: orgs.externalId }).from(orgs).where(eq(orgs.id, org.id));
+      if (!o?.externalId) throw new HTTPException(501, { message: "This organization isn't connected to Webrizen." });
+      const result = await directory.invite({ organizationId: o.externalId, email: e.workEmail, role, inviterUserId: c.get("viewer")!.userId });
+      if (!result.ok) {
+        const status = result.code === "already_member" ? 409 : result.code === "not_allowed" || result.code === "not_a_member" ? 403 : result.code === "invalid_role" ? 422 : 502;
+        const message =
+          result.code === "already_member"
+            ? `${e.workEmail} is already in your Webrizen organization, so they can sign in now.`
+            : status === 403
+              ? "Your Webrizen role doesn't allow inviting people. Ask an owner or admin."
+              : status === 422
+                ? result.message
+                : `Webrizen couldn't send the invitation: ${result.message}`;
+        throw new HTTPException(status as 403 | 409 | 422 | 502, { message });
+      }
+      await db.update(employees).set({ invitedAt: new Date(), invitedRole: role }).where(eq(employees.id, e.id));
+      await audit(c, "employee.invited", { type: "employee", id: e.id }, { email: e.workEmail, role });
+      return c.json({ invitedAt: new Date().toISOString(), expiresAt: result.expiresAt });
     },
   )
 

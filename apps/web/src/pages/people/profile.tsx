@@ -1,11 +1,14 @@
 import { Avatar, Badge, Button, Card, cn, DateInput, Dialog, DialogContent, Field, Input, Skeleton } from "@operant/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Briefcase, Cake, FileText, Mail, MapPin, Paperclip, Pencil, Phone, Trash2, UserMinus } from "lucide-react";
+import { can } from "@operant/core";
+import { ArrowLeft, Briefcase, Cake, FileText, Mail, MailPlus, MapPin, Paperclip, Pencil, Phone, Trash2, UserMinus } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../lib/api.ts";
 import { useCrumb } from "../../lib/breadcrumbs.ts";
+import { useViewer } from "../../lib/viewer.ts";
+import { InviteDialog, SignInBadge } from "./invite.tsx";
 import {
   EMPLOYMENT_LABEL,
   formatDate,
@@ -167,6 +170,8 @@ export function ProfilePage() {
   const { data: runs } = useOnboardingRuns({ employeeId: id });
   const [editing, setEditing] = useState(false);
   const [offboarding, setOffboarding] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const me = useViewer();
 
   if (isLoading) {
     return (
@@ -205,12 +210,18 @@ export function ProfilePage() {
               <h1 className="text-2xl font-bold">{e.fullName}</h1>
               <StatusBadge status={e.status} />
               {access.isSelf ? <Badge tone="people">You</Badge> : null}
+              <SignInBadge e={e} />
             </div>
             <p className="text-sm text-tertiary">
               {[e.jobTitle, e.departmentName].filter(Boolean).join(" · ") || "No title yet"}
             </p>
           </div>
           <div className="flex gap-2">
+            {e.signIn !== "active" && e.workEmail && e.status !== "offboarded" && can(me.org.permissions, "employee", "create") ? (
+              <Button variant={e.signIn === "none" ? "primary" : "secondary"} onClick={() => setInviting(true)}>
+                <MailPlus /> {e.signIn === "none" ? "Invite to Operant" : "Resend invitation"}
+              </Button>
+            ) : null}
             {access.canEdit ? (
               <Button onClick={() => setEditing(true)}>
                 <Pencil /> Edit
@@ -363,6 +374,7 @@ export function ProfilePage() {
       </div>
 
       {access.canEdit ? <EmployeeFormDialog key={e.id} open={editing} onOpenChange={setEditing} employee={e} /> : null}
+      {inviting ? <InviteDialog employee={e} onClose={() => setInviting(false)} /> : null}
       {access.canArchive ? <OffboardDialog open={offboarding} onOpenChange={setOffboarding} id={e.id} name={e.fullName} /> : null}
     </PageBody>
   );

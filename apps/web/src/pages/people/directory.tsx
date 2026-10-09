@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "../../components/app-shell.tsx";
 import { api, type Me } from "../../lib/api.ts";
 import { EMPLOYMENT_LABEL, type Employee, PEOPLE_KEYS, useApiMutation, useDepartments, useEmployees } from "../../lib/people.ts";
+import { SignInBadge } from "./invite.tsx";
 import { EmployeeFormDialog } from "./employee-form.tsx";
 import { PageBody } from "./layout.tsx";
 
@@ -146,8 +147,9 @@ export function DirectoryPage({ me }: { me: Me }) {
                       <span className="truncate font-display text-[15px] font-bold">{e.fullName}</span>
                     </div>
                     <div className="mt-0.5 max-w-full truncate text-[13px] text-tertiary">{e.jobTitle ?? "—"}</div>
-                    <div className="mt-2">
+                    <div className="mt-2 flex flex-wrap justify-center gap-1">
                       <StatusBadge status={e.status} />
+                      <SignInBadge e={e} />
                     </div>
                     <div className="mt-auto flex w-full items-center justify-between gap-2 border-t border-secondary pt-3 text-[11.5px] text-tertiary">
                       <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -187,6 +189,7 @@ export function DirectoryPage({ me }: { me: Me }) {
                           <div className="flex items-center gap-2 font-medium">
                             <span className="truncate">{e.fullName}</span>
                             <StatusBadge status={e.status} />
+                            <SignInBadge e={e} />
                           </div>
                           <div className="truncate text-xs text-tertiary">{e.jobTitle ?? e.workEmail ?? "—"}</div>
                         </div>

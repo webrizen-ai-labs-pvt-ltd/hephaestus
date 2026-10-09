@@ -15,6 +15,8 @@ export interface ApiDeps {
   appUrl: string;
   /** Public base URL of the client portal app, for links in client emails. */
   portalUrl?: string;
+  /** Invites people to sign in, through the identity provider. Missing where that isn't possible. */
+  directory?: DirectoryInviter;
   /** Resolve the signed-in viewer from the request (cookie session), or null. */
   resolveViewer(req: Request): Promise<Viewer | null>;
 }
@@ -42,4 +44,16 @@ export interface PortalViewer {
   name: string | null;
   phone: string | null;
   clientId: string | null;
+}
+
+/** Sends an invitation from the identity provider (Webrizen SSO) on behalf of a member. */
+export interface DirectoryInviter {
+  invite(input: {
+    /** The identity provider's organization id (orgs.externalId). */
+    organizationId: string;
+    email: string;
+    role: string;
+    /** The signed-in person asking for it; they must be allowed to invite. */
+    inviterUserId: string;
+  }): Promise<{ ok: true; expiresAt: string } | { ok: false; code: string; message: string }>;
 }

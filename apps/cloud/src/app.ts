@@ -21,7 +21,7 @@ import { secureHeaders } from "hono/secure-headers";
 import * as client from "openid-client";
 import { Webhook } from "standardwebhooks";
 import { z } from "zod";
-import { directoryMember, directoryOrg, listAllMembers, toSnapshot } from "./directory.ts";
+import { directoryMember, directoryOrg, listAllMembers, toSnapshot, webrizenInviter } from "./directory.ts";
 import type { Env } from "./env.ts";
 import { getConfig, identityFromTokens, refreshSession, SCOPES, safeReturnTo, tokensToSession } from "./oidc.ts";
 import {
@@ -86,6 +86,7 @@ export async function createCloudApp(env: Env) {
     appUrl: env.APP_URL,
     portalUrl: env.PORTAL_URL,
     mailer: env.RESEND_API_KEY ? new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) : consoleMailer,
+    directory: env.ssoConfigured ? webrizenInviter(env) : undefined,
     resolveViewer: async (req) => viewers.get(req) ?? null,
   };
   const api = createApi(apiDeps);
